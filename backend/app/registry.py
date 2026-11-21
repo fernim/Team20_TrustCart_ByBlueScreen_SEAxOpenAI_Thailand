@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
+import json
+from pathlib import Path
 
 
 class RegistryUnavailable(Exception):
@@ -14,9 +16,15 @@ class RegistryRecord:
     active: bool
 
 
+_DATA = Path(__file__).resolve().parent.parent / "data"
 _FIXTURES = {
-    "DEMO-001": RegistryRecord("Demo Supplement", "Demo Brand", "supplement", True),
+    reference: RegistryRecord(**record)
+    for reference, record in json.loads((_DATA / "registry.json").read_text(encoding="utf-8")).items()
 }
+
+
+def demo_listings():
+    return json.loads((_DATA / "listings.json").read_text(encoding="utf-8"))
 
 
 def tool_registry_lookup(reference: str) -> Optional[RegistryRecord]:

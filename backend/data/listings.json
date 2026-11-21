@@ -1,0 +1,54 @@
+{
+  "L1": {
+    "registration_reference": "DEMO-001",
+    "product_name": "Turmeric Blend",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "reverses diabetes"
+  },
+  "L2": {
+    "registration_reference": "DEMO-001",
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "description": "ผลิตภัณฑ์เสริมอาหาร"
+  },
+  "L3": {
+    "registration_reference": "DEMO-REVOKED",
+    "product_name": "Firming Serum",
+    "license_holder": "Demo Brand",
+    "category": "cosmetic",
+    "description": "ผลิตภัณฑ์เสริมอาหาร"
+  },
+  "L4": {
+    "registration_reference": "DEMO-001",
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "prevents obesity"
+  },
+  "L5": {
+    "registration_reference": "MISSING",
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "description": "ผลิตภัณฑ์เสริมอาหาร"
+  },
+  "L6": {
+    "registration_reference": "DEMO-001",
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "description": "ผลิตภัณฑ์เสริมอาหาร"
+  },
+  "L7": {
+    "registration_reference": "DEMO-001",
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "advertising_permit_conflict": true
+  }
+}

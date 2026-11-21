@@ -8,7 +8,8 @@ from pathlib import Path
 from fastapi import Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from backend.app.main import Trace, create_app
+from backend.app.main import Listing, Trace, create_app, evaluate_rules, Status
+from backend.app.registry import demo_listings
 
 
 PRODUCTS = (
@@ -18,16 +19,6 @@ PRODUCTS = (
     "Oat Cream", "Berry Blend", "Daily Moisturiser", "Lemongrass Blend",
     "Pumpkin Fibre", "Rice Cleanser",
 )
-SCENARIOS = (
-    ("PENDING", "Seller evidence requested", "R-05", 0.60),
-    ("APPROVED", "Registry identity and category matched", "R-01 / R-02", 1.0),
-    ("DENIED", "Registration fixture marked inactive", "R-01", 1.0),
-    ("DENIED", "Advertising copy flagged in the demo", "R-03", 1.0),
-    ("UNKNOWN", "Registration reference unavailable", "R-01", 0.0),
-    ("APPROVED", "Registry identity and category matched", "R-01 / R-02", 1.0),
-    ("PENDING", "Advertising permit conflict", "R-04", 0.60),
-    ("UNKNOWN", "Registry outage simulated", "registry_lookup", 0.0),
-)
 DEMO_EXAMPLE = {
     "registration_reference": "DEMO-001",
     "product_name": "Demo Supplement",
@@ -36,27 +27,29 @@ DEMO_EXAMPLE = {
 }
 
 
-def demo_transactions():
+def demo_transactions(offline=False):
     records = []
+    cases = list(demo_listings().items())
     for number, product in enumerate(PRODUCTS, start=1):
-        status, reason, rule, confidence = SCENARIOS[(number - 1) % len(SCENARIOS)]
+        case_id, payload = cases[(number - 1) % len(cases)]
+        listing = Listing(**payload)
+        listing.simulate_registry_outage = offline
         trace = Trace()
         trace.add("demo_fixture", f"TX-{number:03}")
-        trace.add(rule, reason)
-        trace.add("decision", status)
+        status, reason, rule_results = evaluate_rules(listing, trace)
+        confidence = {Status.UNKNOWN: 0.0, Status.PENDING: 0.60}.get(status, 1.0)
+        trace.add("decision", reason)
         trace.add("review_routing", "required" if confidence < 0.75 else "clear")
         records.append({
-            "id": f"TX-{number:03}",
-            "listing": product,
-            "seller": f"Demo Store {(number - 1) % 5 + 1}",
-            "amount_thb": 190 + number * 15,
-            "status": status,
-            "reason": reason,
-            "rule": rule,
-            "confidence": confidence,
+            "id": f"TX-{number:03}", "scenario": case_id,
+            "listing": listing.product_name, "seller": f"Demo Store {(number - 1) % 5 + 1}",
+            "amount_thb": 190 + number * 15, "status": status.value,
+            "reason": reason, "confidence": confidence,
             "human_review_required": confidence < 0.75,
+            "rule_results": rule_results,
             "trace": [entry.model_dump() for entry in trace.entries],
             "chain_hash": trace.entries[-1].chain_hash,
+            "synthetic": True,
         })
     return records
 
@@ -66,10 +59,10 @@ def create_demo_app(database: Path):
     service.title = "TrustCart Marketplace API"
     service.description = (
         "Password-protected synthetic marketplace demo. Use GET /v1/demo/transactions "
-        "to explore the 20 simulated scenarios. The working verification endpoint "
+        "to explore the 20 rule-evaluated synthetic scenarios. The working verification endpoint "
         "checks synthetic registration identity and category and returns a "
         "Location header for retrieving the decision. Demo scenarios for R-03 "
-        "through R-05 illustrate the product workflow. "
+        "through R-05 include deterministic claim screening, declared permit conflicts, and pending evidence work. "
         "Sign in with username demo and the shared demo password. "
         "Use Try it out on POST /v1/verifications with the example body, "
         "then copy the returned id into GET /v1/verifications/{verification_id}. "
@@ -91,7 +84,6 @@ def create_demo_app(database: Path):
         return schema
 
     service.openapi = demo_openapi
-    records = demo_transactions()
     dashboard = Path(__file__).with_name("demo.html").read_text(encoding="utf-8")
 
     @service.middleware("http")
@@ -121,9 +113,9 @@ def create_demo_app(database: Path):
         return dashboard
 
     @service.get("/v1/demo/transactions", tags=["Demo"])
-    def transactions():
+    def transactions(offline: bool = False):
         """List the 20 synthetic marketplace transaction scenarios and audit traces."""
-        return records
+        return demo_transactions(offline)
 
     @service.get("/v1/demo/example", tags=["Demo"])
     def example():

@@ -1,0 +1,14 @@
+{
+  "DEMO-001": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true
+  },
+  "DEMO-REVOKED": {
+    "product_name": "Firming Serum",
+    "license_holder": "Demo Brand",
+    "category": "cosmetic",
+    "active": false
+  }
+}

@@ -111,4 +111,6 @@ To run the web app locally, set `TRUSTCART_DEMO_PASSWORD` in the process environ
 
 The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
 
-Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. R-03 through R-05 transaction scenarios illustrate planned product behavior.
+Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. The dashboard now evaluates all 20 records through the rule engine. R-03 screens submitted Thai/English advertising text and returns matched phrase positions. Declared permit conflicts route to PENDING. Evidence uploads, rechecks, reviewer decisions, and audit-tamper controls remain roadmap work. The outage control is scoped to each request so one visitor cannot change another visitor's registry state.
+
+Validation for this implementation stage: 18 tests pass.

@@ -18,6 +18,11 @@ def test_demo_gate_and_transactions(tmp_path, monkeypatch):
         assert {row["status"] for row in records} == {"APPROVED", "PENDING", "DENIED", "UNKNOWN"}
         assert all(row["human_review_required"] for row in records if row["status"] == "UNKNOWN")
         assert all(row["trace"][-1]["chain_hash"] == row["chain_hash"] for row in records)
+        assert all(row["rule_results"] for row in records)
+        offline = client.get("/v1/demo/transactions?offline=true", auth=auth).json()
+        assert all(row["status"] == "UNKNOWN" and row["human_review_required"] for row in offline)
+        schema = client.get("/openapi.json", auth=auth).json()
+        assert schema["components"]["schemas"]["Listing"]["example"]
         result = client.post("/v1/verifications", auth=auth, json={
             "registration_reference": "DEMO-001", "product_name": "Demo Supplement",
             "license_holder": "Demo Brand", "category": "supplement",

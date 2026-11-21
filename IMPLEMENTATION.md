@@ -175,3 +175,12 @@ Work on short-lived branches and merge into `main` often. Only one person edits 
 - [ ] No secrets in the repository. Give judges the demo password through the submission form only.
 - [ ] README Declarations are current, including the link to the earlier project.
 - [ ] Update the pitch slides to match what was actually built, with features that were not built labelled "Roadmap".
+
+
+## Integration update on 21 November 2026
+
+Delivered in the hosted demo: PENDING mismatch policy, JSON registry/listing fixtures for seven initial scenarios, request-scoped outage simulation, deterministic R-03 checks, and bilingual rule-result fields. Each of the 20 dashboard records now runs through the same rules as API submissions.
+
+T12 is partially delivered. T6 through T11 and T13 remain pending, including evidence uploads, rechecks, reviewer decisions, and audit/tamper controls. Permit conflicts currently use a declared synthetic flag. Advertising text checks run when title or description is submitted, preserving original identity/category-only callers.
+
+Validation: 18 tests pass. Browser testing confirmed 20 UNKNOWN results and zero approvals during simulated outage.

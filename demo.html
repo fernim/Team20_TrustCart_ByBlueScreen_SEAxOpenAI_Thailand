@@ -49,7 +49,9 @@
   </section>
   <section id="metrics" class="metrics" aria-label="Transaction counts"></section>
   <section class="panel">
-    <div class="bar"><h2>Demo transactions</h2><label>Status <select id="filter">
+    <div class="bar"><h2>Demo transactions</h2>
+    <label>Registry <select id="registry"><option value="">Online</option><option value="true">Simulated outage</option></select></label>
+    <label>Status <select id="filter">
       <option value="">All statuses</option><option>APPROVED</option><option>PENDING</option><option>DENIED</option><option>UNKNOWN</option>
     </select></label></div>
     <div class="table-wrap"><table>
@@ -64,7 +66,7 @@
   <section class="panel bar">
     <div><h2>One verification API for the listing flow</h2>
     <p>Marketplaces submit listings before publication. Sellers receive reasons and evidence requests. Shoppers see a decision report, and reviewers investigate uncertain cases.</p>
-    <p>The live sample checks registration identity and category against a synthetic registry. The transaction scenarios also illustrate advertising claims, advertising permits, and seller evidence checks.</p>
+    <p>Each transaction runs identity, category, and advertising text checks against synthetic fixtures. Declared permit conflicts request review. Evidence upload and reviewer decisions are planned.</p>
     <p>Confidence below 0.75 routes a case to human review. Registry outages and unmapped categories produce Unknown. Every decision step contributes to the audit trace.</p>
     </div>
   </section>
@@ -117,6 +119,13 @@
     byId("rows").replaceChildren(...rows);
   }
   byId("filter").onchange = render;
+  byId("registry").onchange = async () => {
+    try {
+      records = await (await api("/v1/demo/transactions?offline=" + (byId("registry").value || "false"))).json();
+      updateMetrics();
+      render();
+    } catch (error) { report("Registry simulation failed", error.message, {}); }
+  };
   byId("run").onclick = async () => {
     const run = byId("run");
     run.disabled = true;
@@ -136,6 +145,14 @@
   (async () => {
     try {
       records = await (await api("/v1/demo/transactions")).json();
+      updateMetrics();
+      render();
+    } catch (error) {
+      byId("rows").querySelector("td").textContent = error.message;
+    }
+  })();
+  function updateMetrics() {
+      byId("metrics").replaceChildren();
       const counts = [["Transactions", records.length], ...statuses.map(status => [
         status[0] + status.slice(1).toLowerCase(), records.filter(row => row.status === status).length
       ])];
@@ -148,10 +165,6 @@
         card.append(number);
         byId("metrics").append(card);
       }
-      render();
-    } catch (error) {
-      byId("rows").querySelector("td").textContent = error.message;
-    }
-  })();
+  }
 </script>
 </html>

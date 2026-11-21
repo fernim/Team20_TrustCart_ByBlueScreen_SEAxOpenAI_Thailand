@@ -9,10 +9,11 @@ from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException, Response
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 from typing_extensions import Annotated
 
 from . import registry
+from .rules import advertising_claims
 
 
 ListingText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -24,10 +25,15 @@ class Listing(BaseModel):
     product_name: ListingText
     license_holder: ListingText
     category: ListingText
+    title: str = Field(default="", max_length=2000)
+    description: str = Field(default="", max_length=10000)
+    simulate_registry_outage: bool = False
+    advertising_permit_conflict: bool = False
 
 
 class Status(str, Enum):
     APPROVED = "APPROVED"
+    PENDING = "PENDING"
     DENIED = "DENIED"
     UNKNOWN = "UNKNOWN"
 
@@ -64,6 +70,37 @@ class Verification(BaseModel):
     human_review_required: bool
     trace: list[TraceEntry]
     chain_hash: str
+    rule_results: list[dict] = Field(default_factory=list)
+
+
+def evaluate_rules(listing: Listing, trace: Trace):
+    results = []
+
+    def add(rule, result, reason_en, reason_th, evidence=None):
+        results.append(dict(rule=rule, result=result, reason_en=reason_en, reason_th=reason_th, evidence=evidence))
+        trace.add(rule, json.dumps(results[-1], sort_keys=True, ensure_ascii=False))
+
+    status, reason = evaluate(listing, trace)
+    add("R-01", "skip" if status == Status.UNKNOWN else "fail" if reason in {"evidence_requested", "registration_inactive"} else "pass",
+        "Registration identity check", "ตรวจสอบข้อมูลทะเบียน")
+    add("R-02", "skip" if status == Status.UNKNOWN else "fail" if reason == "registration_category_mismatch" else "pass",
+        "Registered category check", "ตรวจสอบประเภทผลิตภัณฑ์")
+    if listing.title or listing.description:
+        matches, missing = advertising_claims(listing.title, listing.description, listing.category.casefold())
+        failed = bool(matches) or missing
+        add("R-03", "fail" if failed else "pass", "Advertising text check", "ตรวจสอบข้อความโฆษณา",
+            dict(matches=matches, missing_required_term=missing))
+        if failed and status == Status.APPROVED:
+            status, reason = Status.DENIED, "advertising_claim_failed"
+    else:
+        add("R-03", "skip", "No advertising text submitted", "ไม่ได้ส่งข้อความโฆษณา")
+    add("R-04", "fail" if listing.advertising_permit_conflict else "skip",
+        "Declared permit conflict" if listing.advertising_permit_conflict else "Permit verification awaits authorized data",
+        "ตรวจสอบใบอนุญาตโฆษณา")
+    if listing.advertising_permit_conflict and status == Status.APPROVED:
+        status, reason = Status.PENDING, "permit_conflict"
+    add("R-05", "skip", "Seller evidence not submitted", "ยังไม่ได้ส่งหลักฐาน")
+    return status, reason, results
 
 
 def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str]:
@@ -73,6 +110,8 @@ def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str]:
         return Status.UNKNOWN, "category_unmapped"
     trace.add("category_mapping", "mapped")
     try:
+        if listing.simulate_registry_outage:
+            raise registry.RegistryUnavailable
         record = registry.tool_registry_lookup(listing.registration_reference)
     except registry.RegistryUnavailable:
         trace.add("registry_lookup", "unavailable")
@@ -86,6 +125,10 @@ def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str]:
         return Status.UNKNOWN, "registry_category_unmapped"
     trace.add("registry_category_mapping", "mapped")
 
+    if not record.active:
+        trace.add("R-01", "inactive")
+        return Status.DENIED, "registration_inactive"
+
     same_identity = (
         record.active
         and listing.product_name.casefold() == record.product_name.casefold()
@@ -93,7 +136,7 @@ def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str]:
     )
     trace.add("R-01", "matched" if same_identity else "failed")
     if not same_identity:
-        return Status.DENIED, "registration_identity_failed"
+        return Status.PENDING, "evidence_requested"
     category_matches = category == record.category
     trace.add("R-02", "matched" if category_matches else "failed")
     if not category_matches:
@@ -115,8 +158,8 @@ def create_app(database: Path) -> FastAPI:
     @service.post("/v1/verifications", status_code=201, response_model=Verification)
     def submit(listing: Listing, response: Response) -> Verification:
         trace = Trace()
-        status, reason = evaluate(listing, trace)
-        confidence = 0.0 if status == Status.UNKNOWN else 1.0
+        status, reason, rule_results = evaluate_rules(listing, trace)
+        confidence = {Status.UNKNOWN: 0.0, Status.PENDING: 0.60}.get(status, 1.0)
         human_review_required = confidence < 0.75
         trace.add("decision", reason)
         trace.add("review_routing", "required" if human_review_required else "clear")
@@ -124,6 +167,7 @@ def create_app(database: Path) -> FastAPI:
             id=uuid4(), status=status, reason=reason, confidence=confidence,
             human_review_required=human_review_required, trace=trace.entries,
             chain_hash=trace.entries[-1].chain_hash,
+            rule_results=rule_results,
         )
         with closing(sqlite3.connect(database)) as connection, connection:
             connection.execute(
