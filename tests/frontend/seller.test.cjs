@@ -371,3 +371,16 @@ test('initial demo copy agrees with its registered supplement identity', t => {
   assert.ok(p.$('#listing-title').value.includes(p.$('#license-holder').value));
   assert.ok(p.$('#listing-description').value.includes(p.$('#registered-name').value));
 });
+
+test('seller can submit the medicine category', async t => {
+  let submitted;
+  const p = seller(t, async (url, options) => {
+    if (!options?.body) return {ok:true,json:async()=>[]};
+    submitted = JSON.parse(options.body);
+    return {ok:true,json:async()=>({id:'medicine',version:1,listing:submitted,verification:result})};
+  });
+  assert.equal(p.$('#listing-category option[value="drug"]').textContent, 'ยา');
+  p.$('#listing-category').value = 'drug';
+  await p.submit();
+  assert.equal(submitted.category, 'drug');
+});

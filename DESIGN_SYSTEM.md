@@ -52,3 +52,11 @@ The reviewer’s latest-product list reuses seller thumbnail and metadata styles
 The integrated application retains the Shopee-style orange gradient, shopping-bag mark, campaign hero, brand showcase and compact panels. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.
 
 The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.
+
+## Full product page
+
+Product pages retain the Shopee-style two-column purchase area, followed by section navigation, shop information, specifications/description, ratings/reviews, and six related products. White surfaces, orange accents, pale review summaries and compact borders use the shared tokens. Below 760px the layout stacks, filters wrap, and related cards use two columns.
+
+`product-detail.js` owns presentation-only review fixtures and per-product filter/page state. Catalog reviews, shop data and shipping examples are explicitly labeled samples; saved seller products show honest empty or unavailable states. Review photos are labeled illustrations. Sample ratings never influence verification. Specifications use only known catalog attributes or saved stock. Names, descriptions and comments render as text.
+
+Reviews show five items per page, star/photo filters, accessible photo dialogs and persistent selections across language changes. Product refreshes preserve gallery choice, bounded quantity, and control focus. Related cards use the normal product URLs and existing badge eligibility. No API, schema, checkout, messaging or review-submission behavior is added.
