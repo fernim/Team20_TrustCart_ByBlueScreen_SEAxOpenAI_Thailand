@@ -1,10 +1,12 @@
-# TrustCart Baseline Lead
+# TrustCart
+
+**Verify the listing. Trace the evidence. Escalate uncertainty.**
 
 **Repository** `Team20_TrustCart_ByBlueScreen_SEAxOpenAI_Thailand`
 
 Built by Team BlueScreen for the Sea × OpenAI Regional Codex Hackathon Thailand. The `[codex]` stamp credits OpenAI Codex with initiating this baseline implementation.
 
-TrustCart gives marketplaces a pre-publication verification API for health-product listings. A marketplace submits a listing and receives a status, a reason, an audit trace, and a URL for retrieving the decision. The baseline runs end to end with a synthetic registry and a local SQLite database. Its approvals apply only to synthetic fixtures.
+TrustCart is an API-first, human-governed verification workflow for health-product listings. Marketplaces and seller operations can check product identity, advertising claims, and supporting evidence before publication. A marketplace submits a listing and receives a status, a reason, an audit trace, and a URL for retrieving the decision. The baseline runs end to end with a synthetic registry and a local SQLite database. Its approvals apply only to synthetic fixtures.
 
 > **All data is synthetic.** TrustCart does not connect to the Thai FDA registry or any marketplace. It is not affiliated with Shopee or Thai FDA, and its results are decision support. They are not certification, legal advice, or medical advice.
 
@@ -19,6 +21,41 @@ TrustCart checks a listing **before publication** through an API. The design rul
 - Rules R-01 to R-05 decide the status. A language model is never allowed to set one.
 - A registry outage, missing reference, or unmapped category returns `UNKNOWN` with human review. TrustCart never approves a case it could not verify.
 - Every decision step is written to a SHA-256 hash-chained audit trace.
+
+## Product: one verification engine, two delivery surfaces
+
+```
+Seller / marketplace listing
+        |
+        v
+POST /v1/verifications  ──>  Registry adapter (synthetic in demo)
+        |                      + rule-based identity, category,
+        |                        advertising and evidence checks
+        v
+  APPROVED / PENDING / DENIED / UNKNOWN
+        |
+        +--> Evidence upload --> Recheck --> Human review when required
+        |
+        +--> Evidence-linked report + hash-chained audit trace
+        |
+        +--> API response / reviewer dashboard / shopper-facing demo widget
+```
+
+**The API is the product; the dashboard is the demonstration and review interface.** They share the same backend decision model rather than implementing separate verification systems.
+
+**Design principle:** *AI extracts and suggests. Deterministic rules decide. Humans govern.* Optional language-model extraction must remain grounded in the listing text and cannot set or override a verification status. With no approved external AI configuration, the demo uses local rule-based screening.
+
+### Intended users and commercial buyers
+
+| Role                                                          | Job to be done                                                        | TrustCart interface                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------- |
+| Marketplace trust-and-safety or listing-operations team       | Screen listings consistently and route unresolved cases               | **Verification API + reviewer queue + audit report** |
+| Supplement brand, seller-operations team, or marketing agency | Find listing problems and provide missing evidence before publication | **Seller dashboard + evidence/recheck flow**         |
+| Shopper                                                       | Understand which checks ran and what remains unverified               | **Demo trust status + explanation**                  |
+| Regulatory reviewer or other authorized human reviewer        | Inspect evidence, resolve escalations, and retain decision history    | **Reviewer dashboard + tamper-evident trace**        |
+
+**Who might pay?** The commercial hypotheses are (1) marketplaces or seller platforms paying for API usage / enterprise integration, and (2) brands or agencies paying for a hosted review workflow. **Neither willingness to pay nor customer ROI has been validated.** We are not asserting that a large marketplace would outsource functionality it can build internally.
+
 
 ## Build direction
 
@@ -154,6 +191,7 @@ FastAPI registers six routers from `backend/app/api/`. The local API entry point
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| GET | /version | Public commit SHA from VERCEL_GIT_COMMIT_SHA, or local |
 | POST | /v1/verifications | Submit listing |
 | GET | /v1/verifications/{id} | Retrieve result |
 | POST | /v1/verifications/{id}/evidence | Multipart synthetic files and declared product fields |
@@ -172,6 +210,8 @@ FastAPI registers six routers from `backend/app/api/`. The local API entry point
 Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
 
 Once a reviewer has recorded a decision, seller evidence uploads and rechecks on that verification return `409`. Submit a fresh verification for updated evidence or an edited listing. A reviewer may record a new decision using the latest audit hash.
+
+Evidence uploads accept an optional comma-separated `standards` declaration. ISO 9001 alone cannot satisfy R-05; ISO 22000 or GMP can satisfy the standards comparison when identity checks also pass. This compares declarations, not certificate authenticity. A file digest already stored for another verification adds a `duplicate_evidence` trace event and requires human review at confidence 0.60; rechecks retain unresolved duplicate warnings.
 
 If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
 
@@ -203,6 +243,38 @@ Product edits use optimistic version checks and atomically create fresh verifica
 
 Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
 
+## Business model and validation plan
+
+**B2B APIaaS (proposed):** A marketplace or seller platform could pay per verification or under an enterprise contract. **B2B workflow SaaS (proposed):** Brands/agencies with frequent reviews could pay by user seat or review volume. Shoppers benefit from transparency but are **not** the assumed subscription payer.
+
+A credible commercial case needs a pilot with an authorized data source and real operations teams:
+
+| Hypothesis to test                            | Measure                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| Current verification is fragmented or costly  | Baseline time per review; number of systems consulted; evidence follow-ups |
+| TrustCart reduces repetitive work             | Change in time-to-decision and reviewer workload versus current process    |
+| TrustCart does not sacrifice safety for speed | Critical-issue recall, false approvals, false positives, escalation rate   |
+| Evidence history is operationally useful      | Share of decisions with complete source/rule/reviewer trace                |
+| Organizations will pay                        | Signed pilot, actual budget owner, paid conversion, retention              |
+
+**Market sizing discipline:** the total value of Thailand's supplement sales is **not** TrustCart's addressable software market. A bottom-up estimate should use `eligible paying organizations × validated annual contract value`, with an explicit market-access assumption. No TAM, revenue, ROI, or customer conversion figure is claimed as validated here.
+
+### Why not just use the Thai FDA search, generic AI, or marketplace filters?
+
+- **Official lookup:** authoritative product information is vital, but product identity, listing claims, missing evidence, and a reviewer decision still need to be connected in a workflow.
+- **Generic AI:** useful for interpreting text, but TrustCart keeps the decision behind explicit rules, exposes uncertainty, and records the actions taken.
+- **Marketplace tooling:** large platforms already invest in screening and can build internally. TrustCart's *hypothesized* value is a reusable, auditable service that can fit smaller platforms, seller operations, or cross-channel workflows. Integration and ROI must be proven.
+
+## Roadmap
+
+MoPH 448 ingredient ceilings (B11) remain Roadmap; no ingredient-ceiling check is implemented.
+
+1. **Evidence and quality:** expert-reviewed Thai rule pack; current regulatory sources and rule versioning; representative evaluation sets; calibrated risk ranking.
+2. **Trusted data:** authorized Thai FDA registry/permit adapter with field provenance, freshness, source availability, and error handling.
+3. **Pilot integration:** one real marketplace or seller-operations workflow with consent, proper API authentication, human-review permissions, durable storage, and privacy/security controls.
+4. **Expansion:** additional health-product categories and jurisdictions only after local rules, data access, and product-market fit are validated.
+
+
 ## Shared production storage
 
 Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
@@ -225,3 +297,11 @@ Latest local validation: 137 Python tests, 108 Node component tests, and 22 desk
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
 
 The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.
+
+## Background references
+
+- [Thai FDA — misleading health-product advertising and complaints (27 January 2026)](https://dis.fda.moph.go.th/detail-newsUpdate?id=3428)
+- [Thai FDA Journal — survey of unlawful online health-product advertisements (2024)](https://he01.tci-thaijo.org/index.php/fdajournal/article/view/273126)
+- [Thai FDA — platform screening and enforcement update (2026)](https://dis.fda.moph.go.th/detail-newsUpdate?id=3498)
+- [Thai FDA Food Division — advertising criteria (2026)](https://food.fda.moph.go.th/food-law/announ-fda-ads69)
+- [Product brief](PRODUCT.md) · [Implementation details](IMPLEMENTATION.md) · [Demo guide](DEMO.md) · [Developer/agent instructions](AGENTS.md)
