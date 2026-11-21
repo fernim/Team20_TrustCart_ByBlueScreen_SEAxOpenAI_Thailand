@@ -66,6 +66,8 @@ This is a narrow demo policy, not a comprehensive Thai FDA compliance engine. It
 
 ## Tests
 
+`tests/test_claims_unit.py` adds offline R-03 scanner regression coverage for literal text/source preservation, case and whitespace variations, Thai numerals, repeated occurrences, and ordinary copy without findings. Run it directly with `.venv/bin/python -m pytest -q tests/test_claims_unit.py` on macOS/Linux.
+
 ```powershell
 .venv/Scripts/python -m pytest -q
 ```
