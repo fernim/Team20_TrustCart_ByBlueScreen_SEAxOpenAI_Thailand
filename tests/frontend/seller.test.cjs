@@ -3,12 +3,13 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { JSDOM } = require("jsdom");
-function seller(t, fetch) {
+function seller(t, fetch, setup = () => {}) {
   const dom = new JSDOM(
     fs.readFileSync(path.join(__dirname, "../../frontend/seller.html"), "utf8"),
     { url: "http://localhost/seller", runScripts: "outside-only" },
   );
   dom.window.fetch = fetch;
+  setup(dom.window);
   for (const file of ["verification-view.js", "seller.js"])
     dom.window.eval(
       fs.readFileSync(path.join(__dirname, "../../frontend", file), "utf8"),
@@ -117,4 +118,133 @@ test("seller edits the same product ID with its current version", async (t) => {
     p.dom.window.document.querySelectorAll(".seller-product-row").length,
     1,
   );
+});
+
+const settle = () => new Promise((resolve) => setImmediate(resolve));
+const listingFixture = {
+  title: 'Saved title', description: 'Saved description', category: 'cosmetic',
+  registration_reference: 'DEMO-001', product_name: 'Saved name', license_holder: 'Saved holder',
+};
+const productFixture = { id: 'seller-1', version: 3, listing: listingFixture,
+  verification: { ...result, listing: listingFixture } };
+
+for (const field of ['listing-title', 'registration-reference', 'registered-name', 'license-holder']) {
+  test(`seller requires ${field} before submitting`, async (t) => {
+    let submissions = 0;
+    const p = seller(t, async (url, options) => {
+      if (options?.body) submissions++;
+      return { ok: true, json: async () => [] };
+    });
+    p.$(`#${field}`).value = '';
+    await p.submit();
+    assert.equal(submissions, 0);
+    assert.equal(p.$('#seller-form').checkValidity(), false);
+  });
+}
+
+test('seller restores all draft fields and requires a new check', (t) => {
+  const p = seller(t, async () => ({ ok: true, json: async () => [] }), (window) => {
+    window.localStorage.setItem('trustcart-seller-draft', JSON.stringify(listingFixture));
+  });
+  for (const [id, key] of Object.entries({ 'listing-title': 'title', 'listing-description': 'description',
+    'listing-category': 'category', 'registration-reference': 'registration_reference',
+    'registered-name': 'product_name', 'license-holder': 'license_holder' })) {
+    assert.equal(p.$(`#${id}`).value, listingFixture[key]);
+  }
+  assert.equal(p.$('#seller-result').textContent, '');
+  assert.match(p.$('#seller-feedback').textContent, /ต้องส่งตรวจใหม่/);
+});
+
+test('seller handles broken draft storage without losing form access', (t) => {
+  const p = seller(t, async () => ({ ok: true, json: async () => [] }), (window) => {
+    window.localStorage.setItem('trustcart-seller-draft', '{broken');
+    window.Storage.prototype.setItem = () => { throw Error('quota'); };
+  });
+  assert.equal(p.$('#submit-listing').disabled, false);
+  p.$('#save-draft').click();
+  assert.match(p.$('#seller-feedback').textContent, /ไม่สามารถบันทึก/);
+});
+
+for (const failure of [409, 500, 'malformed']) {
+  test(`seller recovers controls and clears status after ${failure} response`, async (t) => {
+    const p = seller(t, async (url, options) => {
+      if (!options?.body) return { ok: true, json: async () => [] };
+      return failure === 'malformed'
+        ? { ok: true, json: async () => ({}) }
+        : { ok: false, status: failure };
+    });
+    await p.submit();
+    assert.equal(p.$('#seller-result').textContent, '');
+    assert.match(p.$('#seller-feedback').textContent, failure === 409 ? /โหลดรายการล่าสุด/ : /ไม่สามารถ/);
+    for (const control of p.dom.window.document.querySelectorAll('#seller-form input,#seller-form textarea,#seller-form select,#submit-listing,#save-draft,#new-product')) {
+      assert.equal(control.disabled, false);
+    }
+    assert.equal(p.dom.window.sessionStorage.getItem('trustcart-demo-reports'), null);
+  });
+}
+
+test('seller disables editing while submitting and restores it on completion', async (t) => {
+  let finish;
+  const p = seller(t, (url, options) => options?.body
+    ? new Promise((resolve) => { finish = resolve; })
+    : Promise.resolve({ ok: true, json: async () => [] }));
+  await p.submit();
+  assert.equal(p.$('#submit-listing').disabled, true);
+  assert.equal(p.$('#listing-title').disabled, true);
+  assert.equal(p.$('#new-product').disabled, true);
+  finish({ ok: true, json: async () => productFixture });
+  await settle();
+  assert.equal(p.$('#listing-title').disabled, false);
+  assert.match(p.$('#seller-result').textContent, /DENIED/);
+  assert.equal(JSON.parse(p.dom.window.sessionStorage.getItem('trustcart-demo-reports'))[0].productId, 'seller-1');
+  assert.ok(p.dom.window.localStorage.getItem('trustcart-products-updated'));
+});
+
+test('seller can cancel switching a dirty form, then load the saved product version', async (t) => {
+  const calls = [];
+  const p = seller(t, async (url) => {
+    calls.push(url);
+    return { ok: true, json: async () => url === '/v1/products' ? [productFixture] : productFixture };
+  });
+  await settle();
+  p.$('#listing-title').value = 'Unsaved';
+  p.$('#listing-title').dispatchEvent(new p.dom.window.Event('input', { bubbles: true }));
+  p.dom.window.confirm = () => false;
+  p.$('.seller-product-row').click();
+  await settle();
+  assert.equal(p.$('#listing-title').value, 'Unsaved');
+  assert.deepEqual(calls, ['/v1/products']);
+  p.dom.window.confirm = () => true;
+  p.$('.seller-product-row').click();
+  await settle();
+  assert.equal(calls.at(-1), '/v1/products/seller-1');
+  assert.equal(p.$('#listing-title').value, 'Saved title');
+  assert.match(p.$('#seller-result').textContent, /DENIED/);
+});
+
+test('seller new-product confirmation preserves or resets unsaved fields', (t) => {
+  const p = seller(t, async () => ({ ok: true, json: async () => [] }));
+  const initial = p.$('#listing-title').value;
+  p.$('#listing-title').value = 'Unsaved';
+  p.$('#listing-title').dispatchEvent(new p.dom.window.Event('input', { bubbles: true }));
+  p.dom.window.confirm = () => false;
+  p.$('#new-product').click();
+  assert.equal(p.$('#listing-title').value, 'Unsaved');
+  p.dom.window.confirm = () => true;
+  p.$('#new-product').click();
+  assert.equal(p.$('#listing-title').value, initial);
+  assert.equal(p.$('#seller-result').textContent, '');
+});
+
+test('seller ignores a late submitted report after the form changes', async (t) => {
+  let finish;
+  const p = seller(t, (url, options) => options?.body
+    ? new Promise((resolve) => { finish = resolve; })
+    : Promise.resolve({ ok: true, json: async () => [] }));
+  await p.submit();
+  p.$('#listing-title').dispatchEvent(new p.dom.window.Event('input', { bubbles: true }));
+  finish({ ok: true, json: async () => productFixture });
+  await settle();
+  assert.equal(p.$('#seller-result').textContent, '');
+  assert.match(p.$('#seller-feedback').textContent, /ต้องส่งตรวจใหม่/);
 });
