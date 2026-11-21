@@ -385,8 +385,8 @@
           : "product-card",
     );
     card.dataset.product = product.id;
-    const open = element("button", "product-open");
-    open.type = "button";
+    const open = element("a", "product-open");
+    open.href = `/products/${encodeURIComponent(product.id)}`;
     open.setAttribute("aria-label", name(product));
     const picture = element("div", "product-picture");
     picture.append(
@@ -399,7 +399,10 @@
       ),
     );
     const copy = element("div", "product-copy");
-    const productName = element("h3", "product-name", name(product));
+    const productName = element("h3", "product-name");
+    const titleLink = element("a", "product-title-link", name(product));
+    titleLink.href = open.href;
+    productName.append(titleLink);
     if (hasProductVerification(product)) {
       productName.prepend(
         productCheckmark(product),
@@ -477,6 +480,7 @@
     $("#clear-filters").hidden = !state.query && state.category === null;
   }
   function browse() {
+    if (routeProductId() !== null) navigateProductPage("/");
     renderProducts();
     $("#catalog-title").scrollIntoView({ block: "start", behavior: "smooth" });
   }
@@ -671,7 +675,8 @@
   function renderDeals() {
     $("#flash-products").replaceChildren(
       ...dealProducts.map((product, index) => {
-        const button = element("button", "flash-card");
+        const button = element("a", "flash-card");
+        button.href = `/products/${encodeURIComponent(product.id)}`;
         button.dataset.product = product.id;
         button.setAttribute(
           "aria-label",
@@ -699,7 +704,8 @@
     .sort((a, b) => b.sold - a.sold).slice(0, 6);
   function renderPopular() {
     $("#popular-products").replaceChildren(...popularProducts.map((product, index) => {
-      const button = element("button", "popular-product");
+      const button = element("a", "popular-product");
+      button.href = `/products/${encodeURIComponent(product.id)}`;
       button.dataset.product = product.id;
       button.append(element("span", "popular-rank", `TOP ${index + 1}`), productImage(product),
         element("span", "popular-sales", `${t("sold")} ${product.sold.toLocaleString("en-US")}`),
@@ -749,8 +755,14 @@
     renderProducts();
   });
   Object.assign(text.th, {
+    productLoading: "กำลังโหลดสินค้า…",
+    productUnavailable: "ไม่สามารถโหลดสินค้าได้",
+    productNotFound: "ไม่พบสินค้า",
+    backToProducts: "กลับไปเลือกสินค้า",
+    retryProduct: "ลองอีกครั้ง",
     productNavigation: "เส้นทางสินค้า",
     productImages: "รูปสินค้า",
+    productCategory: "หมวดหมู่",
     specifications: "ข้อมูลจำเพาะของสินค้า",
     productDescription: "รายละเอียดสินค้า",
     descriptionMissing: "ผู้ขายยังไม่ได้ระบุรายละเอียดสินค้า",
@@ -791,8 +803,14 @@
       "สร้างโดย Team BlueScreen โดยอ้างอิงรูปแบบหน้าแรกของ Shopee Thailand เพื่อสาธิตหน้าร้านเท่านั้น ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ Shopee",
   });
   Object.assign(text.en, {
+    productLoading: "Loading product…",
+    productUnavailable: "Could not load product",
+    productNotFound: "Product not found",
+    backToProducts: "Back to products",
+    retryProduct: "Try again",
     productNavigation: "Product navigation",
     productImages: "Product images",
+    productCategory: "Category",
     specifications: "Product specifications",
     productDescription: "Product description",
     descriptionMissing: "The seller has not added a description yet.",
@@ -835,22 +853,83 @@
   });
   const cart = new Map();
   let selectedProduct = null;
+  let catalogLoaded = false;
+  let catalogFailed = false;
+  function routeProductId() {
+    const match = window.location.pathname.match(/^\/products\/([^/]+)\/?$/);
+    if (!match) return null;
+    try { return decodeURIComponent(match[1]); } catch (_) { return ""; }
+  }
+  function resolveProductRoute(force = false) {
+    const id = routeProductId();
+    const detailPage = $("#product-page");
+    const home = id === null;
+    detailPage.hidden = home;
+    $("#storefront-home").hidden = !home;
+    document.body.classList.toggle("product-detail-page", !home);
+    if (home) {
+      selectedProduct = null;
+      document.title = "TrustCart • Marketplace";
+      return;
+    }
+    const product = findProduct(id);
+    if (product) {
+      const changed = !selectedProduct || JSON.stringify(product) !== JSON.stringify(selectedProduct);
+      selectedProduct = product;
+      if (changed || force) renderDetail();
+      document.title = `${name(product)} | TrustCart`;
+      detailPage.removeAttribute("aria-busy");
+      return;
+    }
+    selectedProduct = null;
+    const loading = !catalogLoaded && !catalogFailed;
+    detailPage.setAttribute("aria-busy", String(loading));
+    const message = element("section", "product-page-state");
+    const heading = element("h1", "", t(loading ? "productLoading" : catalogFailed ? "productUnavailable" : "productNotFound"));
+    const homeLink = element("a", "text-button", t("backToProducts"));
+    homeLink.href = "/";
+    homeLink.dataset.homeLink = "";
+    message.append(heading, homeLink);
+    if (catalogFailed) {
+      const retry = element("button", "primary", t("retryProduct"));
+      retry.type = "button";
+      retry.addEventListener("click", () => {
+        catalogFailed = false;
+        catalogLoaded = false;
+        resolveProductRoute();
+        refreshSellerProducts();
+      });
+      message.append(retry);
+    }
+    $("#product-detail").replaceChildren(message);
+    document.title = `${heading.textContent} | TrustCart`;
+  }
+  function navigateProductPage(url) {
+    if (window.location.pathname !== url) window.history.pushState({}, "", url);
+    resolveProductRoute();
+    $("#main").scrollIntoView({ block: "start", behavior: "instant" });
+    const heading = $("#product-title") || $("#main");
+    heading.focus({ preventScroll: true });
+  }
+  window.addEventListener("popstate", () => resolveProductRoute());
   let currentInfo = "help";
   function renderDetail() {
     const product = selectedProduct;
     const categoryName = categories[product.category][state.language === "th" ? 0 : 1];
     const breadcrumb = element("nav", "detail-breadcrumb");
     breadcrumb.setAttribute("aria-label", t("productNavigation"));
-    const back = element("button", "text-button", "TrustCart");
-    back.type = "button";
-    back.dataset.close = "";
+    const back = element("a", "text-button", "TrustCart");
+    back.id = "detail-back";
+    back.href = "/";
+    back.dataset.homeLink = "";
     breadcrumb.append(back, element("span", "", "›"), element("span", "", categoryName),
       element("span", "", "›"), element("span", "detail-breadcrumb-name", name(product)));
 
     const layout = element("div", "product-detail-layout");
     const details = element("section", "product-purchase");
     details.setAttribute("aria-labelledby", "product-title");
-    const heading = element("h2", "", name(product));
+    const heading = element("h1", "", name(product));
+    heading.tabIndex = -1;
     heading.id = "product-title";
     if (hasProductVerification(product))
       heading.prepend(productCheckmark(product), document.createTextNode(" "));
@@ -912,17 +991,12 @@
       }
       cart.set(product.id, (cart.get(product.id) || 0) + quantity);
       renderCart();
-      $("#product-dialog").close();
       toast(t("added"));
     });
     const viewCart = element("button", "primary", t("viewCart"));
     viewCart.id = "detail-view-cart";
     viewCart.type = "button";
-    viewCart.addEventListener("click", () => {
-      $("#product-dialog").close();
-      // Restore focus to the original product before opening the next native dialog.
-      requestAnimationFrame(showCart);
-    });
+    viewCart.addEventListener("click", showCart);
     const actions = element("div", "detail-actions");
     actions.append(add, viewCart);
     details.append(heading, metadata, pricePanel, quantity, actions);
@@ -958,10 +1032,10 @@
 
     const descriptionSection = element("section", "product-description-section");
     descriptionSection.setAttribute("aria-labelledby", "product-description-title");
-    const specsTitle = element("h3", "", t("specifications"));
+    const specsTitle = element("h2", "", t("specifications"));
     const specs = element("dl", "detail-specifications");
-    specs.append(element("dt", "", t("categories")), element("dd", "", categoryName));
-    const descriptionTitle = element("h3", "", t("productDescription"));
+    specs.append(element("dt", "", t("productCategory")), element("dd", "", categoryName));
+    const descriptionTitle = element("h2", "", t("productDescription"));
     descriptionTitle.id = "product-description-title";
     const description = product.sourceDescription ||
       (state.language === "th" ? product.descriptionTh : product.descriptionEn) || t("descriptionMissing");
@@ -1025,11 +1099,12 @@
   }
   $("#open-cart").addEventListener("click", showCart);
   document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const homeLink = event.target.closest("[data-home-link]");
     const card = event.target.closest("[data-product]");
-    if (card) {
-      selectedProduct = findProduct(card.dataset.product);
-      renderDetail();
-      openDialog($("#product-dialog"));
+    if (homeLink || card) {
+      event.preventDefault();
+      navigateProductPage(homeLink ? "/" : `/products/${encodeURIComponent(card.dataset.product)}`);
     }
   });
   $$("[data-info]").forEach((button) =>
@@ -1156,7 +1231,7 @@
     renderPopular();
     renderSlide();
     renderCart();
-    if (selectedProduct) renderDetail();
+    resolveProductRoute(true);
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";
@@ -1224,7 +1299,6 @@
   async function refreshSellerProducts() {
     if (typeof window.fetch !== "function") return;
     const request = ++catalogRequest;
-    const previousDetail = selectedProduct && JSON.stringify(selectedProduct);
     const previousVerified = selectedProduct && hasProductVerification(selectedProduct);
     try {
       const response = await window.fetch("/v1/products", {
@@ -1234,6 +1308,8 @@
       const records = await response.json();
       if (request !== catalogRequest) return;
       if (!Array.isArray(records)) throw Error();
+      catalogLoaded = true;
+      catalogFailed = false;
       const incoming = records.filter(
         (record) =>
           record &&
@@ -1271,18 +1347,13 @@
       }
     } catch (_) {
       if (request !== catalogRequest) return;
+      catalogFailed = true;
       for (const product of catalog)
         if (product.sellerProduct) productVerifications.delete(product.id);
     }
     renderProducts();
     renderCart();
-    if (selectedProduct?.sellerProduct) {
-      const latest = findProduct(selectedProduct.id);
-      if (latest) {
-        selectedProduct = latest;
-        if (JSON.stringify(latest) !== previousDetail || hasProductVerification(latest) !== previousVerified) renderDetail();
-      } else $("#product-dialog").close();
-    }
+    resolveProductRoute(Boolean(selectedProduct) && previousVerified !== hasProductVerification(selectedProduct));
   }
   window.addEventListener("focus", refreshSellerProducts);
   window.addEventListener("storage", (event) => {
@@ -1294,6 +1365,7 @@
   window.setInterval(() => {
     if (!document.hidden) refreshSellerProducts();
   }, 5000);
+  resolveProductRoute();
   refreshSellerProducts();
   function saveReviewerReports() {
     const reports = [...productVerifications.entries()]

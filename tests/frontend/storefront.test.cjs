@@ -4,12 +4,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { JSDOM } = require("jsdom");
 
-function page(t, setup = () => {}) {
+function page(t, setup = () => {}, url = "http://localhost/") {
   const dom = new JSDOM(
     fs.readFileSync(path.join(__dirname, "../../frontend/index.html"), "utf8"),
     {
       runScripts: "outside-only",
-      url: "http://localhost/",
+      url,
       pretendToBeVisual: true,
     },
   );
@@ -129,11 +129,12 @@ test("flash deals open the full catalog and countdown never becomes negative", (
 test("product details add chosen quantity, merge repeated items, total correctly, and remove", (t) => {
   const p = page(t);
   p.$(".product-card").click();
-  assert.equal(p.$("#product-dialog").open, true);
+  assert.equal(p.$("#product-page").hidden, false);
   assert.match(p.$("#product-title").textContent, /หูฟัง/);
   p.$("#quantity").value = "2";
   p.$("#add-to-cart").click();
   assert.equal(p.$("#cart-count").textContent, "2");
+  p.$("#detail-back").click();
   p.$(".product-card").click();
   p.$("#add-to-cart").click();
   p.$("#open-cart").click();
@@ -153,7 +154,7 @@ test("invalid quantities cannot be added to the cart", (t) => {
     p.$("#quantity").value = invalid;
     p.$("#add-to-cart").click();
     assert.equal(p.$("#cart-count").hidden, true);
-    assert.equal(p.$("#product-dialog").open, true);
+    assert.equal(p.$("#product-page").hidden, false);
   }
 });
 
@@ -291,7 +292,7 @@ test("customer badge opens a short status without exposing the reviewer report",
   assert.equal(badge.getAttribute("aria-haspopup"), "dialog");
   badge.click();
   assert.equal(p.$("#product-status-dialog").open, true);
-  assert.equal(p.$("#product-dialog").open, false);
+  assert.equal(p.$("#product-page").hidden, true);
   p.$("#product-status-dialog [data-close]").click();
   p.$('[data-product="14"]').click();
   assert.equal(p.$("#verification-dialog"), null);
@@ -322,7 +323,7 @@ test("overclaim product copy has no fictional-brand remarks and no verified badg
       false,
     );
     assert.ok(p.$(".product-description").textContent.length > 40);
-    p.$("#product-dialog [data-close]").click();
+    p.$("#detail-back").click();
   }
 });
 
@@ -378,7 +379,7 @@ test("storefront product language contains no simulation or fictional-brand rema
       p.$("#product-detail").textContent,
       /จำลอง|แบรนด์สมมติ/,
     );
-    p.$("#product-dialog [data-close]").click();
+    p.$("#detail-back").click();
   }
   assert.doesNotMatch(p.document.body.textContent, /จำลอง|แบรนด์สมมติ/);
 });
@@ -493,7 +494,7 @@ test('flash product opens matching details; cart rejects cumulative quantity ove
   assert.equal(p.$('#product-title').textContent, title);
   p.$('#add-to-cart').click();
   assert.equal(p.$('#cart-count').textContent, '99');
-  assert.equal(p.$('#product-dialog').open, true);
+  assert.equal(p.$('#product-page').hidden, false);
   assert.equal(p.document.activeElement, p.$('#quantity'));
 });
 
@@ -525,7 +526,7 @@ test('dialog backdrop closes only for a click outside its bounds', (t) => {
   assert.equal(dialog.open, false);
 });
 
-test('seller catalog storage refresh removes deleted listings and closes their dialog', async (t) => {
+test('seller catalog storage refresh removes deleted listings and shows the missing product state', async (t) => {
   let records = [{ id: 'seller-storage', listing: { title: '<img src=x>', description: '<script>bad</script>',
     category: 'cosmetic' }, verification: reportFixture }];
   const p = page(t, (window) => {
@@ -544,7 +545,8 @@ test('seller catalog storage refresh removes deleted listings and closes their d
   p.window.dispatchEvent(new p.window.StorageEvent('storage', { key: 'trustcart-products-updated' }));
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(p.$('[data-product="seller-storage"]'), null);
-  assert.equal(p.$('#product-dialog').open, false);
+  assert.equal(p.$('#product-page').hidden, false);
+  assert.match(p.$('#product-detail h1').textContent,/ไม่พบสินค้า/);
 });
 
 test('customer sees seller images price and stock, caps cart and refreshes edited stock', async (t) => {
@@ -609,9 +611,9 @@ test('popular product rail opens real local product details and updates language
   assert.equal(p.$$('#popular-products .popular-product').length,6);
   const first=p.$('#popular-products .popular-product');
   first.click();
-  assert.equal(p.$('#product-dialog').open,true);
+  assert.equal(p.$('#product-page').hidden,false);
   assert.ok(p.$('#product-title').textContent.length>0);
-  p.$('#product-dialog [data-close]').click();
+  p.$('#detail-back').click();
   p.$('#language').value='en';
   p.$('#language').dispatchEvent(new p.window.Event('change'));
   assert.equal(p.$('#popular-title').textContent,'Popular products');
@@ -660,4 +662,61 @@ test('approved product results never certify brand-shop references across langua
     assert.equal(p.$('#brand-shops .product-status'), null);
     assert.match(p.$('#brand-shops a').getAttribute('aria-label'), language === 'en' ? /View on Shopee/ : /ดูบน Shopee/);
   }
+});
+
+test('product links navigate to a full page URL and popstate returns to the catalog', (t) => {
+  const p=page(t);
+  const link=p.$('.product-open');
+  assert.equal(link.tagName,'A');
+  assert.equal(link.getAttribute('href'),'/products/0');
+  link.click();
+  assert.equal(p.window.location.pathname,'/products/0');
+  assert.equal(p.$('#product-page').hidden,false);
+  assert.equal(p.$('#storefront-home').hidden,true);
+  assert.equal(p.$('dialog#product-dialog'),null);
+  p.window.history.replaceState({},'', '/');
+  p.window.dispatchEvent(new p.window.PopStateEvent('popstate'));
+  assert.equal(p.$('#product-page').hidden,true);
+  assert.equal(p.$('#storefront-home').hidden,false);
+});
+
+test('direct seller product URLs load persisted content and retry after an outage', async (t) => {
+  let offline=true;
+  const record={id:'deep-link',listing:{title:'Persisted product',category:'supplement',description:'Saved description',price:'39.50',stock:2,images:[]},verification:reportFixture};
+  const p=page(t,w=>{w.fetch=async(url)=>{
+    if(url==='/v1/products') { if(offline) throw Error('offline'); return {ok:true,json:async()=>[record]}; }
+    throw Error('unavailable');
+  };},'http://localhost/products/deep-link');
+  assert.equal(p.$('#storefront-home').hidden,true);
+  assert.match(p.$('#product-detail').textContent,/กำลังโหลด/);
+  await new Promise(r=>setImmediate(r));
+  assert.match(p.$('#product-detail').textContent,/ไม่สามารถโหลด/);
+  assert.equal(p.$('#product-detail .product-verified'),null);
+  offline=false;
+  p.$('.product-page-state button').click();
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#product-title').textContent.trim(),'Persisted product');
+  assert.match(p.document.title,/Persisted product/);
+  assert.equal(p.$('#quantity').max,'2');
+  assert.ok(p.$('#product-title .product-verified'));
+});
+
+test('unknown direct product URL shows a missing state with a working home link',async(t)=>{
+  const p=page(t,w=>{w.fetch=async()=>({ok:true,json:async()=>[]});},'http://localhost/products/missing');
+  await new Promise(r=>setImmediate(r));
+  assert.match(p.$('#product-detail h1').textContent,/ไม่พบสินค้า/);
+  p.$('.product-page-state a').click();
+  assert.equal(p.window.location.pathname,'/');
+  assert.equal(p.$('#storefront-home').hidden,false);
+});
+
+test('detail page keeps native product links and translates its specifications', (t)=>{
+  const p=page(t);
+  assert.equal(p.$('.product-title-link').getAttribute('href'),'http://localhost/products/0');
+  p.$('.product-open').click();
+  assert.equal(p.$('.detail-specifications dt').textContent,'หมวดหมู่');
+  p.$('#language').value='en';
+  p.$('#language').dispatchEvent(new p.window.Event('change'));
+  assert.equal(p.$('.detail-specifications dt').textContent,'Category');
+  assert.equal(p.$('#product-title').tagName,'H1');
 });

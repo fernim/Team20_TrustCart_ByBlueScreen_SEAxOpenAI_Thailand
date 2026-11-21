@@ -57,3 +57,12 @@ def test_seller_page_and_listing_snapshot_roundtrip(tmp_path):
         result = client.post('/v1/verifications',json=payload)
         assert result.json()['listing'] == {**payload, 'images': [], 'price': None, 'stock': None}
         assert client.get(result.headers['location']).json()['listing'] == {**payload, 'images': [], 'price': None, 'stock': None}
+
+
+def test_product_detail_urls_serve_the_storefront_shell(tmp_path):
+    with TestClient(create_app(tmp_path / 'detail-pages.sqlite3')) as client:
+        for product_id in ['0', '8cba5000-67d7-4f61-89da-758d09137964']:
+            response = client.get('/products/' + product_id)
+            assert response.status_code == 200
+            assert 'id="product-page"' in response.text
+            assert '<dialog id="product-dialog"' not in response.text
