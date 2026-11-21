@@ -1,0 +1,9 @@
+# Seller images, price, and stock
+
+Seller listings support up to five PNG, JPEG, or WebP images, a nonnegative THB price with at most two decimal places, and a whole-number stock count from zero to 10,000,000. Images are limited to 2 MiB and 16 million pixels each. The backend validates image contents and declared format; remote URLs and SVG are not accepted. The first image is the catalog thumbnail, and customers can switch images in the product gallery.
+
+`POST /v1/products` and version-checked `PUT /v1/products/{id}` save `images` (data URLs), `price` (decimal serialized as a string), and `stock` with the listing and its latest verification in SQLite. Each new report includes a hash of the complete listing snapshot in its audit chain. Earlier reports retain their original values. Existing records default to no images and unspecified price/stock; the seller must fill in price and stock before saving through the form. No database migration is needed.
+
+Customer catalog refreshes show saved changes. Unspecified price/stock or zero stock disables adding seller products to the cart. Quantities are capped at available stock and the demo cart's 99-item limit. A later stock reduction adjusts the cart and displays a notice. The cart is local and does not reserve or decrement inventory. Verification eligibility remains independent of stock availability; only qualifying passing products have a clickable badge.
+
+Images are stored inline for this local demo, including local drafts when browser storage permits. Production object storage, authenticated upload ownership, and transaction-backed inventory remain future work. Oversized drafts report a browser-storage failure without publishing changes.

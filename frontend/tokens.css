@@ -1,0 +1,40 @@
+/* TrustCart shared visual system. */
+:root {
+  --font-sans: "Roboto", "Helvetica Neue", Arial, Tahoma, sans-serif;
+  --font-size-caption: 12px;
+  --font-size-body: 16px;
+  --font-size-section: 20px;
+  --font-size-title: 24px;
+  --brand-primary: #076853;
+  --brand-end: #12343e;
+  --brand-soft: #e6f4ef;
+  --orange: var(--brand-primary);
+  --surface: #ffffff;
+  --canvas: #f5f5f5;
+  --text-primary: #333333;
+  --text-secondary: #757575;
+  --border-subtle: #e8e8e8;
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --paper: var(--surface);
+  --page: var(--canvas);
+  --line: var(--border-subtle);
+  --status-pass: #18845b;
+  --status-block: #b53521;
+  --status-wait: #757575;
+  --focus-ring: #176cba;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-control: 10px;
+  --radius-panel: 16px;
+  --width-storefront: 1200px;
+  --width-sidebar: 220px;
+  --shadow-panel: 0 1px 4px rgb(0 0 0 / 5%);
+}
+@font-face { font-family: Roboto; font-style: normal; font-weight: 400; font-display: swap; src: url('/static/assets/fonts/roboto-regular.ttf') format('truetype'); }
+@font-face { font-family: Roboto; font-style: normal; font-weight: 500; font-display: swap; src: url('/static/assets/fonts/roboto-medium.ttf') format('truetype'); }
+@font-face { font-family: Roboto; font-style: normal; font-weight: 700; font-display: swap; src: url('/static/assets/fonts/roboto-bold.ttf') format('truetype'); }

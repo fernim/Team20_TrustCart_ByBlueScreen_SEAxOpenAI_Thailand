@@ -50,9 +50,9 @@ TrustCart checks a listing **before publication** through an API. The design rul
 
 - **`AGENTS.md` first.** It gives Codex the stack, run and test commands, eight safety rules, and the status policy, so every task starts from the same constraints.
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
-- **Visible log.** Commits made through Codex carry the `[codex]` tag. Through the consolidated API integration, 7 of 9 committed revisions carry the `[codex]` tag.
+- **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 45 tests for the demo workflow, API compatibility, dataset invariants, and agency aggregation.
+- **Test results.** `pytest` passes 105 tests for the demo workflow, API compatibility, dataset invariants, and agency aggregation.
 
 ## Run locally
 
@@ -172,7 +172,7 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 45 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration.
+Validation: 105 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration.
 
 ## Dataset and release update
 
@@ -183,3 +183,13 @@ Expired or revoked fixtures are denied. Permit conflicts and required missing pe
 GET /v1/agency/summary aggregates saved synthetic verifications by status, failing rule, category, day, claim phrase and audit validity. The Agency view exposes those totals without seller identity fields.
 
 The release retains the existing router split, SQLite evidence migration compatibility, evidence-backed rechecks, ThomazAgents.md, and competition declarations. Python 3.9 pytest CI runs on pull requests and pushes to main with read-only repository permissions and no live credentials. Live AI, official registry integration, document authenticity/COA validation and marketplace OAuth remain integration work.
+
+## Frontend integration
+
+The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /reviewer reads verification reports. /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
+
+Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. TrustCart styling uses a teal palette, a distinct hero and rounded product cards. Historical reference artwork remains in source provenance; copied promotional sections are hidden from the live interface.
+
+Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
+
+Frontend integration validation: 105 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed locally. GitHub CI runs both the API and frontend suites.

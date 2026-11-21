@@ -1,7 +1,7 @@
 {
   "functions": {
     "app.py": {
-      "includeFiles": "{backend/**,demo.html}"
+      "includeFiles": "{backend/**,frontend/**,demo.html}"
     }
   }
 }
