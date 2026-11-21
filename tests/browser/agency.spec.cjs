@@ -2,9 +2,6 @@ const { test, expect } = require("@playwright/test");
 async function login(page, role = "reviewer") {
   await page.goto("/login");
   await page.locator("#username").selectOption(role);
-  await page
-    .locator("#password")
-    .fill(process.env["TRUSTCART_" + role.toUpperCase() + "_PASSWORD"]);
   await page.locator("button[type=submit]").click();
   await expect(page).toHaveURL(
     role === "reviewer" ? /\/(agency|reviewer)$/ : /\/seller$/,
@@ -192,7 +189,6 @@ test("Agency deep link returns after sign in and stale review requires reload", 
   );
   await expect(page).toHaveURL(/\/login\?next=/);
   await page.locator("#username").selectOption("reviewer");
-  await page.locator("#password").fill(process.env.TRUSTCART_REVIEWER_PASSWORD);
   await page.locator("button[type=submit]").click();
   await expect(page).toHaveURL(new RegExp("/agency/submissions/" + result.id));
   await page.locator("#agency-language").selectOption("en");

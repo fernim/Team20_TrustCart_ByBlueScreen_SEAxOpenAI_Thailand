@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 test.beforeEach(async({page,context})=>{
- const response=await page.request.post('/v1/auth/login',{data:{username:'reviewer',password:process.env.TRUSTCART_REVIEWER_PASSWORD}});
+ const response=await page.request.post('/v1/auth/login',{data:{username:'reviewer'}});
  expect(response.status()).toBe(200);
  const account=await response.json();await context.setExtraHTTPHeaders({'X-CSRF-Token':account.csrf_token});
 });

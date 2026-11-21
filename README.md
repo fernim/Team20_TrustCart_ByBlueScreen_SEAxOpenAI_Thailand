@@ -89,18 +89,20 @@ POST /v1/verifications  ──>  Registry adapter (synthetic in demo)
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Validation.** Run the Python, DOM and Playwright commands below. Browser tests use real role sessions, temporary SQLite data and generated environment-only passwords; they never call live OpenAI.
+- **Validation.** Run the Python, DOM and Playwright commands below. Browser tests use real role sessions, temporary SQLite data and password-free demo role selection; they never call live OpenAI.
 
 ## Run locally
 
-Create `.venv`, install `requirements.txt`, and set these environment variables to presenter-chosen passwords before starting the server. Passwords are never checked into the repository:
+Create `.venv` and install `requirements.txt`. No password variables are required. On `/login`, choose a demo account and continue:
 
-| Environment variable | Account | Access |
-| --- | --- | --- |
-| `TRUSTCART_BUYER_PASSWORD` | `buyer` | Public product catalog |
-| `TRUSTCART_SELLER1_PASSWORD` | `seller1` | TrustCart Demo Shop |
-| `TRUSTCART_SELLER2_PASSWORD` | `seller2` | BlueScreen Health Shop |
-| `TRUSTCART_REVIEWER_PASSWORD` | `reviewer` | Cross-shop review queue |
+| Account | Access |
+| --- | --- |
+| `buyer` | Public product catalog |
+| `seller1` | TrustCart Demo Shop |
+| `seller2` | BlueScreen Health Shop |
+| `reviewer` | Agency and cross-shop review |
+
+This is public demo role selection: anyone can choose any role. Sessions, shop ownership checks and CSRF protection remain in place; the selector does not authenticate a real identity.
 
 ```sh
 python -m venv .venv
@@ -108,7 +110,7 @@ python -m venv .venv
 .venv/bin/python -m uvicorn backend.app.main:app --port 8000
 ```
 
-On Windows, use `.venv/Scripts/python` instead. Open `http://localhost:8000/login`. Buyers can also browse without signing in. Sessions last eight hours and use HttpOnly cookies and CSRF tokens. Credentials are required for seller/reviewer access even when running the core application locally.
+On Windows, use `.venv/Scripts/python` instead. Open `http://localhost:8000/login`. Buyers can also browse without signing in. Sessions last eight hours and use HttpOnly cookies and CSRF tokens. Choose a role to enter seller or agency views; no password is requested.
 
 ## Connected demo
 
@@ -145,9 +147,9 @@ npm test
 npm run test:browser
 ```
 
-Browser tests run on port 8768 with a temporary database, generated test passwords and desktop/mobile viewports. They cover public shopping and reviews, seller media and publication, matching document approval, prohibited-claim denial, reviewer requests, resubmission history and badge invalidation. Python tests separately cover ownership, CSRF, stale hashes, late AI results, replay mismatches, ungrounded extraction, file limits and outages. Legacy policy tests isolate authentication in the test harness; `test_connected_*` tests exercise the real guard. Older seller/reviewer DOM harnesses remain regression coverage for the legacy components; connected browser tests exercise the scripts served by the current role pages.
+Browser tests run on port 8768 with a temporary database, password-free role selection and desktop/mobile viewports. They cover public shopping and reviews, seller media and publication, matching document approval, prohibited-claim denial, reviewer requests, resubmission history and badge invalidation. Python tests separately cover ownership, CSRF, stale hashes, late AI results, replay mismatches, ungrounded extraction, file limits and outages. Legacy policy tests isolate authentication in the test harness; `test_connected_*` tests exercise the real guard. Older seller/reviewer DOM harnesses remain regression coverage for the legacy components; connected browser tests exercise the scripts served by the current role pages.
 
-For explicitly authorized hosted testing, set `TRUSTCART_BASE_URL` and all four account password variables. Hosted browser tests create persistent demo products, so use a disposable demo environment.
+For explicitly authorized hosted testing, set `TRUSTCART_BASE_URL`. Hosted browser tests create persistent demo products, so use a disposable demo environment.
 
 ## Legacy L1 diagnostic demo (`/workspace`, reviewer only)
 

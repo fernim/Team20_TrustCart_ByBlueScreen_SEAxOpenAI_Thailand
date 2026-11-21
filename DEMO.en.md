@@ -4,7 +4,7 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 
 ## Prepare
 
-1. Install dependencies and start the app using README instructions. Set the four role password environment variables before starting; obtain credentials from the presenter, never from source files.
+1. Install dependencies and start the app using README instructions. No password configuration is needed: select a demo role on the sign-in page. Anyone can select a role in this demo.
 2. Open `/login` in separate browser profiles for `seller1`, `seller2` and `reviewer`. The public storefront needs no login; a `buyer` account is also available.
 3. Use **Replay** for a deterministic offline presentation. **Live** sends submitted documents to OpenAI only when configured. A live outage must show `UNKNOWN`, never a replay approval.
 4. Use a disposable demo database. Products and document history persist; there is no destructive reset button in this flow.

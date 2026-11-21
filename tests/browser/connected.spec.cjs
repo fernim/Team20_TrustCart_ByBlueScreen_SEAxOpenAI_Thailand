@@ -2,9 +2,6 @@ const { test, expect } = require("@playwright/test");
 async function login(page, role) {
   await page.goto("/login");
   await page.locator("#username").selectOption(role);
-  await page
-    .locator("#password")
-    .fill(process.env["TRUSTCART_" + role.toUpperCase() + "_PASSWORD"]);
   await page.locator("button[type=submit]").click();
   await expect(page).toHaveURL(
     role === "reviewer"

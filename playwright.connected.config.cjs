@@ -1,12 +1,6 @@
 const { defineConfig } = require("@playwright/test");
 const { randomBytes } = require("node:crypto");
 const hosted = Boolean(process.env.TRUSTCART_BASE_URL);
-for (const role of ["BUYER", "SELLER1", "SELLER2", "REVIEWER"]) {
-  const key = "TRUSTCART_" + role + "_PASSWORD";
-  if (hosted && !process.env[key])
-    throw Error(key + " is required for hosted role tests");
-  if (!hosted) process.env[key] ||= randomBytes(24).toString("hex");
-}
 if (!hosted) process.env.TRUSTCART_DEMO_PASSWORD = randomBytes(24).toString("hex");
 module.exports = defineConfig({
   testDir: "./tests/browser",

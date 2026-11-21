@@ -9,7 +9,6 @@ document.querySelector("#login-form").onsubmit = async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: document.querySelector("#username").value,
-        password: document.querySelector("#password").value,
       }),
     });
     const result = await response.json();

@@ -16,7 +16,7 @@ def connected(tmp_path, monkeypatch):
 
 def login(client, password, username="seller1"):
     response = client.post(
-        "/v1/auth/login", json={"username": username, "password": password}
+        "/v1/auth/login", json={"username": username}
     )
     assert response.status_code == 200, response.text
     client.headers["X-CSRF-Token"] = response.json()["csrf_token"]
@@ -87,3 +87,16 @@ def test_hosted_entrypoint_uses_role_sessions_without_shared_gate(
         login(client, password)
         assert client.get("/v1/seller/products").status_code == 200
         assert client.get("/v1/reviewer/submissions").status_code == 403
+
+
+def test_demo_role_selection_needs_no_password(connected, monkeypatch):
+    client, _ = connected
+    for role in ('BUYER', 'SELLER1', 'SELLER2', 'REVIEWER'):
+        monkeypatch.delenv('TRUSTCART_' + role + '_PASSWORD', raising=False)
+    for account in ('buyer', 'seller1', 'seller2', 'reviewer'):
+        response = client.post('/v1/auth/login', json={'username': account})
+        assert response.status_code == 200
+        assert response.json()['id'] == account
+        assert response.json()['csrf_token']
+    assert client.post('/v1/auth/login', json={'username': 'administrator'}).status_code == 401
+    assert 'id="password"' not in client.get('/login').text

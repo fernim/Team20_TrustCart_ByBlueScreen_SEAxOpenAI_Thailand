@@ -1,7 +1,6 @@
 """Seeded roles with opaque server sessions; no credentials are stored in source."""
 
 import hashlib
-import os
 import secrets
 import time
 from contextlib import closing
@@ -124,22 +123,13 @@ async def access_guard(request, call_next):
 
 class Login(BaseModel):
     username: str = Field(max_length=80)
-    password: str = Field(max_length=500)
 
 
 @router.post("/login")
 def login(payload: Login, request: Request, response: Response):
-    env = {
-        "buyer": "TRUSTCART_BUYER_PASSWORD",
-        "seller1": "TRUSTCART_SELLER1_PASSWORD",
-        "seller2": "TRUSTCART_SELLER2_PASSWORD",
-        "reviewer": "TRUSTCART_REVIEWER_PASSWORD",
-    }
-    expected = os.environ.get(env.get(payload.username, ""), "")
-    if not expected or not secrets.compare_digest(
-        payload.password.encode(), expected.encode()
-    ):
-        raise HTTPException(401, "Invalid account or password")
+    # Public demo role selection: this is not production identity authentication.
+    if payload.username not in ("buyer", "seller1", "seller2", "reviewer"):
+        raise HTTPException(401, "Unknown demo account")
     token = secrets.token_urlsafe(32)
     csrf = secrets.token_urlsafe(32)
     with transaction(request.app.state.database) as connection:
