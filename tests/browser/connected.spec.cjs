@@ -15,7 +15,10 @@ async function fixture(page, kind = "clean") {
   await login(page, "seller1");
   const activate = page.locator("#activate-plan");
   await expect(page.locator("#plan-status")).not.toHaveText("");
-  if (await activate.isEnabled()) await activate.click();
+  if (await activate.isEnabled()) {
+    await page.locator("#verification-plan summary").click();
+    await activate.click();
+  }
   await expect(activate).toBeDisabled();
   await page.locator("#demo-case").selectOption(kind);
   await page.locator("#load-demo").click();
@@ -186,4 +189,16 @@ test("seller uploads images and edits price and stock on the same public page", 
   await page.goto(href);
   await expect(page.locator("#product-detail")).toContainText("149");
   await expect(page.locator("#add-to-cart")).toBeDisabled();
+});
+
+test('subscription offer lives top right and disappears for active sellers',async({page})=>{
+ let active=false;
+ await page.route('**/v1/seller/subscription',route=>route.fulfill({json:{active,active_until:active?'2026-12-21T00:00:00Z':null}}));
+ await page.route('**/v1/seller/subscription/activate',route=>{active=true;return route.fulfill({json:{active:true}});});
+ await login(page,'seller2');
+ const menu=page.locator('header #verification-plan');await expect(menu).toBeVisible();await expect(page.locator('main #verification-plan')).toHaveCount(0);
+ await menu.locator('summary').click();await expect(page.locator('#activate-plan')).toBeVisible();
+ const panel=await page.locator('.seller-plan-panel').boundingBox();expect(panel.x).toBeGreaterThanOrEqual(0);expect(panel.x+panel.width).toBeLessThanOrEqual(page.viewportSize().width);
+ await page.locator('#activate-plan').click();await expect(menu).toBeHidden();
+ await page.reload();await expect(page.locator('#plan-status')).toContainText('Active until');await expect(menu).toBeHidden();
 });

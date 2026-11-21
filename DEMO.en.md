@@ -11,7 +11,7 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 
 ## Show a passing product
 
-1. As seller1, activate **TrustCart Verification · ฿299/month**. Explain that activation is simulated, unlimited for the month, and collects no payment.
+1. As seller1, open **TrustCart · ฿299/month** in the top-right header menu and activate the demo plan. The menu disappears while the plan is active. Explain that activation is simulated, unlimited for the month, and collects no payment.
 2. In Synthetic demonstration examples, choose **Matching supplement** and **Load example listing**. Save the product. Its images, price and stock are already visible at **View product**, with no badge yet.
 3. Choose **Verify this product**. The stepper stops at **Documents** and identifies missing evidence. Choose **Upload selected example documents**; this uploads the matching synthetic label, registration certificate and advertising permit and explicitly selects Replay.
 4. Choose **Start check**. The result becomes `APPROVED`. Open View product; click its blue tick. Buyers see only a short status, not evidence or the audit trace.

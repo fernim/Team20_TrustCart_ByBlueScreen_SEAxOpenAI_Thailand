@@ -188,6 +188,8 @@
       ? "Active until " + new Date(plan.active_until).toLocaleDateString()
       : "Inactive · Normal listings remain available";
     $("#activate-plan").disabled = plan.active;
+    $("#verification-plan").hidden = plan.active;
+    if (plan.active) $("#verification-plan").open = false;
   }
   async function requestVerification() {
     if (!selected) throw Error("Save the product first");

@@ -24,13 +24,14 @@
         <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
         ><span class="workspace-title">Seller Centre <small><span data-en="Product management">ศูนย์ผู้ขาย</span></small></span>
       </div>
+<details id="verification-plan" class="seller-plan-menu" hidden><summary>TrustCart · ฿299 / เดือน</summary><div class="seller-plan-panel"><h2>TrustCart Verification · ฿299 / เดือน</h2><p>ตรวจสินค้าไม่จำกัด · Unlimited product submissions. Demo activation only; no payment is collected.</p><p id="plan-status"></p><button id="activate-plan" type="button" class="primary">เปิดใช้แผนสาธิต / Activate demo plan</button></div></details>
     </header>
     <div class="seller-layout">
       <aside class="seller-sidebar">
         <div class="workspace-profile"><span class="shop-avatar">L</span><div><strong id="shop-name">My shop</strong><small>ร้านค้าสาธิต · Demo shop</small></div></div><h3>จัดการสินค้า</h3>
         <a aria-current="location" href="#seller-form">＋ เพิ่มสินค้าใหม่</a
         ><a href="#seller-products">สินค้าของฉัน</a
-        ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a><a href="#verification-plan">TrustCart · ฿299 / เดือน</a>
+        ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a>
         <p class="dialog-note">
           TrustCart Seller Centre<br /><span data-en="Manage product data">จัดการข้อมูลสินค้า</span><br /><span data-en="See verification status">ดูสถานะการตรวจสอบ</span>
         </p>
@@ -119,7 +120,7 @@ Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริม�
           </p>
           <div id="seller-product-list"></div>
         </section>
-        <section class="seller-section" id="verification-plan"><h2>TrustCart Verification · ฿299 / เดือน</h2><p>ตรวจสินค้าไม่จำกัด · Unlimited product submissions. Demo activation only; no payment is collected.</p><p id="plan-status"></p><button id="activate-plan" type="button" class="primary">เปิดใช้แผนสาธิต / Activate demo plan</button></section>
+
 <section class="seller-section"><h2>Synthetic demonstration examples</h2><p>These examples use the synthetic registry, not real product certification.</p><select id="demo-case" aria-label="Demo example"></select><button id="load-demo" type="button">Load example listing</button><div id="document-links" class="document-list"></div></section>
 <section class="seller-section" id="verification-controls" hidden><h2>การตรวจสอบ / Verification</h2><button id="request-verification" type="button">Verify this product</button><button id="refresh-verification" type="button">Refresh status</button>
 <form id="document-form"><label for="document-kind">Document type</label><select id="document-kind"><option value="label">Product label</option><option value="certificate">Registration document</option><option value="permit">Advertising permit</option><option value="supporting">Supporting document</option></select><label for="document-file">Private document · PDF, PNG, JPEG, WebP · 2 MiB max</label><input id="document-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" /><button type="submit">Upload document</button><button type="button" id="demo-documents">Upload selected example documents</button></form>

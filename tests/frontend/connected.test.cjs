@@ -56,3 +56,11 @@ test("document workflow distinguishes the current blocked stage from rule checks
     /Reviewer/,
   );
 });
+
+test('seller plan offer is a header menu, hidden until subscription status is known',()=>{
+ const doc=new JSDOM(fs.readFileSync('frontend/seller.html','utf8')).window.document;
+ const menu=doc.querySelector('header #verification-plan');
+ assert.ok(menu);assert.equal(menu.tagName,'DETAILS');assert.equal(menu.hidden,true);
+ assert.match(menu.querySelector('summary').textContent,/299/);
+ assert.equal(doc.querySelector('main #verification-plan'),null);
+});

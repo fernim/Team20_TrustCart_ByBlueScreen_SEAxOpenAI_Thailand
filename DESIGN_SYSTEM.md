@@ -73,3 +73,5 @@ Reviews show five items per page, star/photo filters, accessible photo dialogs a
 - Live versus Replay is visible beside each result. Demo plan activation explicitly states that no payment is taken. Preserve visible synthetic-registry context without making the customer popup a technical report.
 
 Storefront product cards and galleries use the local supplement illustration (`demo-supplement.png`) for missing seller photos, empty gallery entries, or image-load failures. A fallback image never grants a verification badge; valid product photos stay unchanged.
+
+The seller subscription offer is a top-right header disclosure menu, shown only after the subscription check confirms an inactive plan. Active subscribers see no upsell or disabled activation panel. The dropdown stays within the viewport on mobile.

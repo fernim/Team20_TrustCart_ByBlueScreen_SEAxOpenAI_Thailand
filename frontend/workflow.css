@@ -316,3 +316,16 @@
   border-color: var(--brand-primary);
   color: var(--brand-primary);
 }
+/* Seller subscription offer stays in the header and disappears after activation. */
+.seller-page .reviewer-brandbar {position:relative;display:flex;align-items:center;gap:16px;padding-right:24px;flex-wrap:wrap}
+.seller-page .reviewer-brandbar > .container {flex:1;width:auto;margin:0;min-width:0}
+.seller-plan-menu {position:relative;margin-left:auto;color:var(--text-primary);font-size:14px;z-index:20}
+.seller-plan-menu[hidden] {display:none}
+.seller-plan-menu summary {cursor:pointer;list-style:none;border:1px solid var(--brand-primary);color:var(--brand-primary);padding:12px 16px;border-radius:var(--radius-control);white-space:nowrap}
+.seller-plan-menu summary::-webkit-details-marker {display:none}
+.seller-plan-menu summary::after {content:' ▾'}
+.seller-plan-menu summary:focus-visible {outline:2px solid var(--focus-ring);outline-offset:3px}
+.seller-plan-panel {position:absolute;right:0;top:calc(100% + 8px);width:340px;max-width:calc(100vw - 32px);padding:20px;background:var(--surface);border:1px solid var(--border-subtle);box-shadow:0 6px 20px rgb(0 0 0 / 12%);line-height:1.6}
+.seller-plan-panel h2 {font-size:18px;line-height:1.5;margin:0 0 12px}
+.seller-plan-panel p {margin:12px 0}
+@media(max-width:600px){.seller-page .reviewer-brandbar{padding:0 16px 12px;gap:0}.seller-page .reviewer-brandbar>.container{flex-basis:100%;padding-left:0;padding-right:0}.seller-plan-menu{margin-top:8px}}
