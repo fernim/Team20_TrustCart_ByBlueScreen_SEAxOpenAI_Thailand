@@ -59,7 +59,7 @@ Use a fresh synthetic case for the run. Verify the case survives reload and subs
 
 Use the exact revision presented by the team. Record actual results before submission.
 
-Local checks after the storage merge passed 112 Python tests, 94 Node component tests, and 16 desktop/mobile browser tests in Chrome. Separate authenticated browser checks passed the reviewer workflow. A local PostgreSQL 15 run preserved the decision and evidence across two app instances. Use the live URL and deployed commit when describing what judges can access.
+Local checks passed 115 Python tests, 107 Node component tests, and 22 desktop and mobile browser tests in Chrome. Separate authenticated browser checks passed the reviewer workflow. A local PostgreSQL 15 run preserved the decision and evidence across two app instances. Use the live URL and deployed commit when describing what judges can access.
 
 | Evidence | What to record |
 | --- | --- |

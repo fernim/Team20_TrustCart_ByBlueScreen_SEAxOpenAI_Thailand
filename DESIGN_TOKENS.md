@@ -59,4 +59,6 @@ Validation covers bounded plus/minus controls, thumbnail switching, badge eligib
 
 ## TrustCart integration update
 
-The integrated application uses TrustCart branding, a teal palette, shield/check logo, independent verification hero, and rounded panels. The copied promotion and brand showcase sections are hidden in the live storefront. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.
+The integrated application retains the Shopee-style orange gradient, shopping-bag mark, campaign hero, brand showcase and compact panels. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.
+
+The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.

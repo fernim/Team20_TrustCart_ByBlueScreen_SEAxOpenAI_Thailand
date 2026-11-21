@@ -134,11 +134,12 @@ The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer work
 
 ## API workflow
 
-FastAPI registers five routers from `backend/app/api/`. The API entry point is `backend.app.main:app`. The password-protected local demo uses `app:app`.
+FastAPI registers six routers from `backend/app/api/`. The local API entry point is `backend.app.main:app`. Use `app:app` for the password-protected demo and its access checks.
 
 | Router | API area |
 | --- | --- |
 | `verifications.py` | Listing submission and retrieval |
+| `products.py` | Versioned product creation, updates, and retrieval |
 | `seller.py` | Evidence, rechecks, and copy suggestions |
 | `reviewer.py` | Review queue and decisions |
 | `reports.py` | Reports, badges, comparison, and audit checks |
@@ -200,7 +201,7 @@ Two normal, unverified reference listings now use short title excerpts from Shop
 
 The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /reviewer reads verification reports. /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
 
-Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. TrustCart styling uses a teal palette, a distinct hero and rounded product cards. Historical reference artwork remains in source provenance; copied promotional sections are hidden from the live interface.
+Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. The storefront, seller and reviewer retain the Shopee-style orange theme, compact controls and reference campaign imagery. Backend integration does not replace the visual theme.
 
 Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
 
@@ -221,6 +222,8 @@ The seller list displays each saved product’s image, price, stock and verifica
 
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Latest merged local validation: 111 Python tests, 107 Node component tests, and 22 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
+Local validation passed 115 Python tests, 107 Node component tests, and 22 desktop and mobile browser tests. The automated suites use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
 
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
+
+The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.
