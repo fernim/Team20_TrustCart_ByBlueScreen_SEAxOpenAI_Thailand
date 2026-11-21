@@ -1,6 +1,7 @@
 """Local SQLite or explicitly configured shared PostgreSQL storage."""
 import os
 import sqlite3
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
 class PostgresConnection:
@@ -33,8 +34,26 @@ class PostgresConnection:
         self.raw.close()
 
 
-def connect(path, timeout=10):
+def database_url():
     url = os.environ.get("TRUSTCART_DATABASE_URL")
+    if url or os.environ.get("VERCEL") != "1" or not os.environ.get("SUPABASE_URL"):
+        return url
+
+    parts = urlsplit(os.environ.get("POSTGRES_URL", ""))
+    if parts.scheme not in {"postgresql", "postgres"} or not parts.hostname:
+        raise ValueError("The Supabase integration must provide a PostgreSQL POSTGRES_URL")
+
+    # The integration can include provider and JavaScript-driver hints that libpq rejects.
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query.pop("supa", None)
+    if query.get("workaround") == "supabase-pooler.vercel":
+        del query["workaround"]
+    query.setdefault("sslmode", "require")
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
+def connect(path, timeout=10):
+    url = database_url()
     if not url:
         return sqlite3.connect(path, timeout=timeout)
     if not url.startswith(("postgresql://", "postgres://")):

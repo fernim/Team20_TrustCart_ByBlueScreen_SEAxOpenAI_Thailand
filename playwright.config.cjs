@@ -26,7 +26,7 @@ module.exports = defineConfig({
   webServer: hosted ? undefined : {
     command: `"${python}" tests/browser/serve.py`,
     url: 'http://127.0.0.1:8766/version',
-    env: { TRUSTCART_DATABASE_URL: '', TRUSTCART_AI_TRANSFER_APPROVED: '', TRUSTCART_REVIEWER_PASSWORD: '', TRUSTCART_DEMO_PASSWORD: localPassword },
+    env: { TRUSTCART_DATABASE_URL: '', SUPABASE_URL: '', TRUSTCART_AI_TRANSFER_APPROVED: '', TRUSTCART_REVIEWER_PASSWORD: '', TRUSTCART_DEMO_PASSWORD: localPassword },
     reuseExistingServer: false,
     timeout: 30000,
   },

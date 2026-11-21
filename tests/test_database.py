@@ -71,3 +71,46 @@ def test_postgres_connector_uses_transaction_local_schema_for_supavisor(tmp_path
         ("SELECT result FROM verifications WHERE id=%s", ("synthetic-id",)),
     ]
     assert raw.committed
+
+
+def test_vercel_uses_the_synced_supabase_secret_when_no_override_is_set(tmp_path, monkeypatch):
+    import psycopg
+
+    endpoint = "postgresql://synthetic@aws-0-example.pooler.supabase.com:6543/postgres"
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("SUPABASE_URL", "https://synthetic.supabase.co")
+    monkeypatch.setenv("POSTGRES_URL", endpoint + "?supa=base-pooler.synthetic&workaround=supabase-pooler.vercel")
+    calls = []
+
+    def postgres_connect(conninfo, **options):
+        calls.append(conninfo)
+        return RawConnection()
+
+    monkeypatch.setattr(psycopg, "connect", postgres_connect)
+    database.connect(tmp_path / "fallback.sqlite3").close()
+    assert calls == [endpoint + "?sslmode=require"]
+
+    override = "postgresql://localhost/synthetic"
+    monkeypatch.setenv("TRUSTCART_DATABASE_URL", override)
+    database.connect(tmp_path / "fallback.sqlite3").close()
+    assert calls[-1] == override
+    assert not (tmp_path / "fallback.sqlite3").exists()
+
+
+def test_missing_vercel_supabase_secret_does_not_silently_use_sqlite(tmp_path, monkeypatch):
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("SUPABASE_URL", "https://synthetic.supabase.co")
+    monkeypatch.delenv("POSTGRES_URL", raising=False)
+    fallback = tmp_path / "fallback.sqlite3"
+    with pytest.raises(ValueError, match="POSTGRES_URL"):
+        database.connect(fallback)
+    assert not fallback.exists()
+
+
+def test_supabase_marker_does_not_select_remote_storage_outside_vercel(tmp_path, monkeypatch):
+    monkeypatch.delenv("VERCEL", raising=False)
+    monkeypatch.setenv("SUPABASE_URL", "https://synthetic.supabase.co")
+    monkeypatch.setenv("POSTGRES_URL", "postgresql://synthetic.invalid/db")
+    fallback = tmp_path / "fallback.sqlite3"
+    database.connect(fallback).close()
+    assert fallback.exists()

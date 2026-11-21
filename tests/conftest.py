@@ -8,6 +8,7 @@ import pytest
 def isolate_external_configuration(monkeypatch):
     """Keep API tests independent of the developer's live configuration."""
     monkeypatch.delenv("TRUSTCART_DATABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("TRUSTCART_AI_TRANSFER_APPROVED", raising=False)
     monkeypatch.delenv("TRUSTCART_REVIEWER_PASSWORD", raising=False)
 
