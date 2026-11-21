@@ -244,24 +244,6 @@ textarea { font: inherit; }
  .reviewer-product-entry .reviewer-open-report { grid-column:1 / -1; width:100%; white-space:normal; }
 }
 
-/* TrustCart marketplace integration */
-.header { background: #12343e; }
-.storefront-page .utility { display:flex; }
-.storefront-page .search-row { min-height:108px; gap:28px; }
-.storefront-page .promotions { display:block; }
-.storefront-page .hero-banner { border-radius:20px; background:linear-gradient(120deg,#12343e,#076853); min-height:240px; color:white; }
-.storefront-page .hero-banner img, .storefront-page .side-promos, .storefront-page .shortcuts,
-.storefront-page .new-user-banner, .storefront-page .brand-showcase, .storefront-page .carousel-arrow,
-.storefront-page .carousel-dots { display:none; }
-.trustcart-hero { display:flex; flex-direction:column; gap:18px; text-align:left; padding:34px; }
-.trustcart-hero strong { font-size:44px; letter-spacing:-1px; }
-.trustcart-hero span { font-size:18px; line-height:1.5; }
-.storefront-page .hero-zone { padding:24px 0; background:#ecf4f2; }
-.storefront-page .categories, .storefront-page .flash { border-radius:16px; margin-top:24px; }
-.storefront-page .panel { border-radius:16px; overflow:hidden; }
-.product-card { border-radius:12px; overflow:hidden; }
-.product-card:hover { border-color:#076853; }
-@media (max-width:600px) { .storefront-page .search-row { gap:12px; flex-wrap:wrap; } .trustcart-hero { padding:24px; } .trustcart-hero strong { font-size:32px; } }
-
-.integration-nav { display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 24px;background:#e6f4ef;color:#12343e;font-size:14px; }
-.integration-nav a { color:#076853;text-decoration:underline; }
+/* Keep integration navigation consistent with the shared marketplace theme. */
+.integration-nav { display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 24px;background:var(--brand-soft);color:var(--text-primary);font-size:14px; }
+.integration-nav a { color:var(--brand-primary);text-decoration:underline; }
