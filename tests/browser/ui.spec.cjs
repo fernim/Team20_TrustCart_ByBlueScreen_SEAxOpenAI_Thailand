@@ -92,12 +92,15 @@ test('all pages load local styles, navigate, and fit the viewport', async ({ pag
   }
 });
 
-test('TrustCart branding and distinct marketplace hero are visible', async ({page}) => {
+test('Shopee theme is shared by customer seller and reviewer', async ({page}) => {
+  for (const route of ['/', '/seller', '/reviewer']) {
+    await page.goto(route);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim())).toBe('#ee4d2d');
+  }
   await page.goto('/');
-  await expect(page.locator('.brand')).toContainText('TrustCart');
-  await expect(page.locator('.trustcart-hero')).toBeVisible();
-  await expect(page.locator('.brand-showcase')).not.toBeVisible();
-  await expect(page.locator('.hero-banner img')).not.toBeVisible();
+  await expect(page.locator('.brand')).toContainText('Shopee');
+  await expect(page.locator('.hero-banner img')).toBeVisible();
+  await expect(page.locator('.brand-showcase')).toBeVisible();
 });
 
 test('reference homepage brands and popular products retain working navigation', async ({ page }) => {
@@ -111,7 +114,7 @@ test('reference homepage brands and popular products retain working navigation',
   await page.locator('#detail-back').click();
   await page.locator('#language').selectOption('en');
   await expect(page.locator('#popular-title')).toHaveText('Popular products');
-  await expect(page.locator('.brand-showcase')).not.toBeVisible();
+  await expect(page.locator('.brand-showcase')).toBeVisible();
   const image = page.locator('#popular-products img').first();
   await image.scrollIntoViewIfNeeded();
   await expect.poll(() => image.evaluate(item => item.complete && item.naturalWidth > 0)).toBe(true);

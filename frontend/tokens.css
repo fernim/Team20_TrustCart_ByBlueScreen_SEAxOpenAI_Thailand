@@ -1,13 +1,13 @@
-/* TrustCart shared visual system. */
+/* Shopee-inspired reference tokens. Shared by customer, seller and reviewer. */
 :root {
   --font-sans: "Roboto", "Helvetica Neue", Arial, Tahoma, sans-serif;
   --font-size-caption: 12px;
-  --font-size-body: 16px;
+  --font-size-body: 14px;
   --font-size-section: 20px;
   --font-size-title: 24px;
-  --brand-primary: #076853;
-  --brand-end: #12343e;
-  --brand-soft: #e6f4ef;
+  --brand-primary: #ee4d2d;
+  --brand-end: #ff6633;
+  --brand-soft: #fff2ed;
   --orange: var(--brand-primary);
   --surface: #ffffff;
   --canvas: #f5f5f5;
@@ -29,8 +29,8 @@
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
-  --radius-control: 10px;
-  --radius-panel: 16px;
+  --radius-control: 2px;
+  --radius-panel: 3px;
   --width-storefront: 1200px;
   --width-sidebar: 220px;
   --shadow-panel: 0 1px 4px rgb(0 0 0 / 5%);
