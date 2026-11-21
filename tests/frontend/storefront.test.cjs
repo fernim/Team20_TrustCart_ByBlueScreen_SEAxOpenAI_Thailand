@@ -214,7 +214,7 @@ test("product checkmark uses the backend result and never marks an account", asy
   assert.equal(p.$(".utility .product-verified"), null);
   p.$(".product-card").click();
   assert.equal(p.$("#explain-verification"), null);
-  assert.equal(p.$("#product-title .product-verified").tagName, "SPAN");
+  assert.equal(p.$("#product-title .product-verified").tagName, "BUTTON");
 });
 
 for (const result of [
@@ -281,14 +281,18 @@ const reportFixture = {
   ],
 };
 
-test("customer sees only a product badge, never a report or status popup", async (t) => {
+test("customer badge opens a short status without exposing the reviewer report", async (t) => {
   const p = page(t, (window) => {
     window.fetch = async () => ({ ok: true, json: async () => reportFixture });
   });
   await new Promise((resolve) => setImmediate(resolve));
   const badge = p.$(".product-card .product-verified");
-  assert.equal(badge.tagName, "SPAN");
-  assert.equal(badge.getAttribute("aria-haspopup"), null);
+  assert.equal(badge.tagName, "BUTTON");
+  assert.equal(badge.getAttribute("aria-haspopup"), "dialog");
+  badge.click();
+  assert.equal(p.$("#product-status-dialog").open, true);
+  assert.equal(p.$("#product-dialog").open, false);
+  p.$("#product-status-dialog [data-close]").click();
   p.$('[data-product="14"]').click();
   assert.equal(p.$("#verification-dialog"), null);
   assert.equal(p.$("#verification-report"), null);
@@ -304,7 +308,7 @@ test("customer sees only a product badge, never a report or status popup", async
   }
 });
 
-test("three fictional-brand supplement examples have overclaim titles and descriptions but no badge", (t) => {
+test("three fictional-brand examples retain clear overclaim labels and no verified badge", (t) => {
   const p = page(t);
   p.$('[data-category="1"]').click();
   assert.equal(p.$$(".product-card").length, 4);
@@ -320,4 +324,54 @@ test("three fictional-brand supplement examples have overclaim titles and descri
     assert.ok(p.$(".product-description").textContent.length > 40);
     p.$("#product-dialog [data-close]").click();
   }
+});
+
+test("overclaim listings submit their actual copy and show clickable denial badges, never verified checks", async (t) => {
+  const submitted = [];
+  const p = page(t, (window) => {
+    window.fetch = async (url, options) => {
+      const listing = JSON.parse(options.body);
+      submitted.push(listing);
+      const denied = listing.title.includes("—");
+      return {
+        ok: true,
+        json: async () => ({
+          ...reportFixture,
+          id: `7aba58f0-1e89-4ba6-89af-3b86b469c8${submitted.length + 10}`,
+          status: denied ? "DENIED" : "APPROVED",
+          reason: denied
+            ? "advertising_overclaim"
+            : "registration_identity_and_category_matched",
+          listing_title: listing.title,
+        }),
+      };
+    };
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(submitted.length, 4);
+  assert.equal(
+    submitted.filter((item) =>
+      item.description.includes("ตัวอย่างคำกล่าวอ้างเกินจริง"),
+    ).length,
+    3,
+  );
+  p.$('[data-category="1"]').click();
+  for (const card of p.$$(".overclaim-example")) {
+    assert.equal(card.querySelector(".product-verified"), null);
+    const badge = card.querySelector(".product-denied");
+    assert.equal(badge.tagName, "BUTTON");
+    badge.click();
+    assert.equal(p.$("#product-dialog").open, false);
+    assert.equal(p.$("#product-status-title").textContent, "ไม่ผ่านการตรวจสอบ");
+    assert.equal(
+      p.$("#product-status-dialog").textContent.includes("R-03"),
+      false,
+    );
+    p.$("#product-status-dialog [data-close]").click();
+  }
+  assert.equal(
+    JSON.parse(p.window.sessionStorage.getItem("trustcart-demo-reports"))
+      .length,
+    4,
+  );
 });

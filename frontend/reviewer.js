@@ -11,7 +11,7 @@
     return result;
   }
   function render(result) {
-    const title = node("h2", "ผลการตรวจสอบข้อมูลจำลอง");
+    const title = node("h2", result.listing_title || "ผลการตรวจสอบข้อมูลจำลอง");
     const fields = node("dl", undefined, "reviewer-summary");
     const field = (label, value) =>
       fields.append(node("dt", label), node("dd", value));
@@ -39,7 +39,7 @@
       fields,
       node(
         "p",
-        "ครอบคลุมเฉพาะตัวตนและหมวดหมู่ในทะเบียนจำลอง ไม่ใช่การรับรองสินค้า บัญชีผู้ขาย หรือคำโฆษณา",
+        "ตรวจตัวตนและหมวดหมู่ในทะเบียนจำลอง พร้อมกฎ R-03 แบบจำกัดสำหรับคำกล่าวอ้างเกินจริง ไม่ใช่การรับรองสินค้า บัญชีผู้ขาย หรือการรับรองตามกฎหมาย",
         "dialog-note",
       ),
       node("h3", "บันทึกลำดับการตรวจสอบ"),
@@ -49,6 +49,29 @@
         "dialog-note",
       ),
     );
+    if (Array.isArray(result.claim_findings) && result.claim_findings.length) {
+      const findings = node("ul", undefined, "reviewer-findings");
+      for (const finding of result.claim_findings) {
+        const row = node("li");
+        row.append(
+          node("strong", `${finding.rule_id} · ${finding.code}`),
+          node("p", finding.reason_th),
+          node("blockquote", finding.phrase),
+          node(
+            "small",
+            finding.source === "title"
+              ? "พบในชื่อสินค้า"
+              : "พบในคำอธิบายสินค้า",
+          ),
+        );
+        findings.append(row);
+      }
+      report.insertBefore(
+        node("h3", "เหตุผลที่ไม่ผ่าน R-03"),
+        report.children[2],
+      );
+      report.insertBefore(findings, report.children[3]);
+    }
     const trace = Array.isArray(result.trace) ? result.trace : [];
     const list = node("ol", undefined, "reviewer-trace");
     for (const entry of trace) {
@@ -118,6 +141,29 @@
     }
   }
   $("#report-lookup").addEventListener("submit", load);
+  try {
+    const entries = JSON.parse(
+      window.sessionStorage.getItem("trustcart-demo-reports") || "[]",
+    );
+    if (Array.isArray(entries))
+      for (const entry of entries) {
+        if (!entry || typeof entry.id !== "string") continue;
+        const option = node(
+          "option",
+          `${entry.title || entry.id} · ${entry.status || "UNKNOWN"}`,
+        );
+        option.value = entry.id;
+        $("#demo-report-select").append(option);
+        $("#demo-reports").hidden = false;
+      }
+  } catch (_) {
+    /* Manual lookup remains available. */
+  }
+  $("#demo-report-select").addEventListener("change", () => {
+    if (!$("#demo-report-select").value) return;
+    $("#report-id").value = $("#demo-report-select").value;
+    load();
+  });
   const initial = new URLSearchParams(window.location.search).get("id");
   if (initial) {
     $("#report-id").value = initial;

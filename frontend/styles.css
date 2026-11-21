@@ -1390,3 +1390,58 @@ dialog h2 {
     padding: 16px;
   }
 }
+
+.product-status {
+  display: inline-flex;
+  vertical-align: -3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.product-status svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+.product-status .verified-tick {
+  fill: none;
+  stroke: white;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.product-denied {
+  color: #d24a27;
+}
+.product-unconfirmed {
+  color: #858585;
+}
+#product-status-dialog {
+  max-width: 340px;
+  text-align: center;
+}
+#product-status-dialog h2 {
+  margin: 10px 15px;
+  font-size: 22px;
+}
+.product-verified {
+  cursor: pointer;
+}
+.reviewer-findings li {
+  margin: 12px 0;
+  padding: 12px;
+  background: #fff4e7;
+}
+.reviewer-findings blockquote {
+  margin: 8px 0;
+  font-weight: bold;
+}
+#demo-report-select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0 20px;
+  border: 1px solid #ccc;
+  background: white;
+}

@@ -241,6 +241,7 @@
     }),
   );
   let productVerification = null;
+  const productVerifications = new Map();
   function hasProductVerification(product) {
     return (
       product.id === checkedProduct.id &&
@@ -256,21 +257,47 @@
   function verificationLabel() {
     return state.language === "th" ? "ตรวจทะเบียนแล้ว" : "Registration checked";
   }
-  function productCheckmark() {
-    const badge = element("span", "product-verified");
-    badge.setAttribute("role", "img");
-    badge.setAttribute("aria-label", verificationLabel());
-    badge.title = verificationLabel();
+  function productCheckmark(product) {
+    const verified = hasProductVerification(product);
+    const denied = productVerifications.get(product.id)?.status === "DENIED";
+    const label = verified
+      ? verificationLabel()
+      : denied
+        ? state.language === "th"
+          ? "ไม่ผ่านการตรวจสอบ"
+          : "Did not pass verification"
+        : state.language === "th"
+          ? "ยังตรวจสอบไม่ได้"
+          : "Could not verify";
+    const badge = element(
+      "button",
+      `product-status ${verified ? "product-verified" : denied ? "product-denied" : "product-unconfirmed"}`,
+    );
+    badge.type = "button";
+    badge.setAttribute("aria-label", label);
+    badge.setAttribute("aria-haspopup", "dialog");
+    badge.title = label;
+    badge.addEventListener("click", (event) => {
+      event.stopPropagation();
+      $("#product-status-title").textContent = label;
+      const result = productVerifications.get(product.id);
+      if (result?.id)
+        $("#reviewer-link").href =
+          `/reviewer?id=${encodeURIComponent(result.id)}`;
+      openDialog($("#product-status-dialog"));
+    });
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.setAttribute("aria-hidden", "true");
     const seal = document.createElementNS(icon.namespaceURI, "path");
     seal.setAttribute(
       "d",
-      "m12 1 3 2 3.6.4.9 3.5L22 10l-1 3.4.2 3.6-3.3 1.5-2.3 2.8-3.6-.5-3.4 1.1-2.6-2.6-3.5-1L2 14.6 1 11l2.4-2.8.8-3.5L7.8 4Z",
+      verified
+        ? "m12 1 3 2 3.6.4.9 3.5L22 10l-1 3.4.2 3.6-3.3 1.5-2.3 2.8-3.6-.5-3.4 1.1-2.6-2.6-3.5-1L2 14.6 1 11l2.4-2.8.8-3.5L7.8 4Z"
+        : "M12 2 21 6v7c0 5-9 9-9 9S3 18 3 13V6Z",
     );
     const check = document.createElementNS(icon.namespaceURI, "path");
-    check.setAttribute("d", "m7 12 3 3 7-7");
+    check.setAttribute("d", verified ? "m7 12 3 3 7-7" : "M12 7v6m0 4v.1");
     check.setAttribute("class", "verified-tick");
     icon.append(seal, check);
     badge.append(icon);
@@ -357,8 +384,11 @@
     );
     const copy = element("div", "product-copy");
     const productName = element("h3", "product-name", name(product));
-    if (hasProductVerification(product)) {
-      productName.prepend(productCheckmark(), document.createTextNode(" "));
+    if (productVerifications.has(product.id)) {
+      productName.prepend(
+        productCheckmark(product),
+        document.createTextNode(" "),
+      );
     }
     copy.append(productName, element("span", "shipping-tag", t("shipping")));
     if (product.overclaim)
@@ -734,8 +764,8 @@
     const details = element("div");
     const heading = element("h2", "", name(product));
     heading.id = "product-title";
-    if (hasProductVerification(product))
-      heading.prepend(productCheckmark(), document.createTextNode(" "));
+    if (productVerifications.has(product.id))
+      heading.prepend(productCheckmark(product), document.createTextNode(" "));
     const amount = element("div", "detail-price", price(product.price));
     const quantity = element("div", "quantity");
     const label = element("label", "", t("quantity"));
@@ -984,7 +1014,24 @@
   renderDeals();
   renderCategories();
   renderProducts();
-  async function loadProductVerification() {
+  function saveReviewerReports() {
+    const reports = [...productVerifications.entries()]
+      .filter(([, result]) => typeof result?.id === "string")
+      .map(([productId, result]) => ({
+        id: result.id,
+        title: catalog[productId].th,
+        status: result.status,
+      }));
+    try {
+      window.sessionStorage.setItem(
+        "trustcart-demo-reports",
+        JSON.stringify(reports),
+      );
+    } catch (_) {
+      /* Report ID links still work if storage is unavailable. */
+    }
+  }
+  async function loadProductVerification(product) {
     if (typeof window.fetch !== "function") return;
     try {
       const response = await window.fetch("/v1/verifications", {
@@ -992,23 +1039,37 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           registration_reference: "DEMO-001",
-          product_name: "Vitamin C Supplement",
-          license_holder: "LumaVale Demo",
+          product_name:
+            product.id === checkedProduct.id
+              ? "Vitamin C Supplement"
+              : product.th.split(" — ")[0],
+          license_holder:
+            product.id === checkedProduct.id
+              ? "LumaVale Demo"
+              : product.en.split(" ")[0] + " Demo",
           category: "supplement",
+          title: product.th,
+          description: product.descriptionTh || "แบรนด์สมมติ · ผลิตภัณฑ์จำลอง",
         }),
       });
-      if (!response.ok) return;
-      productVerification = await response.json();
-      if (typeof productVerification?.id === "string") {
-        const url = `/reviewer?id=${encodeURIComponent(productVerification.id)}`;
-        $("#reviewer-link").href = url;
+      if (!response.ok) throw new Error("verification unavailable");
+      const result = await response.json();
+      productVerifications.set(product.id, result);
+      if (product.id === checkedProduct.id) {
+        productVerification = result;
+        if (typeof result?.id === "string")
+          $("#reviewer-link").href =
+            `/reviewer?id=${encodeURIComponent(result.id)}`;
       }
-      renderProducts();
-      if (selectedProduct?.id === checkedProduct.id) renderDetail();
+      saveReviewerReports();
     } catch (_) {
-      // An unavailable or malformed response cannot produce a checkmark.
-      productVerification = null;
+      productVerifications.set(product.id, { status: "UNKNOWN" });
+      if (product.id === checkedProduct.id) productVerification = null;
     }
+    renderProducts();
+    if (selectedProduct?.id === product.id) renderDetail();
   }
-  loadProductVerification();
+  [checkedProduct, ...catalog.filter((product) => product.overclaim)].forEach(
+    loadProductVerification,
+  );
 })();

@@ -7,7 +7,7 @@ TrustCart demonstrates how a marketplace can verify a health-product listing bef
 1. Submit a listing with `POST /v1/verifications`. TrustCart checks the registration reference, product name, licence holder, and category against its synthetic registry.
 2. Retrieve the saved decision with `GET /v1/verifications/{id}` using the URL in the submission response's `Location` header.
 3. Read the status, reason, human review flag, and hash-chained audit trace. Results persist in SQLite across app restarts.
-4. Open `/` for a responsive Shopee-style storefront UI with synthetic catalog data, search, category filters, promotional controls, product details, and a local demo cart. A product-only blue checkmark on LumaVale Vitamin C reflects a successful synthetic identity/category check from the API. Customers see only the badge. `/reviewer` displays the saved detailed report and audit trace as a read-only, unauthenticated local demo. Three fictional-brand supplement listings illustrate explicitly labeled unsupported overclaims; they have no verified badge. The storefront does not process orders.
+4. Open `/` for a responsive Shopee-style storefront UI with synthetic catalog data, search, category filters, promotional controls, product details, and a local demo cart. A product-only blue checkmark on LumaVale Vitamin C reflects a successful synthetic identity/category check from the API. Customer badges are clickable and show only a short status. `/reviewer` displays the saved detailed report and audit trace as a read-only, unauthenticated local demo. Three fictional-brand supplement listings illustrate explicitly labeled unsupported overclaims; R-03 detects their overclaims and the backend returns DENIED with matched-phrase reasons and a hash-chained trace. They have warning badges rather than verified checkmarks. The storefront does not process orders.
 
 | Status | Meaning |
 | --- | --- |
@@ -19,4 +19,4 @@ Follow the [README](README.md) to run the service locally and try the API at `/d
 
 ## Remaining product work
 
-The baseline runs locally with synthetic data. Integrating an authorized live registry, hosting the API with marketplace authentication, and building the reviewer workflow remain future work.
+The baseline runs locally with synthetic data. Integrating an authorized live registry, completing the regulatory rule pack, hosting the API with marketplace authentication, and authorized reviewer actions remain future work.

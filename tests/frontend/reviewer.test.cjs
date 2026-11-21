@@ -120,3 +120,32 @@ test("late response cannot replace a newer reviewer lookup", async (t) => {
   assert.match(p.$("#reviewer-report").textContent, /UNKNOWN/);
   assert.equal(p.$("#reviewer-report").textContent.includes(report.id), false);
 });
+
+test("reviewer shows literal overclaim evidence and specific denial reason", async (t) => {
+  const p = reviewer(t, async () => ({
+    ok: true,
+    json: async () => ({
+      ...report,
+      status: "DENIED",
+      reason: "advertising_overclaim",
+      listing_title: "NovaLeaf Vitamin C",
+      claim_findings: [
+        {
+          rule_id: "R-03",
+          code: "instant_effect",
+          source: "title",
+          phrase: "ผิวกระจ่างใสทันที 100%",
+          reason_th: "อ้างผลลัพธ์ทันทีจากผลิตภัณฑ์เสริมอาหาร",
+          reason_en: "Promises an immediate effect from a supplement.",
+        },
+      ],
+    }),
+  }));
+  await p.load();
+  const text = p.$("#reviewer-report").textContent;
+  assert.match(text, /DENIED/);
+  assert.match(text, /NovaLeaf Vitamin C/);
+  assert.match(text, /ผิวกระจ่างใสทันที 100%/);
+  assert.match(text, /อ้างผลลัพธ์ทันที/);
+  assert.match(text, /R-03/);
+});

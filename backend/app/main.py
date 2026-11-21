@@ -11,10 +11,11 @@ from uuid import UUID, uuid4
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 from typing_extensions import Annotated
 
 from . import registry
+from .claims import ClaimFinding, find_overclaims
 
 
 ListingText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -27,6 +28,8 @@ class Listing(BaseModel):
     product_name: ListingText
     license_holder: ListingText
     category: ListingText
+    title: Annotated[str, StringConstraints(max_length=1000)] = ""
+    description: Annotated[str, StringConstraints(max_length=6000)] = ""
 
 
 class Status(str, Enum):
@@ -67,26 +70,28 @@ class Verification(BaseModel):
     human_review_required: bool
     trace: list[TraceEntry]
     chain_hash: str
+    listing_title: str = ""
+    claim_findings: list[ClaimFinding] = Field(default_factory=list)
 
 
-def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str]:
+def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str, list[ClaimFinding]]:
     category = listing.category.casefold()
     if category not in SUPPORTED_CATEGORIES:
         trace.add("category_mapping", "unmapped")
-        return Status.UNKNOWN, "category_unmapped"
+        return Status.UNKNOWN, "category_unmapped", []
     trace.add("category_mapping", "mapped")
     try:
         record = registry.tool_registry_lookup(listing.registration_reference)
     except registry.RegistryUnavailable:
         trace.add("registry_lookup", "unavailable")
-        return Status.UNKNOWN, "registry_unavailable"
+        return Status.UNKNOWN, "registry_unavailable", []
     if record is None:
         trace.add("registry_lookup", "missing")
-        return Status.UNKNOWN, "reference_missing"
+        return Status.UNKNOWN, "reference_missing", []
     trace.add("registry_lookup", "found")
     if record.category not in SUPPORTED_CATEGORIES:
         trace.add("registry_category_mapping", "unmapped")
-        return Status.UNKNOWN, "registry_category_unmapped"
+        return Status.UNKNOWN, "registry_category_unmapped", []
     trace.add("registry_category_mapping", "mapped")
 
     same_identity = (
@@ -95,13 +100,19 @@ def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str]:
         and listing.license_holder.casefold() == record.license_holder.casefold()
     )
     trace.add("R-01", "matched" if same_identity else "failed")
-    if not same_identity:
-        return Status.DENIED, "registration_identity_failed"
     category_matches = category == record.category
     trace.add("R-02", "matched" if category_matches else "failed")
+    findings = find_overclaims(listing.title, listing.description)
+    if findings:
+        for finding in findings:
+            trace.add("R-03", finding.model_dump_json())
+        return Status.DENIED, "advertising_overclaim", findings
+    trace.add("R-03", "passed")
+    if not same_identity:
+        return Status.DENIED, "registration_identity_failed", []
     if not category_matches:
-        return Status.DENIED, "registration_category_mismatch"
-    return Status.APPROVED, "registration_identity_and_category_matched"
+        return Status.DENIED, "registration_category_mismatch", []
+    return Status.APPROVED, "registration_identity_and_category_matched", []
 
 
 def create_app(database: Path) -> FastAPI:
@@ -127,7 +138,7 @@ def create_app(database: Path) -> FastAPI:
     @service.post("/v1/verifications", status_code=201, response_model=Verification)
     def submit(listing: Listing, response: Response) -> Verification:
         trace = Trace()
-        status, reason = evaluate(listing, trace)
+        status, reason, findings = evaluate(listing, trace)
         confidence = 0.0 if status == Status.UNKNOWN else 1.0
         human_review_required = confidence < 0.75
         trace.add("decision", reason)
@@ -136,6 +147,7 @@ def create_app(database: Path) -> FastAPI:
             id=uuid4(), status=status, reason=reason, confidence=confidence,
             human_review_required=human_review_required, trace=trace.entries,
             chain_hash=trace.entries[-1].chain_hash,
+            listing_title=listing.title or listing.product_name, claim_findings=findings,
         )
         with closing(sqlite3.connect(database)) as connection, connection:
             connection.execute(
