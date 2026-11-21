@@ -164,7 +164,7 @@ def test_live_failure_and_unknown_replay_never_pass(connected):
     client, password = connected
     _, result = setup_case(client, password)
     failed = run(client, result, "live")
-    assert failed["status"] == "UNKNOWN" and failed["human_review_required"]
+    assert failed["status"] == "PENDING" and failed["human_review_required"]
     assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
 
 

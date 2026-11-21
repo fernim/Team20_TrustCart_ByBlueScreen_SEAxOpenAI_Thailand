@@ -127,3 +127,22 @@ test("Decision replay withholds milestones when the recorded chain fails validat
   assert.equal(p.$("#decision-replay-detail").hidden, true);
   assert.equal(p.$("#decision-replay-unavailable").hidden, false);
 });
+
+test('Agency explicitly confirms skipped AI checks separately from original documents', async (t) => {
+  const p = await mount(t, {result: {mode: 'live', manual_review_checks: ['documents', 'claims'],
+    document_check: {state: 'unavailable'}, claim_check: {state: 'unavailable'}}});
+  await p.dom.window.TrustCartAgencyReport.start();
+  assert.equal(p.dom.window.document.querySelectorAll('#confirm-documents input[data-manual-check]').length, 2);
+  for (const check of p.dom.window.document.querySelectorAll('#confirm-documents input')) check.checked = true;
+  p.$('#agency-language').value = 'en';
+  p.$('#agency-language').dispatchEvent(new p.dom.window.Event('change'));
+  assert.equal(p.dom.window.document.querySelectorAll('#confirm-documents input[data-manual-check]:checked').length, 2);
+  p.$('#review-note').value = 'Manually inspected originals and all listing claims';
+  const form = p.$('#decision-form');
+  form.dispatchEvent(new p.dom.window.SubmitEvent('submit', {bubbles: true, cancelable: true,
+    submitter: p.$('button[value="approve"]')}));
+  await new Promise(resolve => setImmediate(resolve));
+  const payload = p.requests.at(-1).payload;
+  assert.deepEqual(Array.from(payload.confirmed_manual_checks), ['documents', 'claims']);
+  assert.deepEqual(Array.from(payload.confirmed_documents), ['doc-1']);
+});

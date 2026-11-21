@@ -108,3 +108,46 @@ for (const scenario of ["clean", "uncertain"]) {
     },
   );
 }
+
+test('unavailable AI goes to Agency and explicit manual inspection can resolve it', async ({page}) => {
+  await login(page, 'seller1');
+  await expect(page.locator('#plan-status')).not.toHaveText('');
+  if (await page.locator('#activate-plan').isEnabled()) {
+    await page.locator('#verification-plan summary').click();
+    await page.locator('#activate-plan').click();
+  }
+  await page.locator('#demo-case').selectOption('clean');
+  await page.locator('#load-demo').click();
+  // The isolated server's synthetic document assessor rejects changed fixtures.
+  // This exercises a real assessment error, without making a live provider call.
+  await page.locator('#listing-title').fill('Manual fallback ผลิตภัณฑ์เสริมอาหาร');
+  await page.locator('#submit-listing').click();
+  await expect(page.locator('#view-product')).toBeVisible();
+  const productURL = await page.locator('#view-product').getAttribute('href');
+  await page.locator('#request-verification').click();
+  await page.locator('#demo-documents').click();
+  await expect(page.locator('#run-check')).toBeEnabled();
+  await page.locator('#run-check').click();
+  await expect(page.locator('#seller-feedback')).toContainText('sent to Agency for manual review');
+  const record = await (await page.request.get('/v1/seller/products/' + productURL.split('/').pop())).json();
+  expect(record.verification.status).toBe('PENDING');
+  expect(record.verification.manual_review_checks).toEqual(['documents']);
+  expect(record.badge_eligible).toBe(false);
+  await login(page, 'reviewer');
+  await page.goto('/agency/submissions/' + record.verification.id);
+  await page.locator('#agency-language').selectOption('en');
+  await expect(page.locator('#case-checks')).toContainText('Agency manual review');
+  await page.locator('#start-review').click();
+  await expect(page.locator('#decision-form')).toBeVisible();
+  const manual = page.locator('#confirm-documents input[data-manual-check="documents"]');
+  await expect(manual).toBeVisible();
+  for (const checkbox of await page.locator('#confirm-documents input').all()) await checkbox.check();
+  for (const key of ['product_name', 'registration_reference', 'license_holder'])
+    await page.locator('#confirm-' + key).fill(record.listing[key]);
+  await page.locator('#review-note').fill('Manually inspected original documents after the AI failure');
+  await page.locator('button[value=approve]').click();
+  await expect(page.locator('#case-overview')).toContainText('Approved');
+  await expect(page.locator('#case-checks')).toContainText('Manually reviewed by Agency');
+  await page.goto(productURL);
+  await expect(page.locator('#product-detail .product-verified')).toBeVisible();
+});

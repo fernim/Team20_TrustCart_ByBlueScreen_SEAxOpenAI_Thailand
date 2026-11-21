@@ -322,6 +322,19 @@ window.TrustCartAgencyReport = (() => {
       );
       confirms.append(label);
     }
+    for (const name of r.manual_review_checks || []) {
+      const label = ui.node("label", undefined, "agency-confirm-document");
+      const check = ui.node("input");
+      check.type = "checkbox";
+      check.value = name;
+      check.dataset.manualCheck = name;
+      check.checked = checked.has(name);
+      const english = $("#agency-language").value === "en";
+      label.append(check, ui.node("span", english
+        ? (name === "documents" ? "I manually inspected the documents skipped by AI" : "I manually inspected the listing claims skipped by AI")
+        : (name === "documents" ? "ตรวจเอกสารด้วยตนเองแทน AI ที่ข้ามแล้ว" : "ตรวจคำกล่าวอ้างด้วยตนเองแทน AI ที่ข้ามแล้ว")));
+      confirms.append(label);
+    }
     const writable = r.is_current && r.audit?.valid === true && !blocked;
     $("#start-review").hidden = !(
       writable && ["REVIEWER_REQUIRED", "UNAVAILABLE"].includes(r.stage)
@@ -408,7 +421,10 @@ window.TrustCartAgencyReport = (() => {
         fieldNames.map((key) => [key, $("#confirm-" + key).value]),
       );
       payload.confirmed_documents = [
-        ...document.querySelectorAll("#confirm-documents input:checked"),
+        ...document.querySelectorAll("#confirm-documents input:not([data-manual-check]):checked"),
+      ].map((el) => el.value);
+      payload.confirmed_manual_checks = [
+        ...document.querySelectorAll("#confirm-documents input[data-manual-check]:checked"),
       ].map((el) => el.value);
     }
     mutate("/decision", payload);

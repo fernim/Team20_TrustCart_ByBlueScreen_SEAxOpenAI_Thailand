@@ -133,7 +133,7 @@ The adapter in `backend/app/registry.py` is the only registry boundary and reads
 - **APPROVED:** all required applicable checks pass with confidence at least 0.75 and no unresolved review/evidence conflict. Connected badges also require current, completed, document-backed approval and valid audit history.
 - **PENDING:** evidence, correction or reviewer resolution is outstanding. An active-record identity mismatch requests evidence first.
 - **DENIED:** a conclusive failure such as an inactive/revoked fixture, category/claim failure, or an explicit reviewer denial supported by available checks. A secondary failure may be recorded while another blocker keeps the overall case pending.
-- **UNKNOWN:** missing/inconclusive reference, unsupported source/category, outage or unavailable document assessment. It does not mean authoritative nonexistence and never earns a badge.
+- **UNKNOWN:** missing/inconclusive reference, unsupported source/category, registry outage or inconclusive replay. It does not mean authoritative nonexistence and never earns a badge.
 
 Workflow stages are separate from statuses: `WAITING_DOCUMENTS`, `AI_CHECKING`, `REVIEWER_REQUIRED`, `IN_REVIEW`, `SELLER_ACTION`, `COMPLETED`, `UNAVAILABLE`, and `SUPERSEDED`. Waiting for seller input is not the same as a completed human-review decision. Low-confidence assessment cannot grant approval. Risk scoring in legacy diagnostics ranks work only; it does not change a status.
 
@@ -143,7 +143,7 @@ Product images must be valid PNG/JPEG/WebP data URLs, at most 2 MiB and 16 milli
 
 `backend/app/document_assessment.py` uses the OpenAI Responses API for extraction/readability/completeness findings. Live calls require explicit transfer approval and both `OPENAI_API_KEY` and `TRUSTCART_AI_TRANSFER_APPROVED=true` in the environment. Optional `OPENAI_DOCUMENT_MODEL` selects the document model; `OPENAI_MODEL` selects the separate listing-claim model. Both default to `gpt-4o-mini` in code.
 
-The document request can transfer the listing and uploaded document content. Text-PDF quotations are checked against extracted page text. Image-only/scanned content, low confidence, inconsistent findings, missing quotations and non-supplement categories require human confirmation. An unavailable/malformed document or claim assessment produces `UNKNOWN`/`UNAVAILABLE`, retains any available findings and routes to Agency; it never silently switches to replay. Reviewers cannot approve while a required automated check is unavailable.
+The document request can transfer the listing and uploaded document content. Text-PDF quotations are checked against extracted page text. Image-only/scanned content, low confidence, inconsistent findings, missing quotations and non-supplement categories require human confirmation. If a Live OpenAI document or claim call fails, the failed AI check is skipped and retained as `unavailable`, and the case is sent to Agency for manual inspection. Otherwise eligible cases remain `PENDING` without a badge; conclusive rule failures remain `DENIED`, and unresolved registry checks remain `UNKNOWN`. Reviewers can approve after explicitly confirming each manual replacement, inspecting every required original document and confirming identity fields; deterministic rules rerun and unresolved registry/claim/evidence failures still block approval. The audit records both the AI failure and the manual resolution. An invalid Replay fixture remains unavailable and cannot use this Live-call fallback.
 
 Replay makes no OpenAI calls and accepts only the exact bundled listing and matching label/certificate/permit hashes for three synthetic cases: clean, uncertain and overclaim. It is labeled in Seller Centre. Neither replay nor live extraction authenticates documents. Complete, confident cases that pass the required rules can approve automatically; uncertain cases need Agency review. Historical audit chains remain intact.
 
@@ -189,9 +189,9 @@ Playwright uses the connected application on port 8768, a temporary SQLite datab
 
 | Check | Result |
 | --- | --- |
-| `/tmp/trustcart-merge-venv/bin/python -m pytest -q` — isolated Python 3.13 environment installed from `requirements.txt` | 184 passed; one Starlette/httpx deprecation warning |
-| `npm ci` then `npm test` | 133 passed |
-| `npx playwright test` — local Chromium | 48 passed (desktop/mobile Chromium) |
+| `/tmp/trustcart-readme-audit-venv/bin/python -m pytest -q` — isolated Python 3.13 environment installed from `requirements.txt` | 189 passed; one Starlette/httpx deprecation warning |
+| `npm ci` then `npm test` | 134 passed |
+| `npm run test:browser` suite — local Chromium, temporary configuration on isolated port 8771 | 50 passed (desktop/mobile Chromium) |
 
 The pre-existing Python 3.15 `.venv` run had 171 passes and two import failures because `psycopg` was absent; installing the pinned binary extra on that interpreter failed dependency resolution. The successful Python 3.13 run uses the declared dependencies without modifying `.venv` or loosening requirements.
 

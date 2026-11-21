@@ -135,14 +135,14 @@ def test_start_review_never_turns_unavailability_into_approval(connected):
     client, password = connected
     _, result = setup_case(client, password)
     result = run(client, result, "live")
-    assert result["status"] == "UNKNOWN"
+    assert result["status"] == "PENDING"
     login(client, password, "reviewer")
     started = client.post(
         "/v1/reviewer/submissions/" + result["id"] + "/start-review",
         json={"chain_hash": result["chain_hash"]},
     )
     assert started.status_code == 200
-    assert started.json()["status"] == "UNKNOWN"
+    assert started.json()["status"] == "PENDING"
     assert started.json()["confidence"] < 0.75
     assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
 

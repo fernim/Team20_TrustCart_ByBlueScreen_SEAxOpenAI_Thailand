@@ -69,7 +69,7 @@ def test_claim_outage_never_becomes_a_pass_and_documents_are_retained(connected)
     response = submit(client, result)
     assert response.status_code == 200
     checked = response.json()
-    assert checked["status"] == "UNKNOWN" and checked["human_review_required"]
+    assert checked["status"] == "PENDING" and checked["human_review_required"]
     assert checked["document_check"]["state"] == "completed"
     assert checked["claim_check"]["state"] == "unavailable"
     assert checked["assessment"]
@@ -119,7 +119,7 @@ def test_missing_documents_prevent_review_submission_and_live_has_no_replay_fall
     del client.app.state.claim_assessor
     response = submit(client, result)
     assert response.status_code == 200
-    assert response.json()["status"] == "UNKNOWN"
+    assert response.json()["status"] == "PENDING"
     assert response.json()["mode"] == "live"
 
 
@@ -180,7 +180,7 @@ def test_grounded_claim_failure_and_missing_check_cannot_be_overridden(connected
     checked = submit(client, result).json()
     assert (
         checked["claim_check"]["state"] == "unavailable"
-        and checked["status"] == "UNKNOWN"
+        and checked["status"] == "PENDING"
     )
     login(client, password, "reviewer")
     assert (
@@ -192,7 +192,7 @@ def test_grounded_claim_failure_and_missing_check_cannot_be_overridden(connected
                 "note": "Attempt incomplete approval",
             },
         ).status_code
-        == 409
+        == 422
     )
 
 

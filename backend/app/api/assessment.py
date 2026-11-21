@@ -193,6 +193,8 @@ def run(submission_id: UUID, payload: Run, request: Request):
             raise HTTPException(422, "Missing documents: " + ", ".join(sorted(missing)))
         documents = load_documents(connection, result)
         token = str(uuid4())
+        result.pop("manual_review_checks", None)
+        result.pop("manual_reviewed_checks", None)
         result.update(
             stage="AI_CHECKING",
             status="PENDING",
@@ -276,26 +278,36 @@ def run(submission_id: UUID, payload: Run, request: Request):
         result[key]["state"] != "completed" for key in ("document_check", "claim_check")
     )
     if incomplete:
-        result.update(
-            status="UNKNOWN",
-            stage="UNAVAILABLE",
-            confidence=0.0,
-            reason="automated_checks_unavailable",
-            human_review_required=True,
-        )
+        if payload.mode == "live":
+            result["manual_review_checks"] = [
+                name for name, key in (("documents", "document_check"), ("claims", "claim_check"))
+                if result[key]["state"] == "unavailable"
+            ]
+            if result["status"] in ("APPROVED", "PENDING"):
+                result.update(status="PENDING", confidence=0.6,
+                              reason="automated_checks_manual_review")
+            event(result, "automated_checks_skipped", {
+                "checks": result["manual_review_checks"],
+                "action": "agency_manual_review", "status": result["status"],
+            })
+        else:
+            # An unmatched replay is not an OpenAI outage or usable evidence.
+            result.update(status="UNKNOWN", confidence=0.0,
+                          reason="automated_checks_unavailable")
+        result["human_review_required"] = True
         if result["claim_check"]["state"] != "completed":
             for rule in result["rule_results"]:
                 if rule["rule"] == "R-03" and rule["result"] == "pass":
                     rule.update(
                         result="skip",
-                        reason_en="Live claim extraction unavailable",
-                        reason_th="ยังตรวจคำกล่าวอ้างด้วย AI ไม่ได้",
+                        reason_en="AI claim check skipped; Agency must inspect the listing manually",
+                        reason_th="ข้ามการตรวจคำกล่าวอ้างด้วย AI ต้องให้ Agency ตรวจข้อความเอง",
                     )
                     event(result, "R-03", rule)
     result["precheck_status"] = result["status"]
     # Confident, complete findings can pass the deterministic rules automatically.
     # Only unresolved evidence/uncertainty needs an additional Agency decision.
-    needs_review = result["status"] in ("PENDING", "UNKNOWN")
+    needs_review = result["status"] in ("PENDING", "UNKNOWN") or bool(result.get("manual_review_checks"))
     result.update(
         stage=(
             "UNAVAILABLE"
@@ -331,6 +343,7 @@ class Decision(BaseModel):
     note: str = Field(min_length=3, max_length=2000)
     confirmed_fields: Optional[Fields] = None
     confirmed_documents: list[str] = Field(default_factory=list, max_length=5)
+    confirmed_manual_checks: list[Literal["documents", "claims"]] = Field(default_factory=list, max_length=2)
 
     @field_validator("note")
     @classmethod
@@ -354,13 +367,19 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
                 409, "Wait for the active assessment or its retry timeout"
             )
         if payload.decision == "approve":
-            if any(
-                key in result and result[key].get("state") != "completed"
-                for key in ("document_check", "claim_check")
+            incomplete_checks = {
+                name for name, key in (("documents", "document_check"), ("claims", "claim_check"))
+                if key in result and result[key].get("state") != "completed"
+            }
+            manual_checks = set(result.get("manual_review_checks", []))
+            if incomplete_checks and (
+                result.get("mode") != "live" or not incomplete_checks.issubset(manual_checks)
             ):
                 raise HTTPException(
                     409, "Complete both automated checks before approval"
                 )
+            if not manual_checks.issubset(payload.confirmed_manual_checks):
+                raise HTTPException(422, "Confirm manual inspection of every skipped AI check")
             if any(
                 r["rule"] == "R-03" and r["result"] == "fail"
                 for r in result["rule_results"]
@@ -380,6 +399,11 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
                     422,
                     "Inspect and confirm every required document and identity field",
                 )
+            if manual_checks:
+                event(result, "manual_assessment", {
+                    "actor": user["id"], "checks": sorted(manual_checks),
+                    "chain_hash": payload.chain_hash,
+                })
             # No AI call while holding locks: manual confirmation plus deterministic rules.
             evaluate(
                 result,
@@ -394,6 +418,8 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
                     409,
                     "Resolve registry, category, claims and evidence failures before approval",
                 )
+            if manual_checks:
+                result["manual_reviewed_checks"] = sorted(manual_checks)
         elif payload.decision == "deny":
             evaluate(result, result.get("assessment"), None)
             if result["status"] == "UNKNOWN":

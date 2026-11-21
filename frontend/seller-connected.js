@@ -353,8 +353,10 @@
         localStorage.setItem("trustcart-products-updated", Date.now());
       } catch (_) {}
       feedback(
-        submission.stage === "UNAVAILABLE"
-          ? "Check complete: UNKNOWN. Automated checks unavailable; Agency can inspect the case. Retry is required before approval."
+        submission.manual_review_checks?.length
+          ? `Check complete: ${submission.status}. AI checks skipped; sent to Agency for manual review. No approval is assumed.`
+          : submission.stage === "UNAVAILABLE"
+          ? "Check complete: UNKNOWN. Verification unavailable; sent to Agency. Unresolved registry or evidence checks still block approval."
           : submission.status === "APPROVED"
             ? "Check complete: APPROVED. Required checks passed with sufficient confidence; no further approval is needed."
             : submission.status === "DENIED"

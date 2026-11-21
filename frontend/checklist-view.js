@@ -31,8 +31,11 @@ window.TrustCartChecklist = (() => {
       ],
     ]) {
       const check = result[key] || {};
+      const manualName = key === "document_check" ? "documents" : "claims";
       const state =
-        check.state === "unavailable"
+        result.manual_reviewed_checks?.includes(manualName)
+          ? "manual"
+          : check.state === "unavailable"
           ? "unavailable"
           : check.state === "checking"
             ? "checking"
@@ -43,7 +46,10 @@ window.TrustCartChecklist = (() => {
         pass: text("ผ่านการตรวจเบื้องต้น", "Pre-check passed"),
         fail: text("พบข้อที่ไม่ผ่าน", "Failed findings"),
         review: text("ต้องให้เจ้าหน้าที่ตรวจ", "Needs human review"),
-        unavailable: text("ตรวจไม่ได้ ต้องลองใหม่", "Unavailable — retry required"),
+        unavailable: result.manual_review_checks?.includes(manualName)
+          ? text("ข้าม AI ส่งให้ Agency ตรวจด้วยตนเอง", "AI skipped — Agency manual review")
+          : text("ตรวจไม่ได้ ต้องลองใหม่", "Unavailable — retry required"),
+        manual: text("Agency ตรวจด้วยตนเองแล้ว", "Manually reviewed by Agency"),
         checking: text("กำลังตรวจ", "Checking"),
         not_run: text("ยังไม่ได้ตรวจ", "Not checked"),
       };

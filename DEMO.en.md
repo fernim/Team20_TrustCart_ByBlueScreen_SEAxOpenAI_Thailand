@@ -6,7 +6,7 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 
 1. Install dependencies and start the app using README instructions. No password configuration is needed: select a demo role on the sign-in page. Anyone can select a role in this demo.
 2. Open `/login` in separate browser profiles for `seller1`, `seller2` and `reviewer`. The public storefront needs no login; a `buyer` account is also available.
-3. Use **Replay** for a deterministic offline presentation. **Live** sends submitted documents to OpenAI only when configured. A live outage must show `UNKNOWN`, never a replay approval.
+3. Use **Replay** for a deterministic offline presentation. **Live** sends submitted documents to OpenAI only when configured. A failed Live OpenAI call skips the failed check and sends the case to Agency for manual review (`PENDING` when registry/rules permit), never a replay approval.
 4. Use a disposable demo database. Products and document history persist; there is no destructive reset button in this flow.
 
 ## Show a passing product
@@ -30,7 +30,7 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 
 - Choose **Prohibited claim**, save and run its matching replay documents. It becomes `DENIED`; the report identifies the prohibited phrase. It remains a normal customer product without a tick.
 - Sign in as seller2. Seller1's listings and documents are inaccessible. Publish a normal product without activating a plan: it is publicly visible without verification.
-- Choose Live without configured provider access to demonstrate `UNKNOWN` and a retry/reviewer path. Do not describe this as a product failure or silently switch to Replay.
+- Choose Live without configured provider access to demonstrate skipped AI checks and Agency manual review. Staff must explicitly confirm manual replacement of the skipped checks, required original documents and identity fields before approval; registry outages remain `UNKNOWN`. Do not describe this as a product failure or silently switch to Replay.
 
 ## Scope
 
