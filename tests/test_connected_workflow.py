@@ -3,10 +3,11 @@ from PIL import Image
 from test_connected_access import connected, login
 
 
-def setup_case(client, password, case="clean"):
+def setup_case(client, password, case="clean", *, changes=None):
     login(client, password)
     client.post("/v1/seller/subscription/activate").raise_for_status()
     listing = client.get("/v1/seller/demo-cases").json()[case]["listing"]
+    listing.update(changes or {})
     product = client.post("/v1/seller/products", json=listing).json()
     result = client.post(
         "/v1/seller/products/" + product["id"] + "/submissions",
@@ -184,6 +185,46 @@ def test_reviewer_can_resolve_uncertainty_but_not_claim_failure(connected):
         ).status_code
         == 409
     )
+
+
+def test_no_listing_copy_blocks_full_approval_even_with_confirmed_documents(connected):
+    from backend.app.registry import demo_listings
+
+    client, password = connected
+    product, submission = setup_case(
+        client, password, changes={**demo_listings()["L27"], "title": "  ", "description": "\n", "images": []}
+    )
+    login(client, password, "reviewer")
+    response = client.post(
+        f"/v1/reviewer/submissions/{submission['id']}/decision",
+        json={
+            "chain_hash": submission["chain_hash"],
+            "decision": "approve",
+            "note": "Identity documents confirmed",
+            "confirmed_documents": [document["id"] for document in submission["documents"]],
+            "confirmed_fields": {
+                key: product["listing"][key]
+                for key in ("product_name", "license_holder", "registration_reference")
+            },
+        },
+    )
+    assert response.status_code == 409, response.text
+    assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
+
+
+def test_reviewer_cannot_deny_a_passing_connected_submission(connected):
+    client, password = connected
+    _, submission = setup_case(client, password)
+    submission = run(client, submission)
+    assert submission["status"] == "APPROVED"
+    login(client, password, "reviewer")
+    path = f"/v1/reviewer/submissions/{submission['id']}"
+    denied = client.post(f"{path}/decision", json={
+        "chain_hash": submission["chain_hash"], "decision": "deny", "note": "A decision was requested",
+    })
+    assert denied.status_code == 409
+    assert client.get(path).raise_for_status().json()["chain_hash"] == submission["chain_hash"]
+    assert client.get("/v1/catalog/products").json()[0]["badge_eligible"]
 
 
 def test_late_assessment_cannot_approve_edited_product(connected):

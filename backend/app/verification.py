@@ -3,11 +3,11 @@ import json
 import re
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Literal, Optional, Tuple
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, StringConstraints, field_validator
+from pydantic import BaseModel, Field, StringConstraints, computed_field, field_validator
 from typing_extensions import Annotated
 
 from . import registry
@@ -48,6 +48,16 @@ class Status(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+VerificationScope = Literal["identity_category", "listing"]
+
+
+def verification_scope(rule_results: list[dict]) -> VerificationScope:
+    if any(rule.get("rule") == "R-03" and rule.get("result") in {"pass", "fail"}
+           for rule in rule_results):
+        return "listing"
+    return "identity_category"
+
+
 class TraceEntry(BaseModel):
     step: str
     outcome: str
@@ -85,9 +95,16 @@ class Verification(BaseModel):
     listing_title: str = ""
     claim_findings: list[ClaimFinding] = Field(default_factory=list)
 
+    @computed_field
+    @property
+    def verification_scope(self) -> VerificationScope:
+        """Identify whether the evaluation included listing advertising copy."""
+        return verification_scope(self.rule_results)
+
 
 def evaluate_rules(
-    listing: Listing, trace: Trace, extraction_client=None, *, declarations: Optional[dict[str, str]] = None
+    listing: Listing, trace: Trace, extraction_client=None, *,
+    declarations: Optional[dict[str, str]] = None, require_listing_copy: bool = False,
 ):
     results = []
 
@@ -112,7 +129,7 @@ def evaluate_rules(
             status, reason = Status.DENIED, "category_claim_mismatch"
     add("R-02", category_result, "Registered category check", "ตรวจสอบประเภทผลิตภัณฑ์",
         {"registered_category": registered_category, "category_claims": category_claims})
-    if listing.title or listing.description:
+    if listing.title.strip() or listing.description.strip():
         matches, missing = advertising_claims(listing.title, listing.description, listing.category.casefold())
         overclaims = find_overclaims(listing.title, listing.description)
         text = listing.title + "\n" + listing.description
@@ -129,6 +146,8 @@ def evaluate_rules(
             status, reason = Status.DENIED, "advertising_overclaim" if overclaims else "advertising_claim_failed"
     else:
         add("R-03", "skip", "No advertising text submitted", "ไม่ได้ส่งข้อความโฆษณา")
+        if require_listing_copy and status == Status.APPROVED:
+            status, reason = Status.PENDING, "listing_copy_required"
     permit_problem = bool(record and (
         (record.permit_required and not listing.advertising_permit) or
         (listing.advertising_permit and (listing.advertising_permit != record.advertising_permit or not record.permit_active))

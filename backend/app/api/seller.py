@@ -9,6 +9,7 @@ from typing_extensions import Annotated
 from ..rules import RULES, advertising_claims
 from ..verification import Listing, ListingText, Trace
 from ..workflow import Revision, continue_trace, edit, reevaluate
+from .response_models import SavedVerificationResponse
 
 
 router = APIRouter()
@@ -19,6 +20,7 @@ router = APIRouter()
     tags=["Seller"],
     summary="Upload synthetic seller evidence",
     responses={
+        200: {"model": SavedVerificationResponse},
         404: {"description": "Verification not found"},
         409: {"description": "Stale audit hash, invalid audit, completed review, or unusable saved listing"},
         413: {"description": "An evidence file exceeds 2 MiB"},
@@ -85,6 +87,7 @@ async def evidence(
     tags=["Seller"],
     summary="Recheck a saved verification",
     responses={
+        200: {"model": SavedVerificationResponse},
         404: {"description": "Verification not found"},
         409: {"description": "Stale audit hash, invalid audit, completed review, or unusable saved listing"},
     },

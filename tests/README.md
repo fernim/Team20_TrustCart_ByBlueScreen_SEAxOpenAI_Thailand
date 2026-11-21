@@ -41,15 +41,15 @@ The reference brand showcase is hidden in the integrated interface. Browser chec
 
 ## Hosted desktop and mobile checks
 
-Set `TRUSTCART_BASE_URL` to the target origin and run `npm run test:browser` with the login password in the process environment. Set `TRUSTCART_REVIEWER_PASSWORD` when the deployment uses the separate reviewer login. Otherwise, set `TRUSTCART_DEMO_PASSWORD` for the shared demo login. Leave `TRUSTCART_BASE_URL` unset to run the isolated local suite. Keep password values out of command output and source files.
+Check `/version` on an authorized disposable Vercel deployment with the current code and shared PostgreSQL. Set `TRUSTCART_BASE_URL` to that origin and run `npm run test:browser` for the passwordless synthetic demo. Leave `TRUSTCART_BASE_URL` unset to use the isolated local suite. Use the Python marketplace-client tests for the separate credential-enabled configuration.
 
-Hosted mode runs the storefront suite and additional hosted checks across desktop and mobile Chromium contexts. It covers password protection, evidence/recheck/reviewer actions, stale hashes, agency totals, outage simulation, copy correction and authenticated Swagger. Each created product title is unique so earlier hosted runs do not create ambiguous selectors.
+Hosted mode runs the storefront, seller, Agency, workspace and access checks across desktop and mobile Chromium contexts. The suite covers public catalog and private-role access, document submission, reviewer actions, stale hashes, outages, and the public badge. Each created product title is unique so earlier runs do not create ambiguous selectors.
 
-The unauthenticated request context explicitly overrides the configured credentials. Hosted traces are disabled to avoid writing authentication headers into trace artifacts. The suite creates synthetic products and reviews, and leaves the saved audit history available for inspection.
+Hosted traces are disabled so they do not capture session cookies or CSRF headers. The suite creates synthetic products and reviews whose saved audit history remains available for inspection.
 
 Shared persistent storage is required for saved-product and report continuity across hosted requests. A disappearing product or report remains a test failure. Temporary instance-local SQLite cannot guarantee those flows on Vercel.
 
-These tests cover the implemented UI workflows and, in hosted mode, the demo password gate. They do not establish exhaustive branch coverage, official product certification, live-registry integration, production identity management, real checkout, or full accessibility compliance. Browser checks use Chromium only; mobile viewport emulation is not testing on a physical phone.
+Browser checks use Chromium and a mobile viewport emulator. The registry and assessed evidence are synthetic.
 
 ## Agency validation
 

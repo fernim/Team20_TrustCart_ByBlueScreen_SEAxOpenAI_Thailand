@@ -12,7 +12,7 @@ module.exports = defineConfig({
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
       : {},
-    trace: "retain-on-failure",
+    trace: hosted ? "off" : "retain-on-failure",
   },
   projects: [
     { name: "desktop", use: { viewport: { width: 1440, height: 1000 } } },
@@ -34,6 +34,11 @@ module.exports = defineConfig({
             : ".venv/bin/python") + " tests/browser/serve_connected.py",
         url: "http://127.0.0.1:8768/",
         reuseExistingServer: false,
-        env: { TRUSTCART_DATABASE_URL: "", SUPABASE_URL: "", TRUSTCART_AI_TRANSFER_APPROVED: "" },
+        env: {
+          TRUSTCART_DATABASE_URL: "",
+          SUPABASE_URL: "",
+          TRUSTCART_AI_TRANSFER_APPROVED: "",
+          TRUSTCART_MARKETPLACE_CLIENTS: "",
+        },
       },
 });

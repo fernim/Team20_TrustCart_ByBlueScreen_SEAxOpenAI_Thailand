@@ -73,9 +73,7 @@ OPENAI_MODEL=gpt-4o-mini
 | `TRUSTCART_PASSWORD` | ทุกหน้าและทุก API ต้องล็อกอิน (คุกกี้อยู่ได้ 8 ชั่วโมง, มีปุ่มออกจากระบบ) | เข้าได้ทันที |
 | `OPENAI_API_KEY` | AI สกัดคำกล่าวอ้างเพิ่ม + แปลข้อความผู้ใช้อัตโนมัติ | ใช้กฎคำสำคัญ; ข้อความที่ผู้ใช้พิมพ์จะไม่ถูกแปล |
 | `OPENAI_MODEL` | เลือกโมเดล | `gpt-4o-mini` |
-| `TRUSTCART_CLIENTS` | เปิด OAuth 2.0 สำหรับระบบภายนอก: `client_id:secret:scope scope;...` | `/oauth/token` ตอบ 503 (ยังไม่ตั้งค่า) |
-| `TRUSTCART_TOKEN_KEY` | กุญแจลงนามโทเคน (สุ่มยาว ≥ 32 ตัวอักษร) | สร้างจากรายการ client |
-| `TRUSTCART_TOKEN_TTL` | อายุโทเคน (วินาที) | `900` |
+| `TRUSTCART_MARKETPLACE_CLIENTS` | เปิด OAuth client credentials ด้วย JSON ที่ผูก client กับร้านค้าและสิทธิ์ของผู้ขาย เซสชันเบราว์เซอร์ต้องยืนยันรหัสผ่าน | `/oauth/token` ตอบ 503 |
 | `REGISTRY_SOURCE` | เลือกแหล่งทะเบียน (Registry Adapter) | `mock` |
 
 > server อ่าน `.env.local` ตอนเริ่มทำงาน แต่ **ไม่ทับ** ค่าที่ตั้งไว้ใน environment จริง
@@ -169,25 +167,7 @@ npx --yes vercel@latest git disconnect --yes
 npx --yes vercel@latest env add TRUSTCART_PASSWORD production
 ```
 
-(ไม่บังคับ) เปิด OAuth 2.0 สำหรับ API client — สร้างค่าลับแบบสุ่มก่อน แล้วพิมพ์เมื่อ CLI ถาม:
-
-```bash
-python -c "import secrets;print('shopee-sandbox-demo:'+secrets.token_urlsafe(24)+':verifications:write reports:read')"
-```
-
-```bash
-npx --yes vercel@latest env add TRUSTCART_CLIENTS production
-```
-
-```bash
-npx --yes vercel@latest env add TRUSTCART_TOKEN_KEY production
-```
-
-ทดสอบ (แทนค่า client_id/secret ของคุณ):
-
-```bash
-curl -s -X POST https://trustcart-bluescreen.vercel.app/oauth/token -d grant_type=client_credentials -d client_id=$CLIENT_ID -d client_secret=$CLIENT_SECRET
-```
+สำหรับ Marketplace API ที่ใช้ข้อมูลจำลอง ให้ตั้ง `TRUSTCART_MARKETPLACE_CLIENTS` ในการตั้งค่าความลับของ environment เป้าหมาย ยืนยันตัวตน client ด้วย HTTP Basic และส่ง `grant_type=client_credentials` แบบ URL-encoded ไปที่ `/oauth/token` โทเคนมีอายุ 900 วินาที ดูสิทธิ์ที่รองรับและการตั้งค่ารหัสผ่านของแต่ละบทบาทใน [คู่มือ API ปัจจุบัน](README.md#marketplace-api-clients)
 
 (ไม่บังคับ) เปิด AI:
 
@@ -314,7 +294,7 @@ TrustCart_BlueScreen/
 │   │   ├── agent.py          # Verification agent: R-01..R-05, policy, hash-chained trace
 │   │   ├── llm.py            # OpenAI extraction + translation (optional)
 │   │   ├── gate.py           # Password gate + bearer-token routing
-│   │   ├── oauth.py          # OAuth 2.0 client credentials (JWT, TTL, scopes)
+│   │   ├── marketplace_auth.py  # OAuth client credentials และโทเคนจำกัดสิทธิ์
 │   │   └── registry.py       # Registry Adapter (mock default, swappable)
 │   └── data/                 # Synthetic registry, listings, claim rules (TH/EN pairs)
 ├── frontend/index.html       # Shopper / Seller / Reviewer / API plugin UI (TH/EN)

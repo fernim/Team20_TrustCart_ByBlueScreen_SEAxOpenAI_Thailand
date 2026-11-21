@@ -7,9 +7,10 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
+from typing_extensions import Annotated
 
-from .verification import Listing, Status, Trace, TraceEntry, evaluate_rules
+from .verification import Listing, Status, Trace, TraceEntry, evaluate_rules, verification_scope
 
 _POLICY_BYTES = (Path(__file__).resolve().parent.parent / "data" / "risk_policy.json").read_bytes()
 RISK_POLICY = json.loads(_POLICY_BYTES)
@@ -24,11 +25,21 @@ class Revision(BaseModel):
 
 class Review(Revision):
     decision: Literal["approve", "deny"]
-    note: str = Field(min_length=1, max_length=1000)
+    note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
 
 
 class Comparison(BaseModel):
     ids: list[UUID] = Field(min_length=1, max_length=10)
+
+
+def denial_basis(result):
+    if result["status"] == "DENIED":
+        return result["reason"]
+    if result["status"] == "PENDING" and any(
+        rule["rule"] == "R-01" and rule["result"] == "fail" for rule in result["rule_results"]
+    ):
+        return "reviewer_confirmed_identity_mismatch"
+    raise HTTPException(409, "A confirmed rule failure is required for denial. Request evidence if unresolved.")
 
 
 def initialize_store(connection) -> None:
@@ -150,7 +161,7 @@ def reevaluate(connection, result, payload, trace, extraction_client):
     trace.add("decision", reason)
     trace.add("review_routing", "required" if confidence < 0.75 else "clear")
     result.update(status=status.value, reason=reason, confidence=confidence,
-        human_review_required=confidence < 0.75, rule_results=rules,
+        human_review_required=confidence < 0.75, rule_results=rules, verification_scope=verification_scope(rules),
         trace=[entry.model_dump() for entry in trace.entries], chain_hash=trace.entries[-1].chain_hash)
 
 

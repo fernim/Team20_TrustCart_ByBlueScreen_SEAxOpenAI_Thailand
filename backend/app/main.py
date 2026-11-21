@@ -20,7 +20,7 @@ from .verification import (
     evaluate_rules as evaluate_rules,
 )
 from .workflow import initialize_store
-from . import security, connected_store
+from . import security, connected_store, marketplace_auth
 from .api import connected, submissions, documents, assessment, agency_queue
 
 
@@ -41,6 +41,7 @@ def create_app(database: Path) -> FastAPI:
     )
     service.middleware("http")(security.access_guard)
     service.include_router(security.router)
+    service.include_router(marketplace_auth.router)
     service.include_router(connected.router)
     service.include_router(agency_queue.router)
     service.include_router(submissions.router)

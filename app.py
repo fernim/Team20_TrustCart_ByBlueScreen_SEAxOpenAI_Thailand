@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from backend.app import database as store
 from backend.app.demo_access import allows_browser_write
 from backend.app.main import Listing, Status, Trace, create_app, evaluate_rules
+from backend.app.marketplace_auth import TOKEN_PATH
 from backend.app.registry import demo_listings
 from backend.app.workflow import Revision, audit, load
 
@@ -85,9 +86,7 @@ def create_demo_app(database: Path):
         listing_schema = schemas.get("Listing", schemas.get("Listing-Input"))
         listing_schema["example"] = DEMO_EXAMPLE
         schemas.setdefault("Listing", listing_schema)
-        schema["components"]["securitySchemes"] = {
-            "DemoPassword": {"type": "http", "scheme": "basic"}
-        }
+        schema["components"].setdefault("securitySchemes", {})["DemoPassword"] = {"type": "http", "scheme": "basic"}
         schema["security"] = [{"DemoPassword": []}]
         return schema
 
@@ -103,6 +102,8 @@ def create_demo_app(database: Path):
         # The connected storefront uses role sessions. Retain Basic only for legacy tools.
         path = request.url.path
         if request.method == "GET" and path == "/version":
+            return await call_next(request)
+        if request.method == "POST" and path == TOKEN_PATH:
             return await call_next(request)
         if request.cookies.get("trustcart_session") or path in ("/", "/login", "/seller", "/reviewer", "/agency") or path.startswith(("/agency/", "/static/", "/products/", "/v1/auth/", "/v1/catalog/", "/v1/seller/", "/v1/reviewer/", "/v1/documents/")):
             return await call_next(request)

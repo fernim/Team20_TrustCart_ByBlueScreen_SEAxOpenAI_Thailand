@@ -9,7 +9,7 @@ from .. import database as store, registry
 from ..connected_store import transaction, read_submission, save_submission
 from ..security import require
 from ..verification import Listing, Status
-from ..workflow import continue_trace
+from ..workflow import continue_trace, denial_basis
 from ..document_assessment import assess_documents, validate_assessment, Fields
 from ..demo_cases import replay
 from .connected import require_plan
@@ -65,7 +65,7 @@ def evaluate(result, assessment, client, confirmed=None):
         )
         declaration = primary["fields"] if primary else None
     status, reason, rules = evaluate_rules(
-        Listing(**result["listing"]), trace, client, declarations=declaration
+        Listing(**result["listing"]), trace, client, declarations=declaration, require_listing_copy=True
     )
     uncertainty = False
     if confirmed is None:
@@ -265,6 +265,7 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
             raise HTTPException(
                 409, "Wait for the active assessment or its retry timeout"
             )
+        review_event = {"actor": user["id"], **payload.model_dump()}
         if payload.decision == "approve":
             if any(
                 r["rule"] == "R-03" and r["result"] == "fail"
@@ -301,11 +302,7 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
                 )
         elif payload.decision == "deny":
             evaluate(result, result.get("assessment"), None)
-            if result["status"] == "UNKNOWN":
-                raise HTTPException(
-                    409,
-                    "Unavailable registry information cannot establish a denial; request evidence instead",
-                )
+            review_event["denial_basis"] = denial_basis(result)
             result.update(
                 status="DENIED",
                 stage="COMPLETED",
@@ -321,6 +318,6 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
             )
         result["reason"] = "reviewer_" + payload.decision
         result["review_note"] = payload.note.strip()
-        event(result, "human_review", {"actor": user["id"], **payload.model_dump()})
+        event(result, "human_review", review_event)
         save_submission(connection, result)
         return result

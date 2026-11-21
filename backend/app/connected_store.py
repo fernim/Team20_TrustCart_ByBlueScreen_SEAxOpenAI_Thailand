@@ -23,6 +23,7 @@ def initialize(connection):
         "tc_shops": "id TEXT PRIMARY KEY, name TEXT NOT NULL",
         "tc_accounts": "id TEXT PRIMARY KEY, role TEXT NOT NULL, shop_id TEXT REFERENCES tc_shops(id)",
         "tc_sessions": "id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES tc_accounts(id), csrf TEXT NOT NULL, expires_at REAL NOT NULL",
+        "tc_marketplace_tokens": "id TEXT PRIMARY KEY, client_id TEXT NOT NULL, shop_id TEXT NOT NULL REFERENCES tc_shops(id), scope TEXT NOT NULL, expires_at BIGINT NOT NULL",
         "tc_plans": "id TEXT PRIMARY KEY REFERENCES tc_shops(id), active_until TEXT NOT NULL",
         "tc_owners": "id TEXT PRIMARY KEY REFERENCES products(id), shop_id TEXT NOT NULL REFERENCES tc_shops(id), active_submission TEXT",
         "tc_submissions": "id TEXT PRIMARY KEY, product_id TEXT NOT NULL REFERENCES products(id), shop_id TEXT NOT NULL REFERENCES tc_shops(id), revision INTEGER NOT NULL, result TEXT NOT NULL, created_at TEXT NOT NULL",
@@ -35,6 +36,7 @@ def initialize(connection):
         ("tc_submissions", "shop_id, product_id"),
         ("tc_documents", "product_id"),
         ("tc_sessions", "account_id"),
+        ("tc_marketplace_tokens", "expires_at"),
     ]:
         connection.execute(
             f"CREATE INDEX IF NOT EXISTS {table}_lookup ON {table} ({columns})"

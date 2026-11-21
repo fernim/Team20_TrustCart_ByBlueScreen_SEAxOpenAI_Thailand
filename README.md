@@ -120,7 +120,7 @@ See [the English walkthrough](DEMO.en.md) or [คู่มือเดโมภ�
 
 - **Buyer:** `/` and `/products/{id}` show published product images, price and stock. Only an eligible current approval has a clickable badge with a short explanation. Buyers receive no private documents, AI findings or audit hashes.
 - **Seller:** `/seller` shows only that shop's products. Publication is independent of verification. The demo ฿299/month plan enables unlimited verification submissions without taking payment. Each submission needs a label and registration document, plus an advertising permit when required. Sellers see the stage, blockers, reviewer instructions and prior revisions, and can submit more documents for a new review.
-- **Agency:** `/agency` replaces the Reviewer workspace, with Thai/English language switching, Shopee/Lazada source filters, action-based work queues, result filters and product/reference search. `/agency/submissions/{id}` opens a dedicated product report; `/reviewer` redirects to Agency. Staff choose Start review before recording a decision. It displays originals, grounded document findings, rule failures and the audit trace. Approve, Deny and Request documents require a reason and the current chain hash. Approval requires explicit inspection confirmations; prohibited claims and registry failures cannot be overridden.
+- **Agency:** `/agency` replaces the Reviewer workspace, with Thai/English language switching, Shopee/Lazada source filters, action-based work queues, result filters and product/reference search. `/agency/submissions/{id}` opens a dedicated product report. Staff choose Start review before recording a decision. Approve, Deny and Request documents require a reason and the current chain hash. Approval requires confirmed documents and screened listing copy. Denial requires a conclusive rule failure or a reviewer-confirmed registry identity mismatch. The audit records the denial basis. An unavailable registry remains `UNKNOWN` and needs review.
 
 Editing any product invalidates its current badge and supersedes its submission. Historical evidence and traces remain available privately. Late AI results and stale reviewer decisions cannot approve the edited product. The Agency workspace uses the existing reviewer account and role; legacy APIs and `/workspace` remain reviewer-only diagnostic surfaces.
 
@@ -136,9 +136,15 @@ Editing any product invalidates its current badge and supersedes its submission.
 
 Startup adds `tc_*` tables without deleting existing records. Existing catalog products are assigned to the first demo shop but do not inherit a badge from legacy verification. Submissions retain immutable listing snapshots and private document revisions. Evidence bytes are held in SQLite locally or BYTEA when `TRUSTCART_DATABASE_URL` selects the existing PostgreSQL adapter. Files are limited to PDF/PNG/JPEG/WebP, 2 MiB each, five active documents per submission and ten unencrypted PDF pages.
 
-This change is local and has not been deployed. Hosted PostgreSQL and live OpenAI calls require separate environment validation. Serverless SQLite is ephemeral; use persistent storage for a shared hosted demo. Demo subscription activation is not billing. Production identity, marketplace OAuth, real registry integration, payment collection and live marketplace feeds remain separate work. See [Agency workflow details](AGENCY.md).
+Local checks use synthetic registry data and replay documents. Hosted PostgreSQL and live OpenAI calls require separate environment validation. Serverless SQLite is ephemeral. Demo subscription activation does not collect payment. See [Agency workflow details](AGENCY.md).
 
 The optional `app:app` hosting entrypoint uses the same role sessions. Its old shared Basic gate (`TRUSTCART_DEMO_PASSWORD`) remains for legacy diagnostic access; it does not replace reviewer authorization. New role screens and the public storefront do not use that shared password.
+
+### Marketplace API clients
+
+Set `TRUSTCART_MARKETPLACE_CLIENTS` in the process environment to enable client credentials. Its JSON object is keyed by client ID and each entry contains `secret`, `shop_id` and a `scopes` array containing `seller:read`, `seller:write`, or both. Bind each client to an existing shop. Keep the configuration in the deployment secret store. Exchange HTTP Basic client credentials at `POST /oauth/token` with the URL-encoded `grant_type=client_credentials` and optional `scope`. Send the returned 15-minute access token as `Authorization: Bearer <access_token>` over HTTPS.
+
+Bearer tokens access the client's shop products, submissions, submission history and allowed documents. Subscription activation, reviewer operations and legacy diagnostics require a browser role session. If marketplace configuration is present, call `POST /v1/auth/login` with `username` and `password` using the corresponding `TRUSTCART_BUYER_PASSWORD`, `TRUSTCART_SELLER1_PASSWORD`, `TRUSTCART_SELLER2_PASSWORD` or `TRUSTCART_REVIEWER_PASSWORD` environment setting. Old passwordless role sessions are rejected in that environment, and new sessions still require CSRF for writes. Keep the passwordless demo and the client environment on separate databases.
 
 ## Tests
 
@@ -151,7 +157,7 @@ npm run test:browser
 
 Browser tests run on port 8768 with a temporary database, password-free role selection and desktop/mobile viewports. They cover public shopping and reviews, seller media and publication, matching document approval, prohibited-claim denial, reviewer requests, resubmission history and badge invalidation. Python tests separately cover ownership, CSRF, stale hashes, late AI results, replay mismatches, ungrounded extraction, file limits and outages. Legacy policy tests isolate authentication in the test harness; `test_connected_*` tests exercise the real guard. Older seller/reviewer DOM harnesses remain regression coverage for the legacy components; connected browser tests exercise the scripts served by the current role pages.
 
-For explicitly authorized hosted testing, set `TRUSTCART_BASE_URL`. Hosted browser tests create persistent demo products, so use a disposable demo environment.
+For hosted testing, confirm the candidate commit using `GET /version`, then set `TRUSTCART_BASE_URL` to an authorized disposable demo deployment with shared PostgreSQL. The suite creates persistent synthetic products, submissions and reviews. Hosted browser traces are disabled.
 
 ## Legacy L1 diagnostic demo (`/workspace`, reviewer only)
 
@@ -201,7 +207,9 @@ FastAPI registers the connected workflow routers alongside the legacy diagnostic
 
 Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
 
-Once a reviewer has recorded a decision, seller evidence uploads and rechecks on that verification return `409`. Submit a fresh verification for updated evidence or an edited listing. A reviewer may record a new decision using the latest audit hash.
+Legacy verification responses, reports and widgets expose `verification_scope`. `identity_category` means R-03 was skipped. `listing` means R-03 checked the advertising copy. Both scopes use the demo's synthetic registry. The connected catalog badge requires a current approval with meaningful copy and an R-03 pass. Swagger describes the success response fields for evidence, recheck, review, reports, widgets and comparison.
+
+Once a reviewer has recorded a decision, seller evidence uploads and rechecks on that verification return `409`. Submit a fresh verification for updated evidence or an edited listing. A reviewer may record a new supported decision using the latest audit hash.
 
 Evidence uploads accept an optional comma-separated `standards` declaration. ISO 9001 alone cannot satisfy R-05; ISO 22000 or GMP can satisfy the standards comparison when identity checks also pass. This compares declarations, not certificate authenticity. A file digest already stored for another verification adds a `duplicate_evidence` trace event and requires human review at confidence 0.60; rechecks retain unresolved duplicate warnings.
 
@@ -223,7 +231,7 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 141 Python tests, 114 Node component tests, and 36 desktop/mobile browser tests pass locally, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration. Reviewer access, completed-review protection, cross-origin write rejection, and audit simulation are covered; see [API judge Q&A](docs/JUDGE_QA.md).
+Local tests cover the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation and audit checks. Risk weights are illustrative and need calibration. See [API judge Q&A](docs/JUDGE_QA.md) for reviewer access, completed-review protection, cross-origin write rejection and audit simulation.
 
 ## Dataset and release update
 
@@ -233,7 +241,7 @@ Expired or revoked fixtures are denied. Permit conflicts and required missing pe
 
 GET /v1/agency/summary aggregates saved synthetic verifications by status, failing rule, category, day, claim phrase and audit validity. This remains a legacy diagnostic aggregate without seller identity fields. The current Agency workspace uses `/v1/reviewer/queue` over current shop-owned submissions instead.
 
-The release retains the existing router split, SQLite evidence migration compatibility, evidence-backed rechecks, ThomazAgents.md, and competition declarations. Python 3.9 pytest CI runs on pull requests and pushes to main with read-only repository permissions and no live credentials. Live AI, official registry integration, document authenticity/COA validation and marketplace OAuth remain integration work.
+The release retains the existing router split, SQLite evidence migration compatibility, evidence-backed rechecks, ThomazAgents.md, and competition declarations. Python 3.9 pytest CI runs on pull requests and pushes to main with read-only repository permissions and no live credentials. This project uses the synthetic registry for API client and storefront flows. Live AI activation, document authenticity/COA validation and a real marketplace rollout are separate work.
 
 Two normal, unverified reference listings now use short title excerpts from Shopee (Neocell Super Collagen + C and Deva C Vitamin C). Their descriptions are explicitly labeled summaries of visible pack-size information, because full seller descriptions could not be retrieved. Source links are available in product details. They carry no verified badge. Three additional, explicitly labeled copy-correction examples reuse matching market photos with test overclaims; those phrases are not attributed to the source sellers.
 
@@ -287,7 +295,7 @@ MoPH 448 ingredient ceilings (B11) remain Roadmap; no ingredient-ceiling check i
 
 Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
 
-On Vercel, a Supabase Marketplace resource supplies `SUPABASE_URL` and `POSTGRES_URL` for each connected environment. TrustCart reads the managed `POSTGRES_URL` when `SUPABASE_URL` is present and no explicit `TRUSTCART_DATABASE_URL` is set. Connect the same resource to Preview and Production for this synthetic demo. For manual configuration, use the Supabase **Transaction pooler** URI (port `6543`) with `sslmode=require` as the secret value of `TRUSTCART_DATABASE_URL`. The adapter disables automatic prepared statements and selects the `trustcart` schema for each transaction. Verify on a new deployment that a synthetic case saved in the workspace is visible on its marketplace product.
+On Vercel, a Supabase Marketplace resource supplies `SUPABASE_URL` and `POSTGRES_URL` for each connected environment. TrustCart reads the managed `POSTGRES_URL` when `SUPABASE_URL` is present and no explicit `TRUSTCART_DATABASE_URL` is set. Use a separate database for disposable Preview testing because the tests create persistent synthetic cases. For manual configuration, use the Supabase **Transaction pooler** URI (port `6543`) with `sslmode=require` as the secret value of `TRUSTCART_DATABASE_URL`. The adapter disables automatic prepared statements and selects the `trustcart` schema for each transaction. Verify on a new deployment that a synthetic case saved in the workspace is visible on its marketplace product.
 
 PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
 
@@ -302,7 +310,7 @@ The seller list displays each saved product’s image, price, stock and verifica
 
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Latest local validation: 141 Python tests, 114 Node component tests, and 36 desktop/mobile browser tests passed with `.venv/Scripts/python -m pytest -q`, `npm test`, and `npm run test:browser`. These checks use isolated SQLite, synthetic fixtures, and a fake database driver. A separate local PostgreSQL smoke test verified that two app instances share a product, evidence, rechecks, and reviewer decisions. Hosted Supabase connectivity still needs verification. The historical hosted desktop/mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. Hosted retesting remains the Vercel team member's task and was not rerun for this gap review. GitHub CI runs both the API and frontend suites.
+Local validation passed 193 Python tests, 122 Node component tests and 34 desktop/mobile browser checks. Two app instances backed by disposable PostgreSQL shared sessions, documents, reviewer decisions and OAuth tokens. The smoke checks also covered stale hashes, audit validity, buyer badge propagation and seller token isolation from reviewer routes. Hosted Supabase persistence still needs verification on a current disposable deployment. The historical hosted SQLite run passed 16 of 20 checks, with four saved-product continuity failures.
 
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
 

@@ -30,11 +30,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 
 ### P0 (before the demo)
 
-- [ ] **Deploy the latest `main` to production (B12).** A Vercel project member does this; the repository has no `.vercel` link or CLI setup.
-  1. In Vercel → Settings → Environment Variables (Production), set the PostgreSQL connection variable that `backend/app/database.py` reads, plus `TRUSTCART_DEMO_PASSWORD`. Never put either value in the repository.
-  2. In Deployments, confirm that Production shows commit `224c22a` or later. If it does not, redeploy from `main`.
-  3. Rerun the hosted desktop and mobile browser checks. Target 20/20, which closes B6.
-  4. Update the hosted result in the README (line 205) and in this file.
+- [ ] **Verify a current Vercel deployment (B12).** Use an authorized disposable deployment with shared PostgreSQL. Compare its `/version` response with the candidate commit before the desktop and mobile run, then record the results here and in README.
 - [x] **Add `GET /version` without authentication (B12).** Returns only `{"commit": VERCEL_GIT_COMMIT_SHA or "local"}`. Four regression cases cover configured/unset SHA and password, the exact public route, and continued protection of other routes. Deployment remains assigned to the Vercel team member.
 
 - [ ] **Hosted continuity (B6).** The last hosted run failed 4 of 20 saved-product continuity checks. Deploy PostgreSQL storage, then rerun the hosted desktop and mobile checks.
@@ -53,7 +49,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 
 ## P3 (only if time remains)
 
-- [ ] T13 `suggest-copy`; OAuth client credentials (Roadmap is enough for the pitch); `compare`
+- [x] T13 `suggest-copy`, `compare`, and opt-in OAuth client credentials for the synthetic, shop-scoped seller API. Hosted activation and verification remain open.
 
 ## Docs and submission (finish by 16:45)
 
@@ -78,7 +74,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 
 ## Completion update
 
-The core demo loop, reports, widgets, Thai claim regression fixes, registry permit checks, and three UI workspaces are implemented. The gap-fix validation passes 137 Python, 114 Node, and 32 local browser tests. The copy-template and comparison endpoints are also implemented. T6 is tested using fake clients; live OpenAI transfer remains disabled pending approval and credentials. OAuth is roadmap work.
+The core demo loop, reports, widgets, Thai claim regression fixes, registry permit checks, and three UI workspaces are implemented. Marketplace client credentials, explicit verification scope, supported reviewer denials and typed workflow responses are implemented locally. The registry remains synthetic. Live OpenAI transfer requires approval and credentials.
 
 Local browser testing completed the L1 evidence-to-review loop and tamper demonstration. The reset control resets the form and retains audit history. Evidence files are hashed, with declared fields compared against the synthetic registry. Hosted storage remains temporary.
 
