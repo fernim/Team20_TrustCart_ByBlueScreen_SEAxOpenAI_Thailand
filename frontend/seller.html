@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustCart · Seller Centre</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/tokens.css" />
+    <link rel="stylesheet" href="/static/marketplace-ui.css" />
+    <script defer src="/static/verification-view.js"></script>
+    <script defer src="/static/seller.js"></script>
+  </head>
+  <body class="seller-page">
+<nav class="integration-nav" aria-label="Verification tools"><a href="/workspace">Evidence, review and agency workspace</a><span>TrustCart · Synthetic data</span><a href="/docs">API docs</a></nav>
+    <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
+    <nav class="demo-views" aria-label="Views">
+      <a href="/">หน้าลูกค้า / Customer</a><span aria-current="page">หน้าผู้ขาย / Seller</span
+      ><a href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
+    </nav>
+    <header class="reviewer-brandbar">
+      <div class="container">
+        <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
+        ><span class="workspace-title">Seller Centre <small>ศูนย์ผู้ขาย</small></span>
+      </div>
+    </header>
+    <div class="seller-layout">
+      <aside class="seller-sidebar">
+        <div class="workspace-profile"><span class="shop-avatar">L</span><div><strong>LumaVale</strong><small>ร้านค้าสาธิต · Demo shop</small></div></div><h3>จัดการสินค้า</h3>
+        <a aria-current="location" href="#seller-form">＋ เพิ่มสินค้าใหม่</a
+        ><a href="#seller-products">สินค้าของฉัน</a
+        ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a>
+        <p class="dialog-note">
+          TrustCart Seller Centre<br />จัดการข้อมูลสินค้า<br />ดูสถานะการตรวจสอบ
+        </p>
+      </aside>
+      <main id="main" class="seller-main">
+        <p class="seller-breadcrumb">สินค้าของฉัน / เพิ่มสินค้าใหม่</p>
+        <h1>เพิ่มสินค้าใหม่</h1>
+        <button type="button" id="new-product" class="text-button">
+          ＋ เริ่มรายการใหม่
+        </button>
+        <p class="dialog-note">
+          บันทึกสินค้าและตรวจสอบก่อนเผยแพร่ · ผลจาก API เดียวกับหน้าผู้ตรวจสอบ
+        </p>
+        <div class="workspace-notice"><strong>ตรวจสอบข้อมูลก่อนเผยแพร่</strong><span>ใช้ทะเบียนจำลองสำหรับการสาธิต · ไม่ใช่การรับรองอย่างเป็นทางการ</span></div><form id="seller-form">
+          <section class="seller-section">
+            <h2><span class="section-number">01</span> ข้อมูลทั่วไป</h2>
+            <label for="listing-images">รูปสินค้า</label>
+            <input id="listing-images" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-describedby="image-help" />
+            <p id="image-help" class="dialog-note">สูงสุด 5 รูป · PNG, JPEG, WebP · ไม่เกิน 2 MB ต่อรูป · รูปแรกเป็นรูปหลัก</p>
+            <div id="image-previews" class="image-previews" aria-live="polite"></div>
+            <label for="listing-title">ชื่อสินค้า <span>*</span></label
+            ><input
+              id="listing-title"
+              required
+              maxlength="1000"
+              value="ลูมาเวล วิตามินซี"
+            /><label for="listing-description">รายละเอียดสินค้า</label
+            ><textarea id="listing-description" rows="6" maxlength="6000">
+ผลิตภัณฑ์เสริมอาหาร วิตามินซี ชนิดเม็ด</textarea
+            ><label for="listing-category">หมวดหมู่ <span>*</span></label
+            ><select id="listing-category">
+              <option value="supplement">ผลิตภัณฑ์เสริมอาหาร</option>
+              <option value="cosmetic">เครื่องสำอาง</option>
+              <option value="other">หมวดหมู่อื่น / ยังไม่รองรับ</option>
+            </select>
+          </section>
+          <section class="seller-section">
+            <h2><span class="section-number">02</span> ข้อมูลสำหรับตรวจสอบทะเบียน</h2>
+            <p class="dialog-note">
+              กรอกเลขอ้างอิง ชื่อสินค้า และผู้ถือใบอนุญาตให้ตรงกับเอกสาร
+            </p>
+            <label for="registration-reference"
+              >เลขอ้างอิงทะเบียน <span>*</span></label
+            ><input
+              id="registration-reference"
+              value="DEMO-001"
+              required
+              maxlength="200"
+            /><label for="registered-name"
+              >ชื่อสินค้าตามทะเบียน <span>*</span></label
+            ><input
+              id="registered-name"
+              value="Demo Supplement"
+              required
+              maxlength="200"
+            /><label for="license-holder">ผู้ถือใบอนุญาต <span>*</span></label
+            ><input
+              id="license-holder"
+              value="Demo Brand"
+              required
+              maxlength="200"
+            />
+          </section>
+          <section class="seller-section">
+            <h2><span class="section-number">03</span> ข้อมูลการขาย</h2>
+            <label for="listing-price">ราคา (บาท) <span>*</span></label>
+            <input id="listing-price" type="number" min="0" max="99999999.99" step="0.01" value="199" required />
+            <label for="listing-stock">จำนวนสินค้าคงเหลือ <span>*</span></label>
+            <input id="listing-stock" type="number" min="0" max="10000000" step="1" value="0" required />
+          </section>
+          <div class="seller-actions">
+            <button id="save-draft" type="button" class="load-more">
+              บันทึกแบบร่างในเครื่อง</button
+            ><button id="submit-listing" class="primary" type="submit">
+              บันทึกและตรวจสอบสินค้า
+            </button>
+          </div>
+        </form>
+        <p id="seller-feedback" role="status" aria-live="polite"></p>
+        <section id="seller-products" class="seller-section">
+          <h2>สินค้าของฉัน</h2>
+          <p class="dialog-note">
+            รายงานในรอบการใช้งานนี้ รวมรายการจากหน้าลูกค้า
+            เลือกเพื่อดูสถานะล่าสุด
+          </p>
+          <div id="seller-product-list"></div>
+        </section>
+        <article id="seller-result" aria-live="polite"></article>
+      </main>
+    </div>
+  <p class="dialog-note" style="text-align:center"><a href="/workspace">TrustCart evidence, review and agency workspace</a> · Synthetic data</p>
+</body>
+</html>

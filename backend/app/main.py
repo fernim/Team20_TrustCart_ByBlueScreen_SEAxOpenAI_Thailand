@@ -1,10 +1,13 @@
 import sqlite3
+import mimetypes
 from contextlib import asynccontextmanager, closing
 from pathlib import Path
 
 from fastapi import FastAPI
 
-from .api import agency, reports, reviewer, seller, verifications
+from .api import agency, products, reports, reviewer, seller, verifications
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from .llm import openai_claim_client
 from .verification import (
     Listing as Listing,
@@ -24,6 +27,7 @@ def create_app(database: Path) -> FastAPI:
         with closing(sqlite3.connect(database)) as connection, connection:
             connection.execute("BEGIN IMMEDIATE")
             initialize_store(connection)
+            connection.execute("CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, version INTEGER NOT NULL, result TEXT NOT NULL)")
         yield
 
     service = FastAPI(title="TrustCart Baseline Lead", version="0.1.0", lifespan=lifespan)
@@ -34,6 +38,22 @@ def create_app(database: Path) -> FastAPI:
     service.include_router(reviewer.router)
     service.include_router(reports.router)
     service.include_router(agency.router)
+    service.include_router(products.router)
+    frontend = Path(__file__).resolve().parents[2] / "frontend"
+    mimetypes.add_type("image/webp", ".webp")
+    service.mount("/static", StaticFiles(directory=frontend), name="static")
+
+    @service.get("/", include_in_schema=False)
+    def storefront():
+        return FileResponse(frontend / "index.html")
+
+    @service.get("/seller", include_in_schema=False)
+    def seller_page():
+        return FileResponse(frontend / "seller.html")
+
+    @service.get("/reviewer", include_in_schema=False)
+    def reviewer_page():
+        return FileResponse(frontend / "reviewer.html")
     return service
 
 
