@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from backend.app.main import create_app
 
-PAYLOAD=dict(registration_reference='DEMO-001',product_name='Vitamin C Supplement',license_holder='LumaVale',category='supplement',title='Seller Vitamin C',description='Vitamin C tablets.')
+PAYLOAD=dict(price='199.00',registration_reference='DEMO-001',product_name='Vitamin C Supplement',license_holder='LumaVale',category='supplement',title='Seller Vitamin C',description='Vitamin C tablets.')
 
 def test_product_create_edit_latest_result_and_history_persist(tmp_path):
  db=tmp_path/'products.sqlite3'

@@ -122,7 +122,7 @@ test("seller edits the same product ID with its current version", async (t) => {
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const listingFixture = {
-  title: 'Saved title', description: 'Saved description', category: 'cosmetic',
+  price:'199.00', stock:3, images:[], title: 'Saved title', description: 'Saved description', category: 'cosmetic',
   registration_reference: 'DEMO-001', product_name: 'Saved name', license_holder: 'Saved holder',
 };
 const productFixture = { id: 'seller-1', version: 3, listing: listingFixture,
@@ -328,4 +328,39 @@ test('seller product list exposes customer links only for stable products, not h
   p.$('.seller-product-row').click();
   await settle();
   assert.equal(p.$('#view-product').getAttribute('href'),'/products/seller-1');
+});
+
+test('seller product summaries show saved image price stock status and distinct edit/view actions',async(t)=>{
+  const listing={...listingFixture,images:['data:image/png;base64,aA=='],price:'249.50',stock:7};
+  const record={...productFixture,listing,verification:{...result,listing}};
+  const p=seller(t,async(url,options)=>({ok:true,json:async()=>options?.body
+    ? {...record,version:4,listing:JSON.parse(options.body),verification:{...result,listing:JSON.parse(options.body)}}
+    : url==='/v1/products'?[record]:record}));
+  await settle();
+  const row=p.$('.seller-product-entry');
+  assert.equal(row.querySelector('img').getAttribute('src'),listing.images[0]);
+  assert.match(row.querySelector('.seller-item-price').textContent,/249.50/);
+  assert.match(row.querySelector('.seller-item-stock').textContent,/7/);
+  assert.match(row.querySelector('.seller-item-status').textContent,/DENIED/);
+  assert.match(row.querySelector('.seller-product-row').textContent,/Edit/);
+  assert.match(row.querySelector('.seller-view-product').textContent,/View product/);
+  row.querySelector('.seller-product-row').click(); await settle();
+  p.$('#listing-price').value='149.00'; p.$('#listing-stock').value='2';
+  await p.submit();
+  assert.match(p.$('.seller-item-price').textContent,/149.00/);
+  assert.match(p.$('.seller-item-stock').textContent,/2/);
+});
+
+test('returning to seller refreshes saved summaries without overwriting unsaved form edits',async(t)=>{
+  const record={...productFixture,listing:{...listingFixture,price:'199.00',stock:3}};
+  const p=seller(t,async()=>({ok:true,json:async()=>[record]}));
+  await settle();
+  p.$('#listing-title').value='Unsaved form title';
+  p.$('#listing-title').dispatchEvent(new p.dom.window.Event('input',{bubbles:true}));
+  record.listing.price='99.00'; record.listing.stock=1;
+  p.dom.window.dispatchEvent(new p.dom.window.Event('focus'));
+  await settle();
+  assert.match(p.$('.seller-item-price').textContent,/99.00/);
+  assert.match(p.$('.seller-item-stock').textContent,/1/);
+  assert.equal(p.$('#listing-title').value,'Unsaved form title');
 });

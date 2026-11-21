@@ -192,30 +192,14 @@ test("language changes update navigation, search hints, categories, product deta
   assert.equal(p.$("#catalog-title").textContent, "สินค้าแนะนำประจำวัน");
 });
 
-test("product checkmark uses the backend result and never marks an account", async (t) => {
-  const p = page(t, (window) => {
-    window.fetch = async (url, options) => {
-      assert.equal(url, "/v1/verifications");
-      assert.equal(JSON.parse(options.body).registration_reference, "DEMO-001");
-      return {
-        ok: true,
-        json: async () => ({
-          status: "APPROVED",
-          confidence: 1,
-          human_review_required: false,
-          registry_source: "synthetic",
-          chain_hash: "demo-chain",
-        }),
-      };
-    };
-  });
-  await new Promise((resolve) => setImmediate(resolve));
-  p.$('[data-category="1"]').click();
-  assert.equal(p.$$(".product-card .product-verified").length, 1);
-  assert.equal(p.$(".utility .product-verified"), null);
-  p.$(".product-card").click();
-  assert.equal(p.$("#explain-verification"), null);
-  assert.equal(p.$("#product-title .product-verified").tagName, "BUTTON");
+test("product checkmark uses the saved backend result and never marks an account", async (t) => {
+  const p=page(t,w=>{w.fetch=async(url)=>url==="/v1/products"?{ok:true,json:async()=>[{id:"approved-demo",listing:{title:"Saved demo",category:"supplement",price:"199",stock:3},verification:reportFixture}]}:{ok:false};});
+  await new Promise(resolve=>setImmediate(resolve));
+  submit(p,"Saved demo");
+  assert.equal(p.$$(".product-card .product-verified").length,1);
+  assert.equal(p.$(".utility .product-verified"),null);
+  p.$(".product-card .product-open").click();
+  assert.equal(p.$("#product-title .product-verified").tagName,"BUTTON");
 });
 
 for (const result of [
@@ -284,7 +268,7 @@ const reportFixture = {
 
 test("customer badge opens a short status without exposing the reviewer report", async (t) => {
   const p = page(t, (window) => {
-    window.fetch = async () => ({ ok: true, json: async () => reportFixture });
+    window.fetch = async (url) => url === "/v1/products" ? {ok:true,json:async()=>[{id:"customer-badge",listing:{title:"Saved demo",category:"supplement",price:"199",stock:3},verification:reportFixture}]} : {ok:false};
   });
   await new Promise((resolve) => setImmediate(resolve));
   const badge = p.$(".product-card .product-verified");
@@ -294,7 +278,7 @@ test("customer badge opens a short status without exposing the reviewer report",
   assert.equal(p.$("#product-status-dialog").open, true);
   assert.equal(p.$("#product-page").hidden, true);
   p.$("#product-status-dialog [data-close]").click();
-  p.$('[data-product="14"]').click();
+  p.$('[data-product="customer-badge"]').click();
   assert.equal(p.$("#verification-dialog"), null);
   assert.equal(p.$("#verification-report"), null);
   assert.equal(p.$("#explain-verification"), null);
@@ -349,7 +333,7 @@ test("overclaim listings submit their actual copy and never show a customer stat
     };
   });
   await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(submitted.length, 4);
+  assert.equal(submitted.length, 3);
   assert.equal(
     submitted.filter(
       (item) =>
@@ -366,7 +350,7 @@ test("overclaim listings submit their actual copy and never show a customer stat
   assert.equal(
     JSON.parse(p.window.sessionStorage.getItem("trustcart-demo-reports"))
       .length,
-    4,
+    3,
   );
 });
 
@@ -402,6 +386,7 @@ test("customer catalog keeps one seller product with its newest content and remo
                 title,
                 description: "Seller description",
                 category: "supplement",
+                price: "199.00", stock: 2,
               },
               verification: { ...reportFixture, status },
             },
@@ -528,7 +513,7 @@ test('dialog backdrop closes only for a click outside its bounds', (t) => {
 
 test('seller catalog storage refresh removes deleted listings and shows the missing product state', async (t) => {
   let records = [{ id: 'seller-storage', listing: { title: '<img src=x>', description: '<script>bad</script>',
-    category: 'cosmetic' }, verification: reportFixture }];
+    category: 'cosmetic',price:'199.00',stock:null }, verification: reportFixture }];
   const p = page(t, (window) => {
     window.fetch = async (url) => url === '/v1/products'
       ? { ok: true, json: async () => records } : { ok: false };
@@ -647,7 +632,7 @@ test('Shopee-style detail separates gallery purchase and description with bounde
 test('approved product results never certify brand-shop references across languages', async (t) => {
   const p = page(t, (window) => {
     window.fetch = async (url) => url === '/v1/products'
-      ? { ok: true, json: async () => [] }
+      ? { ok: true, json: async () => [{id:"brand-test-demo",listing:{title:"Saved demo",category:"supplement",price:"199",stock:1},verification:reportFixture}] }
       : { ok: true, json: async () => reportFixture };
   });
   await new Promise((resolve) => setImmediate(resolve));
@@ -719,4 +704,23 @@ test('detail page keeps native product links and translates its specifications',
   p.$('#language').dispatchEvent(new p.window.Event('change'));
   assert.equal(p.$('.detail-specifications dt').textContent,'Category');
   assert.equal(p.$('#product-title').tagName,'H1');
+});
+
+test('customer catalog has no invented preferred shops and excludes unpriced saved listings',async(t)=>{
+  const p=page(t,w=>{w.fetch=async(url)=>url==='/v1/products'?{ok:true,json:async()=>[{id:'unpriced',listing:{title:'Unpriced product',category:'supplement',price:null},verification:reportFixture}]}:{ok:false};});
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('[data-product="unpriced"]'),null);
+  assert.equal(p.$$('.preferred').length,0);
+  assert.equal(p.$('#products').textContent.includes('ยังไม่ระบุราคา'),false);
+});
+
+test('market supplement references use matching real photos without borrowing synthetic verification',async(t)=>{
+  const p=page(t,w=>{w.fetch=async(url)=>url==='/v1/products'?{ok:true,json:async()=>[]}:{ok:true,json:async()=>reportFixture};});
+  await new Promise(r=>setImmediate(r));
+  p.$('[data-category="1"]').click();
+  for(const card of p.$$('.product-card')) {
+    assert.match(card.querySelector('img').getAttribute('src'),/product-(dhc|neocell|deva)/);
+    assert.equal(card.querySelector('.product-verified'),null);
+  }
+  assert.match(p.$('[data-product="14"]').textContent,/DHC/);
 });

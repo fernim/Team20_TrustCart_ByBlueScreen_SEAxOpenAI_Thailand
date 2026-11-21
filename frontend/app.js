@@ -185,48 +185,57 @@
   };
   // This listing uses the existing synthetic fixture; no registry record is invented here.
   const checkedProduct = catalog[14];
-  checkedProduct.th = "ลูมาเวล วิตามินซี";
-  checkedProduct.en = "LumaVale Vitamin C";
+  Object.assign(checkedProduct, {
+    th: "DHC วิตามินซี 40 แคปซูล", en: "DHC Vitamin C 40 capsules",
+    realReference: true, original: 0, images: ["/static/assets/product-dhc-40.jpg"],
+    sourceUrl: "https://top.dhc.co.jp/shop/health/tempo/item/e00003/",
+    sourceDescription: "DHC วิตามินซี ชนิดแคปซูล บรรจุ 40 แคปซูล",
+  });
   const overclaimExamples = [
     {
-      th: "ออราเฟิร์น คอลลาเจน — ผิวดูอ่อนวัยใน 3 วัน",
-      en: "AuraFern Collagen — younger-looking skin in 3 days",
-      descriptionTh: "AuraFern คอลลาเจน ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน",
+      th: "NeoCell Super Collagen + C — ผิวดูอ่อนวัยใน 3 วัน",
+      en: "NeoCell Super Collagen + C — younger-looking skin in 3 days",
+      descriptionTh: "NeoCell Super Collagen + C ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน",
       descriptionEn:
-        "AuraFern Collagen. Younger-looking skin in 3 days, guaranteed for everyone.",
+        "NeoCell Super Collagen + C. Younger-looking skin in 3 days, guaranteed for everyone.",
       price: 329,
     },
     {
-      th: "โนวาลีฟ วิตามินซี — ผิวกระจ่างใสทันที 100%",
-      en: "NovaLeaf Vitamin C — instantly brighter skin, 100% guaranteed",
+      th: "Deva C Vitamin C 1000 มก. — ผิวกระจ่างใสทันที 100%",
+      en: "Deva C Vitamin C 1000 mg — instantly brighter skin, 100% guaranteed",
       descriptionTh:
-        "NovaLeaf วิตามินซี ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก",
+        "Deva C Vitamin C 1000 mg ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก",
       descriptionEn:
-        "NovaLeaf Vitamin C. Instantly brighter skin, 100% guaranteed from the first use.",
+        "Deva C Vitamin C 1000 mg. Instantly brighter skin, 100% guaranteed from the first use.",
       price: 189,
     },
     {
-      th: "ซันพีค น้ำมันปลา — ความจำดีขึ้นทันทีทุกคน",
-      en: "SunPeak Fish Oil — instantly better memory for everyone",
+      th: "DHC วิตามินซี 120 แคปซูล — ความจำดีขึ้นทันทีทุกคน",
+      en: "DHC Vitamin C 120 capsules — instantly better memory for everyone",
       descriptionTh:
-        "SunPeak น้ำมันปลา ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น",
+        "DHC Vitamin C 120 capsules ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น",
       descriptionEn:
-        "SunPeak Fish Oil. Instantly better memory for everyone, without exception.",
+        "DHC Vitamin C 120 capsules. Instantly better memory for everyone, without exception.",
       price: 259,
     },
   ];
-  overclaimExamples.forEach((example) =>
+  overclaimExamples.forEach((example, index) =>
     catalog.push({
       ...example,
       id: catalog.length,
       category: 1,
-      original: example.price + 100,
+      original: 0,
       sold: 0,
       overclaim: true,
+      realReference: true,
+      images: [["/static/assets/product-neocell.webp"], ["/static/assets/product-deva.webp"], ["/static/assets/product-dhc-120.jpg"]][index],
+      descriptionTh: "ตัวอย่างข้อความที่ต้องแก้ไข: " + example.descriptionTh,
+      descriptionEn: "Example copy requiring correction: " + example.descriptionEn,
     }),
   );
   // Short excerpts from public Shopee titles; descriptions summarize visible pack data.
   Object.assign(catalog[21], {
+    realReference: true, price: 719, original: 0, images: ["/static/assets/product-neocell.webp"],
     th: "Neocell Super Collagen + C",
     en: "Neocell Super Collagen + C",
     category: 1,
@@ -235,6 +244,7 @@
     sourceDescription: "คอลลาเจน วิตามินซี ขนาด 90/250/270/360 เม็ด",
   });
   Object.assign(catalog[22], {
+    realReference: true, price: 79, original: 0, images: ["/static/assets/product-deva.webp"],
     th: "Deva C Vitamin C 1000 มก.",
     en: "Deva C Vitamin C 1000 mg",
     category: 1,
@@ -247,7 +257,7 @@
   function hasProductVerification(product) {
     const productVerification = productVerifications.get(product.id);
     return (
-      !product.overclaim &&
+      !product.overclaim && !product.realReference &&
       productVerification?.status === "APPROVED" &&
       Number.isFinite(productVerification.confidence) &&
       productVerification.confidence >= 0.75 &&
@@ -363,12 +373,7 @@
   }
   function productImage(product) {
     const img = element("img");
-    img.src = product.images?.[0] || (
-      product.id === checkedProduct.id ||
-      product.overclaim ||
-      product.sellerProduct
-        ? "/static/assets/demo-supplement.svg"
-        : image(product.category));
+    img.src = product.images?.[0] || (product.sellerProduct ? "/static/assets/no-product-image.svg" : image(product.category));
     img.alt = name(product);
     img.loading = "lazy";
     img.width = 200;
@@ -389,15 +394,10 @@
     open.href = `/products/${encodeURIComponent(product.id)}`;
     open.setAttribute("aria-label", name(product));
     const picture = element("div", "product-picture");
-    picture.append(
-      productImage(product),
-      element("span", "preferred", t("preferred")),
-      element(
-        "span",
-        "discount",
-        `−${Math.round((1 - product.price / product.original) * 100)}%`,
-      ),
-    );
+    picture.append(productImage(product));
+    if (product.original > product.price && product.price !== null) {
+      picture.append(element("span", "discount", `−${Math.round((1 - product.price / product.original) * 100)}%`));
+    }
     const copy = element("div", "product-copy");
     const productName = element("h3", "product-name");
     const titleLink = element("a", "product-title-link", name(product));
@@ -1315,6 +1315,7 @@
           record &&
           typeof record.id === "string" &&
           record.listing &&
+          record.listing.price != null && Number.isFinite(Number(record.listing.price)) && Number(record.listing.price) >= 0 &&
           record.verification,
       );
       for (let index = catalog.length - 1; index >= 0; index--)
@@ -1386,7 +1387,7 @@
     }
   }
   async function loadProductVerification(product) {
-    if (typeof window.fetch !== "function") return;
+    if (typeof window.fetch !== "function" || (product.realReference && !product.overclaim)) return;
     try {
       const response = await window.fetch("/v1/verifications", {
         method: "POST",

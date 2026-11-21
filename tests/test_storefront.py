@@ -1,4 +1,5 @@
 import json
+import mimetypes
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -28,7 +29,7 @@ def test_reference_images_are_available_locally(tmp_path):
         for asset in manifest["assets"]:
             response = client.get("/static/assets/" + asset["file"])
             assert response.status_code == 200
-            assert response.headers["content-type"] == "image/webp"
+            assert response.headers["content-type"] == mimetypes.guess_type(asset["file"])[0]
             assert len(response.content) == asset["bytes"]
 
 

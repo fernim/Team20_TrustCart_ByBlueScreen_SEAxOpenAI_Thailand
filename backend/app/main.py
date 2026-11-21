@@ -126,7 +126,11 @@ def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str, list[ClaimFin
     return Status.APPROVED, "registration_identity_and_category_matched", []
 
 
-class ProductUpdate(Listing):
+class ProductCreate(Listing):
+    price: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
+
+
+class ProductUpdate(ProductCreate):
     expected_version: int = Field(ge=1)
 
 
@@ -213,7 +217,7 @@ def create_app(database: Path) -> FastAPI:
         return product
 
     @service.post("/v1/products", status_code=201, response_model=Product)
-    def create_product(listing: Listing, response: Response) -> Product:
+    def create_product(listing: ProductCreate, response: Response) -> Product:
         product = save_product(listing, uuid4())
         response.headers["Location"] = f"/v1/products/{product.id}"
         return product
