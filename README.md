@@ -215,6 +215,16 @@ Evidence uploads accept an optional comma-separated `standards` declaration. ISO
 
 If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
 
+## Run locally on macOS or Linux
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn backend.app.main:app --port 8000
+```
+
+This local development entry point is unprotected. Use `app:app` with a privately configured `TRUSTCART_DEMO_PASSWORD` for the password-gated demo; use the generated `/docs` for current request schemas. `/version` is the intentional public GET exception.
+
 ## Optional AI extraction
 
 The extraction client uses OpenAI structured output and drops every phrase absent from the listing. Deterministic rules evaluate the extracted phrases. Without configuration, keyword rules run locally.
