@@ -13,6 +13,7 @@
   let imageRequest = 0;
   let readingImages = false;
   let saving = false;
+  let productsRequest = 0;
   function markDirty() {
     dirty = true;
     version++;
@@ -120,6 +121,12 @@
   function feedback(text) {
     $("#seller-feedback").textContent = text;
   }
+  function updateProductLink() {
+    const link = $("#view-product");
+    link.hidden = !editingProduct || editingProduct.hasPrice === false;
+    if (editingProduct && editingProduct.hasPrice !== false) link.href = `/products/${encodeURIComponent(editingProduct.id)}`;
+    else link.removeAttribute("href");
+  }
   function renderReports() {
     $("#seller-product-list").replaceChildren();
     if (!reports.length) {
@@ -130,7 +137,9 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "seller-product-row";
-      button.textContent = `${entry.title || entry.id} · ${entry.status || "UNKNOWN"}`;
+      const title = entry.title || entry.id;
+      button.textContent = entry.productId ? "แก้ไข / Edit" : "ดูรายงาน / View report";
+      button.setAttribute("aria-label", `${button.textContent}: ${title}`);
       button.addEventListener("click", async () => {
         if (saving) return;
         if (
@@ -141,6 +150,8 @@
         )
           return;
         const request = ++version;
+        $("#view-product").hidden = true;
+        $("#view-product").removeAttribute("href");
         $("#seller-result").replaceChildren();
         feedback("กำลังโหลดผลตรวจ…");
         try {
@@ -154,7 +165,7 @@
           if (request !== version) return;
           const result = entry.productId ? record.verification : record;
           editingProduct = entry.productId
-            ? { id: record.id, version: record.version }
+            ? { id: record.id, version: record.version, hasPrice: record.listing.price != null }
             : null;
           if (!entry.productId && result.id !== entry.id) throw Error();
           if (result.listing) fill(result.listing);
@@ -167,7 +178,16 @@
               product_name: "",
               license_holder: "",
             });
+          if (entry.productId) {
+            reports = reports.map(item => item.productId === record.id ? {
+              ...item, version: record.version, listing: record.listing,
+              title: record.listing.title || record.listing.product_name, status: result.status,
+            } : item);
+            renderReports();
+            $("#listing-title").focus();
+          }
           dirty = false;
+          updateProductLink();
           window.TrustCartVerification.render($("#seller-result"), result, {
             audit: false,
           });
@@ -177,7 +197,51 @@
             feedback("ไม่สามารถโหลดผลตรวจได้ กรุณาลองใหม่");
         }
       });
-      $("#seller-product-list").append(button);
+      const row = document.createElement("div");
+      row.className = "seller-product-entry";
+      const listing = entry.listing || {};
+      const photo = document.createElement("img");
+      photo.className = "seller-item-image";
+      photo.src = listing.images?.[0] || "/static/assets/no-product-image.svg";
+      photo.alt = title;
+      photo.width = photo.height = 88;
+      photo.loading = "lazy";
+      const summary = document.createElement("div");
+      summary.className = "seller-item-summary";
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      const metadata = document.createElement("div");
+      metadata.className = "seller-item-metadata";
+      const price = document.createElement("span");
+      price.className = "seller-item-price";
+      price.textContent = listing.price == null ? "ต้องระบุราคา" : `฿${Number(listing.price).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const stock = document.createElement("span");
+      stock.className = "seller-item-stock";
+      stock.textContent = listing.stock == null ? "ยังไม่ระบุสต็อก" : `สต็อก ${listing.stock} ชิ้น`;
+      const status = document.createElement("span");
+      status.className = "seller-item-status";
+      const statuses = ["APPROVED", "PENDING", "DENIED", "UNKNOWN"];
+      const state = statuses.includes(entry.status) ? entry.status : "UNKNOWN";
+      status.dataset.status = state;
+      status.textContent = `ผลตรวจ ${state}`;
+      metadata.append(price, stock, status);
+      summary.append(heading, metadata);
+      const actions = document.createElement("div");
+      actions.className = "seller-item-actions";
+      actions.append(button);
+      row.append(photo, summary, actions);
+      if (entry.productId && listing.price != null) {
+        const view = document.createElement("a");
+        view.className = "seller-view-product seller-view-action";
+        view.textContent = "ดูสินค้า / View product ↗";
+        view.href = `/products/${encodeURIComponent(entry.productId)}`;
+        view.target = "_blank";
+        view.rel = "noopener noreferrer";
+        view.setAttribute("aria-label", `ดูสินค้า / View product: ${entry.title || entry.productId}`);
+        view.title = "เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด";
+        actions.append(view);
+      }
+      $("#seller-product-list").append(row);
     }
   }
   $("#seller-form").addEventListener("input", markDirty);
@@ -194,6 +258,7 @@
     event.preventDefault();
     if (saving || readingImages || !$("#seller-form").reportValidity()) return;
     saving = true;
+    productsRequest++;
     renderImages();
     const listing = payload();
     const request = ++version;
@@ -229,7 +294,8 @@
       const result = record.verification;
       if (request !== version) return;
       if (!result || typeof result.id !== "string") throw Error();
-      editingProduct = { id: record.id, version: record.version };
+      editingProduct = { id: record.id, version: record.version, hasPrice: record.listing.price != null };
+      updateProductLink();
       dirty = false;
       window.TrustCartVerification.render($("#seller-result"), result, {
         audit: false,
@@ -239,6 +305,7 @@
           id: result.id,
           productId: record.id,
           version: record.version,
+          listing: record.listing,
           title: listing.title,
           status: result.status,
         },
@@ -247,7 +314,7 @@
       try {
         sessionStorage.setItem(
           "trustcart-demo-reports",
-          JSON.stringify(reports),
+          JSON.stringify(reports.map(({ listing, ...metadata }) => metadata)),
         );
       } catch (_) {}
       try {
@@ -296,6 +363,7 @@
     )
       return;
     editingProduct = null;
+    updateProductLink();
     dirty = false;
     version++;
     $("#seller-form").reset();
@@ -308,16 +376,19 @@
     feedback("เพิ่มสินค้าใหม่");
   });
   async function loadProducts() {
+    if (saving) return;
+    const request = ++productsRequest;
     try {
       const response = await fetch("/v1/products", { cache: "no-store" });
       if (!response.ok) return;
       const records = await response.json();
-      if (!Array.isArray(records)) return;
+      if (request !== productsRequest || !Array.isArray(records)) return;
       reports = [
         ...records.map((record) => ({
           id: record.verification.id,
           productId: record.id,
           version: record.version,
+          listing: record.listing,
           title: record.listing.title || record.listing.product_name,
           status: record.verification.status,
         })),
@@ -330,6 +401,7 @@
       renderReports();
     } catch (_) {}
   }
+  window.addEventListener("focus", loadProducts);
   renderReports();
   loadProducts();
 })();

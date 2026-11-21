@@ -47,6 +47,10 @@ def create_app(database: Path) -> FastAPI:
     def storefront():
         return FileResponse(frontend / "index.html")
 
+    @service.get("/products/{product_id}", include_in_schema=False)
+    def product_page(product_id: str):
+        return FileResponse(frontend / "index.html")
+
     @service.get("/seller", include_in_schema=False)
     def seller_page():
         return FileResponse(frontend / "seller.html")

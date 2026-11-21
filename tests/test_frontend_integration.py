@@ -7,14 +7,14 @@ def test_product_api_preserves_released_policy_and_gate(tmp_path, monkeypatch, c
     monkeypatch.setenv("TRUSTCART_DEMO_PASSWORD", "test-only")
     database = tmp_path / "db.sqlite3"
     with TestClient(create_demo_app(database)) as client:
-        for route in ("/", "/seller", "/reviewer", "/workspace", "/static/app.js", "/v1/products"):
+        for route in ("/", "/seller", "/reviewer", "/products/0", "/workspace", "/static/app.js", "/v1/products"):
             assert client.get(route).status_code == 401
         client.auth = ("demo", "test-only")
         for key, status in (("L1", "PENDING"), ("L2", "APPROVED"), ("L4", "DENIED"), ("L14", "UNKNOWN")):
-            created = client.post("/v1/products", json=demo_listings()[key])
+            created = client.post("/v1/products", json={**demo_listings()[key], "price": "199.00"})
             assert created.status_code == 201
             assert created.json()["verification"]["status"] == status
-        product = client.post("/v1/products", json=demo_listings()["L2"]).json()
+        product = client.post("/v1/products", json={**demo_listings()["L2"], "price": "199.00"}).json()
         verification = product["verification"]
         corrupt_saved_audit(database, verification["id"])
         assert client.get("/v1/products/" + product["id"]).json()["verification"]["status"] == "UNKNOWN"

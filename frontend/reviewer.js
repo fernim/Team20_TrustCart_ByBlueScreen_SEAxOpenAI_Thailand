@@ -76,6 +76,75 @@
     $("#report-id").value = $("#demo-report-select").value;
     load();
   });
+  let productsVersion = 0;
+  let productsSnapshot = null;
+  let productsLoading = false;
+  async function loadProducts() {
+    const version = ++productsVersion;
+    productsLoading = true;
+    const list = $("#reviewer-product-list");
+    $("#reviewer-products-loading").hidden = list.childElementCount > 0;
+    $("#reviewer-products-error").hidden = true;
+    try {
+      const response = await window.fetch("/v1/products", { cache: "no-store" });
+      if (!response.ok) throw new Error();
+      const products = await response.json();
+      if (version !== productsVersion) return;
+      if (!Array.isArray(products)) throw new Error();
+      const snapshot = JSON.stringify(products);
+      if (snapshot === productsSnapshot) return;
+      const rows = products.map(product => {
+        if (!product?.listing || !product.verification?.id) throw new Error();
+        const listing = product.listing;
+        const title = listing.title || listing.product_name || product.id;
+        const row = node("article", undefined, "reviewer-product-entry seller-product-entry");
+        const photo = node("img", undefined, "seller-item-image");
+        photo.src = listing.images?.[0] || "/static/assets/no-product-image.svg";
+        photo.alt = title;
+        photo.width = photo.height = 88;
+        photo.loading = "lazy";
+        const summary = node("div", undefined, "seller-item-summary");
+        const metadata = node("div", undefined, "seller-item-metadata");
+        const price = listing.price == null ? "ต้องระบุราคา" : `฿${Number(listing.price).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const stock = listing.stock == null ? "ยังไม่ระบุสต็อก" : `สต็อก ${listing.stock} ชิ้น`;
+        const states = ["APPROVED", "PENDING", "DENIED", "UNKNOWN"];
+        const state = states.includes(product.verification.status) ? product.verification.status : "UNKNOWN";
+        const status = node("span", `ผลตรวจ ${state}`, "seller-item-status");
+        status.dataset.status = state;
+        metadata.append(node("span", price, "seller-item-price"), node("span", stock, "seller-item-stock"), status);
+        summary.append(node("h3", title), metadata);
+        const open = node("button", "เปิดรายงาน / Open report", "reviewer-open-report seller-view-action");
+        open.type = "button";
+        open.setAttribute("aria-label", `เปิดรายงาน / Open report: ${title}`);
+        open.addEventListener("click", async () => {
+          $("#report-id").value = product.verification.id;
+          await load();
+          if (report.childElementCount) report.scrollIntoView({ block: "start", behavior: "smooth" });
+        });
+        row.append(photo, summary, open);
+        return row;
+      });
+      productsSnapshot = snapshot;
+      list.replaceChildren(...(rows.length ? rows : [node("p", "ยังไม่มีสินค้าที่บันทึกไว้")]));
+    } catch (_) {
+      if (version !== productsVersion) return;
+      productsSnapshot = null;
+      list.replaceChildren();
+      $("#reviewer-products-error").hidden = false;
+    } finally {
+      if (version === productsVersion) {
+        productsLoading = false;
+        $("#reviewer-products-loading").hidden = true;
+      }
+    }
+  }
+  $("#retry-reviewer-products").addEventListener("click", loadProducts);
+  window.addEventListener("focus", loadProducts);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadProducts();
+  });
+  window.setInterval(() => { if (!document.hidden && !productsLoading) loadProducts(); }, 5000);
+  loadProducts();
   const initial = new URLSearchParams(window.location.search).get("id");
   if (initial) {
     $("#report-id").value = initial;

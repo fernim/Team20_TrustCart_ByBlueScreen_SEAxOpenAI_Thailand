@@ -40,7 +40,7 @@ The reference brand showcase is hidden in the integrated interface. Browser chec
 
 Set `TRUSTCART_BASE_URL` to the target origin and run `npm run test:browser` with the login password in the process environment. Set `TRUSTCART_REVIEWER_PASSWORD` when the deployment uses the separate reviewer login. Otherwise, set `TRUSTCART_DEMO_PASSWORD` for the shared demo login. Leave `TRUSTCART_BASE_URL` unset to run the isolated local suite. Keep password values out of command output and source files.
 
-Hosted mode runs 22 checks across desktop and mobile Chromium contexts. It covers the existing storefront flows and adds password protection, evidence/recheck/reviewer actions, stale hashes, agency totals, outage simulation, copy correction and authenticated Swagger. Each created product title is unique so earlier hosted runs do not create ambiguous selectors.
+Hosted mode runs the storefront suite and additional hosted checks across desktop and mobile Chromium contexts. It covers password protection, evidence/recheck/reviewer actions, stale hashes, agency totals, outage simulation, copy correction and authenticated Swagger. Each created product title is unique so earlier hosted runs do not create ambiguous selectors.
 
 The unauthenticated request context explicitly overrides the configured credentials. Hosted traces are disabled to avoid writing authentication headers into trace artifacts. The suite creates synthetic products and reviews, and leaves the saved audit history available for inspection.
 

@@ -1,4 +1,5 @@
 import json
+import mimetypes
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -28,7 +29,7 @@ def test_reference_images_are_available_locally(tmp_path):
         for asset in manifest["assets"]:
             response = client.get("/static/assets/" + asset["file"])
             assert response.status_code == 200
-            assert response.headers["content-type"] == "image/webp"
+            assert response.headers["content-type"] == mimetypes.guess_type(asset["file"])[0]
             assert len(response.content) == asset["bytes"]
 
 
@@ -57,3 +58,12 @@ def test_seller_page_and_listing_snapshot_roundtrip(tmp_path):
         result = client.post('/v1/verifications',json=payload)
         assert all(result.json()['listing'][key] == value for key, value in payload.items())
         assert client.get(result.headers['location']).json()['listing'] == result.json()['listing']
+
+
+def test_product_detail_urls_serve_the_storefront_shell(tmp_path):
+    with TestClient(create_app(tmp_path / 'detail-pages.sqlite3')) as client:
+        for product_id in ['0', '8cba5000-67d7-4f61-89da-758d09137964']:
+            response = client.get('/products/' + product_id)
+            assert response.status_code == 200
+            assert 'id="product-page"' in response.text
+            assert '<dialog id="product-dialog"' not in response.text

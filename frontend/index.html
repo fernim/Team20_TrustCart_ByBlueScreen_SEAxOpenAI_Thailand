@@ -56,7 +56,7 @@
           </div>
         </nav>
         <div class="search-row">
-          <a class="brand" href="/" aria-label="TrustCart homepage"
+          <a class="brand" data-home-link href="/" aria-label="TrustCart homepage"
             ><img
               src="/static/assets/bag.svg"
               alt=""
@@ -92,6 +92,7 @@
       </div>
     </header>
     <main id="main" tabindex="-1">
+      <div id="storefront-home">
       <section class="hero-zone" aria-label="Promotions">
         <div class="container">
           <h1 class="sr-only" data-i18n="homeTitle">
@@ -249,6 +250,10 @@
           <a href="/docs" data-i18n="api">เอกสาร API</a>
         </section>
       </div>
+      </div>
+      <section id="product-page" class="container" hidden aria-live="polite">
+        <div id="product-detail"></div>
+      </section>
     </main>
     <footer>
       <div class="container footer-grid">
@@ -309,10 +314,6 @@
       <a href="/seller">หน้าผู้ขาย / Seller</a>
     </nav>
     </footer>
-    <dialog id="product-dialog" aria-labelledby="product-title">
-      <button class="dialog-close" data-close aria-label="ปิด">×</button>
-      <div id="product-detail"></div>
-    </dialog>
     <dialog id="product-status-dialog" aria-labelledby="product-status-title">
       <button class="dialog-close" data-close aria-label="ปิด">×</button>
       <h2 id="product-status-title">สถานะสินค้า</h2>

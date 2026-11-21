@@ -185,48 +185,57 @@
   };
   // This listing uses the existing synthetic fixture; no registry record is invented here.
   const checkedProduct = catalog[14];
-  checkedProduct.th = "ลูมาเวล วิตามินซี";
-  checkedProduct.en = "LumaVale Vitamin C";
+  Object.assign(checkedProduct, {
+    th: "DHC วิตามินซี 40 แคปซูล", en: "DHC Vitamin C 40 capsules",
+    realReference: true, original: 0, images: ["/static/assets/product-dhc-40.jpg"],
+    sourceUrl: "https://top.dhc.co.jp/shop/health/tempo/item/e00003/",
+    sourceDescription: "DHC วิตามินซี ชนิดแคปซูล บรรจุ 40 แคปซูล",
+  });
   const overclaimExamples = [
     {
-      th: "ออราเฟิร์น คอลลาเจน — ผิวดูอ่อนวัยใน 3 วัน",
-      en: "AuraFern Collagen — younger-looking skin in 3 days",
-      descriptionTh: "AuraFern คอลลาเจน ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน",
+      th: "NeoCell Super Collagen + C — ผิวดูอ่อนวัยใน 3 วัน",
+      en: "NeoCell Super Collagen + C — younger-looking skin in 3 days",
+      descriptionTh: "NeoCell Super Collagen + C ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน",
       descriptionEn:
-        "AuraFern Collagen. Younger-looking skin in 3 days, guaranteed for everyone.",
+        "NeoCell Super Collagen + C. Younger-looking skin in 3 days, guaranteed for everyone.",
       price: 329,
     },
     {
-      th: "โนวาลีฟ วิตามินซี — ผิวกระจ่างใสทันที 100%",
-      en: "NovaLeaf Vitamin C — instantly brighter skin, 100% guaranteed",
+      th: "Deva C Vitamin C 1000 มก. — ผิวกระจ่างใสทันที 100%",
+      en: "Deva C Vitamin C 1000 mg — instantly brighter skin, 100% guaranteed",
       descriptionTh:
-        "NovaLeaf วิตามินซี ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก",
+        "Deva C Vitamin C 1000 mg ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก",
       descriptionEn:
-        "NovaLeaf Vitamin C. Instantly brighter skin, 100% guaranteed from the first use.",
+        "Deva C Vitamin C 1000 mg. Instantly brighter skin, 100% guaranteed from the first use.",
       price: 189,
     },
     {
-      th: "ซันพีค น้ำมันปลา — ความจำดีขึ้นทันทีทุกคน",
-      en: "SunPeak Fish Oil — instantly better memory for everyone",
+      th: "DHC วิตามินซี 120 แคปซูล — ความจำดีขึ้นทันทีทุกคน",
+      en: "DHC Vitamin C 120 capsules — instantly better memory for everyone",
       descriptionTh:
-        "SunPeak น้ำมันปลา ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น",
+        "DHC Vitamin C 120 capsules ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น",
       descriptionEn:
-        "SunPeak Fish Oil. Instantly better memory for everyone, without exception.",
+        "DHC Vitamin C 120 capsules. Instantly better memory for everyone, without exception.",
       price: 259,
     },
   ];
-  overclaimExamples.forEach((example) =>
+  overclaimExamples.forEach((example, index) =>
     catalog.push({
       ...example,
       id: catalog.length,
       category: 1,
-      original: example.price + 100,
+      original: 0,
       sold: 0,
       overclaim: true,
+      realReference: true,
+      images: [["/static/assets/product-neocell.webp"], ["/static/assets/product-deva.webp"], ["/static/assets/product-dhc-120.jpg"]][index],
+      descriptionTh: "ตัวอย่างข้อความที่ต้องแก้ไข: " + example.descriptionTh,
+      descriptionEn: "Example copy requiring correction: " + example.descriptionEn,
     }),
   );
   // Short excerpts from public Shopee titles; descriptions summarize visible pack data.
   Object.assign(catalog[21], {
+    realReference: true, price: 719, original: 0, images: ["/static/assets/product-neocell.webp"],
     th: "Neocell Super Collagen + C",
     en: "Neocell Super Collagen + C",
     category: 1,
@@ -235,6 +244,7 @@
     sourceDescription: "คอลลาเจน วิตามินซี ขนาด 90/250/270/360 เม็ด",
   });
   Object.assign(catalog[22], {
+    realReference: true, price: 79, original: 0, images: ["/static/assets/product-deva.webp"],
     th: "Deva C Vitamin C 1000 มก.",
     en: "Deva C Vitamin C 1000 mg",
     category: 1,
@@ -247,7 +257,7 @@
   function hasProductVerification(product) {
     const productVerification = productVerifications.get(product.id);
     return (
-      !product.overclaim &&
+      !product.overclaim && !product.realReference &&
       productVerification?.status === "APPROVED" &&
       Number.isFinite(productVerification.confidence) &&
       productVerification.confidence >= 0.75 &&
@@ -363,12 +373,7 @@
   }
   function productImage(product) {
     const img = element("img");
-    img.src = product.images?.[0] || (
-      product.id === checkedProduct.id ||
-      product.overclaim ||
-      product.sellerProduct
-        ? "/static/assets/demo-supplement.svg"
-        : image(product.category));
+    img.src = product.images?.[0] || (product.sellerProduct ? "/static/assets/no-product-image.svg" : image(product.category));
     img.alt = name(product);
     img.loading = "lazy";
     img.width = 200;
@@ -385,21 +390,19 @@
           : "product-card",
     );
     card.dataset.product = product.id;
-    const open = element("button", "product-open");
-    open.type = "button";
+    const open = element("a", "product-open");
+    open.href = `/products/${encodeURIComponent(product.id)}`;
     open.setAttribute("aria-label", name(product));
     const picture = element("div", "product-picture");
-    picture.append(
-      productImage(product),
-      element("span", "preferred", t("preferred")),
-      element(
-        "span",
-        "discount",
-        `−${Math.round((1 - product.price / product.original) * 100)}%`,
-      ),
-    );
+    picture.append(productImage(product));
+    if (product.original > product.price && product.price !== null) {
+      picture.append(element("span", "discount", `−${Math.round((1 - product.price / product.original) * 100)}%`));
+    }
     const copy = element("div", "product-copy");
-    const productName = element("h3", "product-name", name(product));
+    const productName = element("h3", "product-name");
+    const titleLink = element("a", "product-title-link", name(product));
+    titleLink.href = open.href;
+    productName.append(titleLink);
     if (hasProductVerification(product)) {
       productName.prepend(
         productCheckmark(product),
@@ -477,6 +480,7 @@
     $("#clear-filters").hidden = !state.query && state.category === null;
   }
   function browse() {
+    if (routeProductId() !== null) navigateProductPage("/");
     renderProducts();
     $("#catalog-title").scrollIntoView({ block: "start", behavior: "smooth" });
   }
@@ -573,10 +577,7 @@
     dialog.showModal();
   }
   $$("dialog").forEach((dialog) => {
-    dialog.addEventListener("close", () => {
-      // Restore focus only when the browser left it on the page body.
-      if (document.activeElement === document.body) returnFocus.get(dialog)?.focus();
-    });
+    dialog.addEventListener("close", () => returnFocus.get(dialog)?.focus());
     dialog.addEventListener("click", (event) => {
       if (event.target.closest("[data-close]")) dialog.close();
       if (event.target === dialog) {
@@ -674,7 +675,8 @@
   function renderDeals() {
     $("#flash-products").replaceChildren(
       ...dealProducts.map((product, index) => {
-        const button = element("button", "flash-card");
+        const button = element("a", "flash-card");
+        button.href = `/products/${encodeURIComponent(product.id)}`;
         button.dataset.product = product.id;
         button.setAttribute(
           "aria-label",
@@ -702,7 +704,8 @@
     .sort((a, b) => b.sold - a.sold).slice(0, 6);
   function renderPopular() {
     $("#popular-products").replaceChildren(...popularProducts.map((product, index) => {
-      const button = element("button", "popular-product");
+      const button = element("a", "popular-product");
+      button.href = `/products/${encodeURIComponent(product.id)}`;
       button.dataset.product = product.id;
       button.append(element("span", "popular-rank", `TOP ${index + 1}`), productImage(product),
         element("span", "popular-sales", `${t("sold")} ${product.sold.toLocaleString("en-US")}`),
@@ -752,8 +755,14 @@
     renderProducts();
   });
   Object.assign(text.th, {
+    productLoading: "กำลังโหลดสินค้า…",
+    productUnavailable: "ไม่สามารถโหลดสินค้าได้",
+    productNotFound: "ไม่พบสินค้า",
+    backToProducts: "กลับไปเลือกสินค้า",
+    retryProduct: "ลองอีกครั้ง",
     productNavigation: "เส้นทางสินค้า",
     productImages: "รูปสินค้า",
+    productCategory: "หมวดหมู่",
     specifications: "ข้อมูลจำเพาะของสินค้า",
     productDescription: "รายละเอียดสินค้า",
     descriptionMissing: "ผู้ขายยังไม่ได้ระบุรายละเอียดสินค้า",
@@ -794,8 +803,14 @@
       "TrustCart โดย Team BlueScreen สำหรับสำรวจสินค้าและตรวจสอบข้อมูลจำลองก่อนเลือกซื้อ",
   });
   Object.assign(text.en, {
+    productLoading: "Loading product…",
+    productUnavailable: "Could not load product",
+    productNotFound: "Product not found",
+    backToProducts: "Back to products",
+    retryProduct: "Try again",
     productNavigation: "Product navigation",
     productImages: "Product images",
+    productCategory: "Category",
     specifications: "Product specifications",
     productDescription: "Product description",
     descriptionMissing: "The seller has not added a description yet.",
@@ -838,22 +853,83 @@
   });
   const cart = new Map();
   let selectedProduct = null;
+  let catalogLoaded = false;
+  let catalogFailed = false;
+  function routeProductId() {
+    const match = window.location.pathname.match(/^\/products\/([^/]+)\/?$/);
+    if (!match) return null;
+    try { return decodeURIComponent(match[1]); } catch (_) { return ""; }
+  }
+  function resolveProductRoute(force = false) {
+    const id = routeProductId();
+    const detailPage = $("#product-page");
+    const home = id === null;
+    detailPage.hidden = home;
+    $("#storefront-home").hidden = !home;
+    document.body.classList.toggle("product-detail-page", !home);
+    if (home) {
+      selectedProduct = null;
+      document.title = "TrustCart • Marketplace";
+      return;
+    }
+    const product = findProduct(id);
+    if (product) {
+      const changed = !selectedProduct || JSON.stringify(product) !== JSON.stringify(selectedProduct);
+      selectedProduct = product;
+      if (changed || force) renderDetail();
+      document.title = `${name(product)} | TrustCart`;
+      detailPage.removeAttribute("aria-busy");
+      return;
+    }
+    selectedProduct = null;
+    const loading = !catalogLoaded && !catalogFailed;
+    detailPage.setAttribute("aria-busy", String(loading));
+    const message = element("section", "product-page-state");
+    const heading = element("h1", "", t(loading ? "productLoading" : catalogFailed ? "productUnavailable" : "productNotFound"));
+    const homeLink = element("a", "text-button", t("backToProducts"));
+    homeLink.href = "/";
+    homeLink.dataset.homeLink = "";
+    message.append(heading, homeLink);
+    if (catalogFailed) {
+      const retry = element("button", "primary", t("retryProduct"));
+      retry.type = "button";
+      retry.addEventListener("click", () => {
+        catalogFailed = false;
+        catalogLoaded = false;
+        resolveProductRoute();
+        refreshSellerProducts();
+      });
+      message.append(retry);
+    }
+    $("#product-detail").replaceChildren(message);
+    document.title = `${heading.textContent} | TrustCart`;
+  }
+  function navigateProductPage(url) {
+    if (window.location.pathname !== url) window.history.pushState({}, "", url);
+    resolveProductRoute();
+    $("#main").scrollIntoView({ block: "start", behavior: "instant" });
+    const heading = $("#product-title") || $("#main");
+    heading.focus({ preventScroll: true });
+  }
+  window.addEventListener("popstate", () => resolveProductRoute());
   let currentInfo = "help";
   function renderDetail() {
     const product = selectedProduct;
     const categoryName = categories[product.category][state.language === "th" ? 0 : 1];
     const breadcrumb = element("nav", "detail-breadcrumb");
     breadcrumb.setAttribute("aria-label", t("productNavigation"));
-    const back = element("button", "text-button", "TrustCart");
-    back.type = "button";
-    back.dataset.close = "";
+    const back = element("a", "text-button", "TrustCart");
+    back.id = "detail-back";
+    back.href = "/";
+    back.dataset.homeLink = "";
     breadcrumb.append(back, element("span", "", "›"), element("span", "", categoryName),
       element("span", "", "›"), element("span", "detail-breadcrumb-name", name(product)));
 
     const layout = element("div", "product-detail-layout");
     const details = element("section", "product-purchase");
     details.setAttribute("aria-labelledby", "product-title");
-    const heading = element("h2", "", name(product));
+    const heading = element("h1", "", name(product));
+    heading.tabIndex = -1;
     heading.id = "product-title";
     if (hasProductVerification(product))
       heading.prepend(productCheckmark(product), document.createTextNode(" "));
@@ -915,17 +991,12 @@
       }
       cart.set(product.id, (cart.get(product.id) || 0) + quantity);
       renderCart();
-      $("#product-dialog").close();
       toast(t("added"));
     });
     const viewCart = element("button", "primary", t("viewCart"));
     viewCart.id = "detail-view-cart";
     viewCart.type = "button";
-    viewCart.addEventListener("click", () => {
-      $("#product-dialog").close();
-      // Restore focus to the original product before opening the next native dialog.
-      requestAnimationFrame(showCart);
-    });
+    viewCart.addEventListener("click", showCart);
     const actions = element("div", "detail-actions");
     actions.append(add, viewCart);
     details.append(heading, metadata, pricePanel, quantity, actions);
@@ -961,10 +1032,10 @@
 
     const descriptionSection = element("section", "product-description-section");
     descriptionSection.setAttribute("aria-labelledby", "product-description-title");
-    const specsTitle = element("h3", "", t("specifications"));
+    const specsTitle = element("h2", "", t("specifications"));
     const specs = element("dl", "detail-specifications");
-    specs.append(element("dt", "", t("categories")), element("dd", "", categoryName));
-    const descriptionTitle = element("h3", "", t("productDescription"));
+    specs.append(element("dt", "", t("productCategory")), element("dd", "", categoryName));
+    const descriptionTitle = element("h2", "", t("productDescription"));
     descriptionTitle.id = "product-description-title";
     const description = product.sourceDescription ||
       (state.language === "th" ? product.descriptionTh : product.descriptionEn) || t("descriptionMissing");
@@ -1028,11 +1099,12 @@
   }
   $("#open-cart").addEventListener("click", showCart);
   document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button > 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const homeLink = event.target.closest("[data-home-link]");
     const card = event.target.closest("[data-product]");
-    if (card) {
-      selectedProduct = findProduct(card.dataset.product);
-      renderDetail();
-      openDialog($("#product-dialog"));
+    if (homeLink || card) {
+      event.preventDefault();
+      navigateProductPage(homeLink ? "/" : `/products/${encodeURIComponent(card.dataset.product)}`);
     }
   });
   $$("[data-info]").forEach((button) =>
@@ -1159,7 +1231,7 @@
     renderPopular();
     renderSlide();
     renderCart();
-    if (selectedProduct) renderDetail();
+    resolveProductRoute(true);
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";
@@ -1227,7 +1299,6 @@
   async function refreshSellerProducts() {
     if (typeof window.fetch !== "function") return;
     const request = ++catalogRequest;
-    const previousDetail = selectedProduct && JSON.stringify(selectedProduct);
     const previousVerified = selectedProduct && hasProductVerification(selectedProduct);
     try {
       const response = await window.fetch("/v1/products", {
@@ -1237,11 +1308,14 @@
       const records = await response.json();
       if (request !== catalogRequest) return;
       if (!Array.isArray(records)) throw Error();
+      catalogLoaded = true;
+      catalogFailed = false;
       const incoming = records.filter(
         (record) =>
           record &&
           typeof record.id === "string" &&
           record.listing &&
+          record.listing.price != null && Number.isFinite(Number(record.listing.price)) && Number(record.listing.price) >= 0 &&
           record.verification,
       );
       for (let index = catalog.length - 1; index >= 0; index--)
@@ -1274,18 +1348,13 @@
       }
     } catch (_) {
       if (request !== catalogRequest) return;
+      catalogFailed = true;
       for (const product of catalog)
         if (product.sellerProduct) productVerifications.delete(product.id);
     }
     renderProducts();
     renderCart();
-    if (selectedProduct?.sellerProduct) {
-      const latest = findProduct(selectedProduct.id);
-      if (latest) {
-        selectedProduct = latest;
-        if (JSON.stringify(latest) !== previousDetail || hasProductVerification(latest) !== previousVerified) renderDetail();
-      } else $("#product-dialog").close();
-    }
+    resolveProductRoute(Boolean(selectedProduct) && previousVerified !== hasProductVerification(selectedProduct));
   }
   window.addEventListener("focus", refreshSellerProducts);
   window.addEventListener("storage", (event) => {
@@ -1297,6 +1366,7 @@
   window.setInterval(() => {
     if (!document.hidden) refreshSellerProducts();
   }, 5000);
+  resolveProductRoute();
   refreshSellerProducts();
   function saveReviewerReports() {
     const reports = [...productVerifications.entries()]
@@ -1317,7 +1387,7 @@
     }
   }
   async function loadProductVerification(product) {
-    if (typeof window.fetch !== "function") return;
+    if (typeof window.fetch !== "function" || (product.realReference && !product.overclaim)) return;
     try {
       const response = await window.fetch("/v1/verifications", {
         method: "POST",

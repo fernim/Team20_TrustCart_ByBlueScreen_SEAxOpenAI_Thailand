@@ -122,7 +122,7 @@ test("seller edits the same product ID with its current version", async (t) => {
 
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 const listingFixture = {
-  title: 'Saved title', description: 'Saved description', category: 'cosmetic',
+  price:'199.00', stock:3, images:[], title: 'Saved title', description: 'Saved description', category: 'cosmetic',
   registration_reference: 'DEMO-001', product_name: 'Saved name', license_holder: 'Saved holder',
 };
 const productFixture = { id: 'seller-1', version: 3, listing: listingFixture,
@@ -292,4 +292,75 @@ test('seller restores media draft and rejects unsupported files without losing i
   assert.equal(writes,0);
   p.$('#save-draft').click();
   assert.deepEqual(JSON.parse(p.dom.window.localStorage.getItem('trustcart-seller-draft')).images,[original]);
+});
+
+test('seller View product links use the saved product ID and remain tied to the published revision', async(t)=>{
+  const p=seller(t,async(url,options)=> {
+    if(!options?.body) return {ok:true,json:async()=>[]};
+    const listing=JSON.parse(options.body);
+    return {ok:true,json:async()=>({id:'saved-product',version:1,listing,verification:{...result,listing}})};
+  });
+  assert.equal(p.$('#view-product').hidden,true);
+  assert.equal(p.$('#view-product').hasAttribute('href'),false);
+  await p.submit();
+  const view=p.$('#view-product');
+  assert.equal(view.hidden,false);
+  assert.equal(view.getAttribute('href'),'/products/saved-product');
+  assert.equal(view.target,'_blank');
+  assert.match(view.rel,/noopener/);
+  assert.equal(p.$('.seller-view-product').getAttribute('href'),'/products/saved-product');
+  p.$('#listing-price').value='700';
+  p.$('#listing-price').dispatchEvent(new p.dom.window.Event('input',{bubbles:true}));
+  assert.equal(view.getAttribute('href'),'/products/saved-product');
+  p.dom.window.confirm=()=>true;
+  p.$('#new-product').click();
+  assert.equal(view.hidden,true);
+  assert.equal(view.hasAttribute('href'),false);
+});
+
+test('seller product list exposes customer links only for stable products, not historical verification reports',async(t)=>{
+  const p=seller(t,async(url)=>({ok:true,json:async()=>url==='/v1/products'?[productFixture]:productFixture}),w=>{
+    w.sessionStorage.setItem('trustcart-demo-reports',JSON.stringify([{id:'legacy-verification',title:'Historical report',status:'DENIED'}]));
+  });
+  await settle();
+  assert.equal(p.dom.window.document.querySelectorAll('.seller-view-product').length,1);
+  assert.equal(p.$('.seller-view-product').getAttribute('href'),'/products/seller-1');
+  p.$('.seller-product-row').click();
+  await settle();
+  assert.equal(p.$('#view-product').getAttribute('href'),'/products/seller-1');
+});
+
+test('seller product summaries show saved image price stock status and distinct edit/view actions',async(t)=>{
+  const listing={...listingFixture,images:['data:image/png;base64,aA=='],price:'249.50',stock:7};
+  const record={...productFixture,listing,verification:{...result,listing}};
+  const p=seller(t,async(url,options)=>({ok:true,json:async()=>options?.body
+    ? {...record,version:4,listing:JSON.parse(options.body),verification:{...result,listing:JSON.parse(options.body)}}
+    : url==='/v1/products'?[record]:record}));
+  await settle();
+  const row=p.$('.seller-product-entry');
+  assert.equal(row.querySelector('img').getAttribute('src'),listing.images[0]);
+  assert.match(row.querySelector('.seller-item-price').textContent,/249.50/);
+  assert.match(row.querySelector('.seller-item-stock').textContent,/7/);
+  assert.match(row.querySelector('.seller-item-status').textContent,/DENIED/);
+  assert.match(row.querySelector('.seller-product-row').textContent,/Edit/);
+  assert.match(row.querySelector('.seller-view-product').textContent,/View product/);
+  row.querySelector('.seller-product-row').click(); await settle();
+  p.$('#listing-price').value='149.00'; p.$('#listing-stock').value='2';
+  await p.submit();
+  assert.match(p.$('.seller-item-price').textContent,/149.00/);
+  assert.match(p.$('.seller-item-stock').textContent,/2/);
+});
+
+test('returning to seller refreshes saved summaries without overwriting unsaved form edits',async(t)=>{
+  const record={...productFixture,listing:{...listingFixture,price:'199.00',stock:3}};
+  const p=seller(t,async()=>({ok:true,json:async()=>[record]}));
+  await settle();
+  p.$('#listing-title').value='Unsaved form title';
+  p.$('#listing-title').dispatchEvent(new p.dom.window.Event('input',{bubbles:true}));
+  record.listing.price='99.00'; record.listing.stock=1;
+  p.dom.window.dispatchEvent(new p.dom.window.Event('focus'));
+  await settle();
+  assert.match(p.$('.seller-item-price').textContent,/99.00/);
+  assert.match(p.$('.seller-item-stock').textContent,/1/);
+  assert.equal(p.$('#listing-title').value,'Unsaved form title');
 });

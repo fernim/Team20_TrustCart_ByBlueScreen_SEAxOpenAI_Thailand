@@ -47,13 +47,11 @@ Use a fresh synthetic case for the run. Verify the case survives reload and subs
 
 **What would you harden before a real pilot?** Use independently authenticated services, role permissions, and record ownership checks. Remove demo-only controls from the pilot surface. Enforce request quotas and size limits at ingress, verify shared storage, and define evidence retention. Confirm data-transfer approval before enabling external extraction or registry integration. [API guidance](../ThomazAgents.md) · [Roadmap](../README.md#marketplace-service-roadmap)
 
-## Metrics, business, and competition evidence
+## API metrics and competition evidence
 
 **How accurate is the system?** The repository has 40 labelled synthetic listings. The test checks expected status and failed rules for each fixture, then verifies that every fixture becomes `UNKNOWN` in an outage. These are deterministic scenario tests. A real accuracy claim needs a representative, separately labelled dataset and per-category false approvals, false denials, and review rates. [Dataset tests](../tests/test_dataset.py)
 
 **What does Agency summary measure?** It counts saved synthetic decisions by status, category, day, failed rule, and common matched claim phrases. It reports audit validity and records with an `APPROVED` verdict despite a failed rule or low confidence. The risk score helps order reviewer work and does not set the decision. Totals from a demo session do not establish market-wide accuracy or impact. [Agency endpoint](../backend/app/api/agency.py) · [Agency test](../tests/test_agency.py)
-
-**Who would pay, and how would you prove value?** Start with a marketplace trust-and-safety pilot using an authorized registry and labelled cases. Compare time to publish compliant listings, review workload, false approvals, and false denials with the current workflow. Pricing and market assumptions are illustrative until validated. [Product brief](../PRODUCT.md)
 
 **How did the team use Codex?** Show a tagged commit and a corresponding test. Evidence upload, stale-hash rejection, outage behavior, grounding, and dashboard aggregation are concrete examples. Describe the code shipped during the event and disclose the earlier prototype and reused material in the submission. [Codex workflow and declarations](../README.md#declarations-what-was-built-during-the-hackathon) · [CI workflow](../.github/workflows/pytest.yml)
 

@@ -44,7 +44,7 @@ INVALID_COMMERCE_FIELDS = [
 @pytest.mark.parametrize('extra', INVALID_COMMERCE_FIELDS)
 def test_invalid_product_commerce_fields_are_rejected(tmp_path,extra):
     with TestClient(create_app(tmp_path/'invalid.sqlite3')) as client:
-        assert client.post('/v1/products',json={**BASE,**extra}).status_code==422
+        assert client.post('/v1/products',json={**BASE,'price':'199.00',**extra}).status_code==422
         assert client.get('/v1/products').json()==[]
 
 
@@ -76,3 +76,12 @@ def test_invalid_commerce_edit_preserves_product_and_verification_history(tmp_pa
         assert edited.json()['version'] == 2
         assert edited.json()['listing']['stock'] == 0
         assert client.get(report_url).json() == original['verification']
+
+@pytest.mark.parametrize('extra', [{}, {'price': None}])
+def test_saved_products_require_price_on_create_and_edit(tmp_path, extra):
+    with TestClient(create_app(tmp_path/'required-price.sqlite3')) as client:
+        assert client.post('/v1/products', json={**BASE, **extra}).status_code == 422
+        original = client.post('/v1/products', json={**BASE, 'price':'199.00'}).json()
+        rejected = client.put('/v1/products/'+original['id'], json={**BASE, 'expected_version':1, **extra})
+        assert rejected.status_code == 422
+        assert client.get('/v1/products/'+original['id']).json() == original

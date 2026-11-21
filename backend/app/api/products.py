@@ -2,6 +2,7 @@ import hashlib
 import json
 from .. import database as store
 from contextlib import closing
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -14,7 +15,11 @@ from ..workflow import RISK_POLICY_HASH, audit
 router = APIRouter(tags=["Products"])
 
 
-class ProductUpdate(Listing):
+class ProductCreate(Listing):
+    price: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
+
+
+class ProductUpdate(ProductCreate):
     expected_version: int = Field(ge=1)
 
 
@@ -68,7 +73,7 @@ def current_product(connection, raw):
 
 
 @router.post("/v1/products", status_code=201, response_model=Product)
-def create_product(listing: Listing, request: Request, response: Response):
+def create_product(listing: ProductCreate, request: Request, response: Response):
     product = save_product(listing, uuid4(), request)
     response.headers["Location"] = "/v1/products/" + str(product.id)
     return product
