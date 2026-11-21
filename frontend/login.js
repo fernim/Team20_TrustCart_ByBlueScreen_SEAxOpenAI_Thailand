@@ -14,11 +14,23 @@ document.querySelector("#login-form").onsubmit = async (event) => {
     });
     const result = await response.json();
     if (!response.ok) throw Error(result.detail);
+    const next = new URLSearchParams(location.search).get("next");
+    if (result.role === "reviewer" && next) {
+      const target = new URL(next, location.origin);
+      if (
+        target.origin === location.origin &&
+        (target.pathname === "/agency" ||
+          /^\/agency\/submissions\/[0-9a-f-]{36}$/.test(target.pathname))
+      ) {
+        location.href = target.pathname + target.search;
+        return;
+      }
+    }
     location.href =
       result.role === "seller"
         ? "/seller"
         : result.role === "reviewer"
-          ? "/reviewer"
+          ? "/agency"
           : "/";
   } catch (error) {
     document.querySelector("#login-feedback").textContent = error.message;

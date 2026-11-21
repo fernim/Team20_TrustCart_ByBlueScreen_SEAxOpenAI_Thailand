@@ -20,7 +20,7 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 ## Show human review and resubmission
 
 1. Load **Unclear document**, save, request verification, upload its example documents and run Replay. The result is `PENDING` / **Reviewer required** because the label is unclear and extraction confidence is below 0.75.
-2. As reviewer, filter by **TrustCart Demo Shop** and **Requires my action**. Open the report. Inspect the listing snapshot, private originals, AI fields/quotations, R-01–R-05 and expandable audit history.
+2. As reviewer, open the **Agency** workspace at `/agency`. Choose **Shopee** and **To review**, then open the product report and choose **Start review**. Inspect the listing snapshot, private originals, AI fields/quotations, R-01–R-05 and expandable audit/revision history. Switch Thai/English in the header; returning to the queue preserves its filters.
 3. Enter an actionable reason and choose **Request documents**. The seller sees **Seller action** with those instructions. No customer badge appears.
 4. As seller, choose **Resubmit**, upload clearer or additional documents and run another assessment. Submission history preserves both revisions. Replay only accepts its original exact fixtures; altered evidence should use Live or be inspected by a reviewer after an unavailable/uncertain result.
 5. To demonstrate human approval, inspect each required original, tick its inspection checkbox, enter the identity fields read from the documents, and provide a reason. Approve reruns deterministic rules. A prohibited claim, unsupported registry, stale hash or superseded listing cannot be approved.
@@ -33,6 +33,6 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 
 ## Scope
 
-Private evidence supports PDF, PNG, JPEG and WebP up to 2 MiB each, five active files, and ten unencrypted PDF pages. Text-PDF quotations are checked against document text. Image-only/scanned documents require visual reviewer confirmation. Supplements are the first automatic path; other categories require manual review. Checkout, real billing, OAuth, live government registries and the agency workspace are not part of this demo.
+Private evidence supports PDF, PNG, JPEG and WebP up to 2 MiB each, five active files, and ten unencrypted PDF pages. Text-PDF quotations are checked against document text. Image-only/scanned documents require visual reviewer confirmation. Supplements are the first automatic path; other categories require manual review. Checkout, real billing, OAuth, live government registries and live marketplace feeds are not part of this demo. The Agency workspace is local and shares persisted submissions and decisions with the storefront; Lazada has an empty state. Agency is a workspace name, using the existing reviewer account.
 
 Run `.venv/bin/python -m pytest -q`, `npm test`, and `npm run test:browser` before presenting. On Windows use `.venv/Scripts/python`. This change does not deploy or validate a hosted environment.

@@ -1,5 +1,7 @@
 # Marketplace UI design system
 
+Current Agency update: `/agency` replaces the served Reviewer workspace. It shares `tokens.css` and uses `agency.css` for a neutral TrustCart dashboard with a 216px work-queue sidebar, desktop tables and mobile case rows. Reports use a two-column evidence/decision layout that stacks on mobile. Authentication and document decisions are now implemented; the initial UI-only/read-only descriptions below are historical. See [AGENCY.md](AGENCY.md) for current behavior.
+
 The customer (`/`), seller (`/seller`) and reviewer (`/reviewer`) pages share `frontend/tokens.css` and `frontend/marketplace-ui.css`. This is a UI-only update: existing APIs, persistence and decision rules remain unchanged.
 
 | Token | Value |

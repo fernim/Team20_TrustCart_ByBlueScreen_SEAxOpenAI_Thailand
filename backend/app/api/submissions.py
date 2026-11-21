@@ -177,7 +177,18 @@ def reviewer_submission(submission_id: UUID, request: Request):
     require(request, "reviewer")
     with closing(store.connect(request.app.state.database)) as connection:
         result = read_submission(connection, submission_id)
+        product, owner = read_product(connection, result["product_id"])
         result["audit"] = audit(result)
+        result["marketplace"] = product.get("marketplace", "shopee")
+        result["shop_name"] = connection.execute(
+            "SELECT name FROM tc_shops WHERE id=?", (owner[0],)
+        ).fetchone()[0]
+        result["is_current"] = (
+            owner[1] == result["id"] and product["version"] == result["product_version"]
+        )
+        result["updated_at"] = (
+            result["trace"][-1]["at"] if result.get("trace") else result["created_at"]
+        )
         return result
 
 
@@ -185,15 +196,39 @@ class StartReview(BaseModel):
     chain_hash: str = Field(min_length=64, max_length=64)
 
 
-@router.post('/v1/reviewer/submissions/{submission_id}/start-review')
+@router.post("/v1/reviewer/submissions/{submission_id}/start-review")
 def start_review(submission_id: UUID, payload: StartReview, request: Request):
-    user = require(request, 'reviewer')
+    user = require(request, "reviewer")
     with transaction(request.app.state.database) as connection:
         result, _ = active_submission(connection, submission_id)
         check_revision(result, payload.chain_hash)
-        if result['stage'] not in ('REVIEWER_REQUIRED', 'UNAVAILABLE'):
-            raise HTTPException(409, 'Only a current case awaiting staff review can be started')
-        event(result, 'review_started', {'actor': user['id'], 'chain_hash': payload.chain_hash})
-        result['stage'] = 'IN_REVIEW'
+        if result["stage"] not in ("REVIEWER_REQUIRED", "UNAVAILABLE"):
+            raise HTTPException(
+                409, "Only a current case awaiting staff review can be started"
+            )
+        event(
+            result,
+            "review_started",
+            {"actor": user["id"], "chain_hash": payload.chain_hash},
+        )
+        result["stage"] = "IN_REVIEW"
         save_submission(connection, result)
         return result
+
+
+@router.get("/v1/reviewer/submissions/{submission_id}/history")
+def reviewer_history(submission_id: UUID, request: Request):
+    require(request, "reviewer")
+    with closing(store.connect(request.app.state.database)) as connection:
+        selected = read_submission(connection, submission_id)
+        records = connection.execute(
+            "SELECT result FROM tc_submissions WHERE product_id=? ORDER BY revision DESC",
+            (selected["product_id"],),
+        ).fetchall()
+        return [
+            {
+                key: result[key]
+                for key in ("id", "revision", "status", "stage", "created_at")
+            }
+            for result in (json.loads(row[0]) for row in records)
+        ]

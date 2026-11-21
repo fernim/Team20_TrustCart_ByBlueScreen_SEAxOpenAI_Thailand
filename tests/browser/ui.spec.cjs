@@ -50,6 +50,9 @@ test('reference homepage brands and popular products retain working navigation',
 
 test('product pages support direct visits, reload, back, forward and header search',async({page})=>{
   await page.goto('/');
+  // Keep this fixture visible regardless of products created by earlier workflow tests.
+  await page.locator('#search').fill('headphones');
+  await page.locator('#search').press('Enter');
   const link=page.locator('[data-product="0"] .product-open');
   await expect(link).toHaveAttribute('href','/products/0');
   await link.click();

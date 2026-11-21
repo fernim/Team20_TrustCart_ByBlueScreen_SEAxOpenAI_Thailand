@@ -19,6 +19,7 @@ npm test
 | Seller | Required fields; submission and correction; stable-ID versioned updates; saved-product selection; draft save/restore/storage failures; unsaved-change confirmation; new-product reset; disabled controls during requests; conflict/server/network/malformed-response handling; stale-response suppression; reviewer-only audit details hidden. |
 | Reviewer | Manual UUID lookup; query-string and saved-report selection; report details, literal findings, rule stepper and stored audit hashes; invalid input/session data; missing/network/server/malformed/wrong-ID reports; loading state; stale successes and failures. |
 | Shared verification view | Confirmation at the 0.75 threshold; blocked confirmation for low confidence, review requirements, unresolved statuses, missing rules or conflicting outcomes; safe evidence/hash text; seller audit suppression. |
+| Agency | Marketplace/work/result/search filters, Thai/English persistence, safe rendering, failed refreshes, report drafts, stale actions and historical/audit-invalid read-only cases. |
 | Shared page shell | Shared tokens, current-page navigation, and skip links. |
 
 ## Real browser checks
@@ -28,7 +29,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Playwright starts FastAPI on port 8766 against a disposable SQLite database. It refuses to reuse an existing server. It runs Chromium at desktop (1440 px) and mobile (390 px) viewport sizes. No marketplace or registry site is contacted; the backend uses its synthetic adapter. A preinstalled Chromium executable can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+Playwright starts FastAPI on port 8768 against a disposable SQLite database. It refuses to reuse an existing server. It runs Chromium at desktop (1440 px) and mobile (390 px) viewport sizes. No marketplace or registry site is contacted; the backend uses its synthetic adapter. A preinstalled Chromium executable can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
 The browser suite checks shopper search/language/sorting/cart, native dialog opening and Escape/focus restoration, seller creation and correction, persistence after reload, reviewer audit expansion, customer badges, native draft-discard confirmations, cross-page navigation, stylesheet loading, and viewport overflow. These scenarios complement the larger mocked failure-path suite.
 
@@ -47,3 +48,9 @@ The unauthenticated request context explicitly overrides the configured credenti
 Shared persistent storage is required for saved-product and report continuity across hosted requests. A disappearing product or report remains a test failure. Temporary instance-local SQLite cannot guarantee those flows on Vercel.
 
 These tests cover the implemented UI workflows and, in hosted mode, the demo password gate. They do not establish exhaustive branch coverage, official product certification, live-registry integration, production identity management, real checkout, or full accessibility compliance. Browser checks use Chromium only; mobile viewport emulation is not testing on a physical phone.
+
+## Agency validation
+
+The Agency implementation was checked locally with `.venv/bin/python -m pytest -q` (143 passed), `npm test` (120 passed), and `npx playwright test --config playwright.connected.config.cjs` (28 passed across desktop/mobile). Test credentials are generated in the process environment. Browser tests cover report deep links through sign-in, stale-hash reloads, original document links/responses, native draft-discard confirmation, approval propagation, seller corrections and existing shopper flows. Headless Chromium does not render the PDF viewer reliably; tests verify the document link opens a new surface and its authenticated response contains a PDF instead of waiting for an HTML DOM event.
+
+Agency screenshots are retained in `artifacts/ui/agency-*.png`. These checks use an isolated SQLite database, synthetic registry and replay fixtures. Live marketplace feeds, real provider calls and hosted PostgreSQL were not exercised.

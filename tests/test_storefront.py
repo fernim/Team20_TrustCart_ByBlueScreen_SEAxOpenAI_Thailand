@@ -37,8 +37,8 @@ def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
     with TestClient(create_app(tmp_path / 'review.sqlite3')) as client:
         reviewer = client.get('/reviewer')
         assert reviewer.status_code == 200
-        assert 'id="report-lookup"' in reviewer.text
-        assert 'reviewer-connected.js' in reviewer.text
+        assert 'id="queue-filters"' in reviewer.text
+        assert 'agency.js' in reviewer.text
         customer = client.get('/').text
         assert 'id="verification-dialog"' not in customer
         submission = client.post('/v1/verifications', json={

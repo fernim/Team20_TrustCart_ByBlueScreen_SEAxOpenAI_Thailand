@@ -5,7 +5,7 @@ import os
 import secrets
 import time
 from contextlib import closing
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, quote
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
@@ -58,8 +58,19 @@ async def access_guard(request, call_next):
     if not public_read and not login:
         user = principal(request)
         if not user:
-            if path in ("/seller", "/reviewer", "/workspace", "/agency") or path.startswith("/agency/"):
-                return RedirectResponse("/login", status_code=303)
+            if path in (
+                "/seller",
+                "/reviewer",
+                "/workspace",
+                "/agency",
+            ) or path.startswith("/agency/"):
+                destination = "/login"
+                if path == "/agency" or path.startswith("/agency/"):
+                    destination += "?next=" + quote(
+                        path + ("?" + request.url.query if request.url.query else ""),
+                        safe="",
+                    )
+                return RedirectResponse(destination, status_code=303)
             return JSONResponse({"detail": "Sign in required"}, status_code=401)
         role = (
             "seller"
@@ -67,7 +78,14 @@ async def access_guard(request, call_next):
             else (
                 "reviewer"
                 if path
-                in ("/reviewer", "/workspace", "/docs", "/redoc", "/openapi.json", "/agency")
+                in (
+                    "/reviewer",
+                    "/workspace",
+                    "/docs",
+                    "/redoc",
+                    "/openapi.json",
+                    "/agency",
+                )
                 or path.startswith(("/v1/reviewer/", "/demo/", "/agency/"))
                 else None
             )

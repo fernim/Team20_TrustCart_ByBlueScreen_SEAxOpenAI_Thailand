@@ -9,7 +9,7 @@ for (const page of ['index', 'seller', 'reviewer']) {
     assert.equal(document.querySelectorAll('.demo-views [aria-current="page"]').length, 1);
     assert.ok(document.querySelector('.skip-link'));
     for (const link of document.querySelectorAll('.demo-views a')) {
-      assert.ok(['/', '/seller', '/reviewer'].includes(link.getAttribute('href')));
+      assert.ok(['/', '/seller', '/reviewer', '/agency'].includes(link.getAttribute('href')));
     }
   });
 }

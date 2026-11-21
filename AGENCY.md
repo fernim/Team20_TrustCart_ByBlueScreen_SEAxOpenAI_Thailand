@@ -25,3 +25,19 @@ Work queues: To review (`REVIEWER_REQUIRED`, `UNAVAILABLE`); In progress (`AI_CH
 `/agency` is protected by the existing reviewer role in local and hosted entrypoints. The Thai-first dashboard remembers a Thai/English preference, defaults to To review, preserves filters in its URL and refreshes the queue every ten seconds while visible. Marketplace and verification result are independent filters. The Agency page has no cross-role demo tabs. Loading, empty and failed refresh states are explicit; failed requests hide stale results.
 
 หน้า `/agency` ใช้สิทธิ์ reviewer ทั้งการรันในเครื่องและ entrypoint สำหรับโฮสต์ เริ่มต้นเป็นภาษาไทยและจำภาษาที่เลือก กรองกลุ่มงาน Marketplace และผลตรวจแยกกัน เก็บตัวกรองใน URL และรีเฟรชทุกสิบวินาทีเมื่อเปิดหน้านี้อยู่ ไม่มีแท็บสลับบทบาทบนหน้า Agency และแสดงสถานะกำลังโหลด ไม่มีข้อมูล หรือโหลดล้มเหลวอย่างชัดเจน
+
+## Product reports / รายงานสินค้า
+
+Open `/agency/submissions/{id}` to inspect a submitted listing, original documents, recorded rules, AI extraction findings, submission revisions and the hash-chained trace. The Back link keeps marketplace/work/result/search filters. Reports never poll over draft decisions. Refresh asks before discarding unsaved form fields. Language switching preserves notes and inspection checkboxes. A stale action blocks further writes until an explicit reload. Previous revisions and invalid audits have no decision controls.
+
+เปิดรายงานสินค้าที่ `/agency/submissions/{id}` เพื่อดูข้อมูลที่ส่งตรวจ เอกสารต้นฉบับ ผลกฎ สิ่งที่ AI สกัด ประวัติคำขอ และประวัติ hash ปุ่มกลับคงตัวกรองเดิม รายงานไม่รีเฟรชอัตโนมัติทับข้อมูลที่กำลังกรอก หากกดรีเฟรชจะถามก่อนทิ้งข้อมูลที่ยังไม่บันทึก การสลับภาษาไม่ล้างหมายเหตุหรือช่องยืนยันเอกสาร การใช้ hash เก่าจะปิดการเขียนจนกว่าจะโหลดรายงานใหม่ ฉบับเก่าและประวัติไม่ถูกต้องไม่มีปุ่มตัดสินใจ
+
+The dashboard/report use the existing reviewer session, with no extra Agency role. Login redirects staff to `/agency`, and authenticated legacy `/reviewer?id={id}` links redirect to the case page. Original document access remains private. Queue refreshes update local seller submissions; recorded staff decisions update seller views and public badge eligibility through the same saved workflow. This is a local shared-database flow, not an external Shopee/Lazada connector. No PDF export, bulk decisions or reviewer assignment is added.
+
+แดชบอร์ดและรายงานใช้ session reviewer เดิม ไม่เพิ่มบทบาท Agency บัญชีเจ้าหน้าที่เข้าสู่ `/agency` และลิงก์ `/reviewer?id={id}` เดิมส่งต่อไปยังรายงาน เอกสารยังเป็นส่วนตัว คิวอ่านคำขอล่าสุดของผู้ขายและคำตัดสินอัปเดตผลบนหน้าผู้ขายและสิทธิ์แสดงเครื่องหมายบนหน้าลูกค้าผ่านระบบบันทึกเดียวกัน ไม่ใช่การเชื่อมต่อ Shopee/Lazada ภายนอก ยังไม่มีส่งออก PDF ตัดสินใจหลายรายการ หรือมอบหมายผู้ตรวจ
+
+## Validation / การทดสอบ
+
+Local validation: 143 Python tests, 120 frontend tests and 28 desktop/mobile browser checks passed. Browser scenarios cover approval propagation, correction requests, original document access, language persistence, deep links and stale hashes. Screenshots are saved under `artifacts/ui/agency-*.png`. Hosted PostgreSQL and live marketplace integrations were not validated.
+
+ทดสอบในเครื่องผ่าน 143 Python tests, 120 frontend tests และ 28 browser checks บน desktop/mobile ครอบคลุมการส่งผลอนุมัติถึงหน้าร้าน การขอแก้ไข การเปิดเอกสาร ภาษา ลิงก์รายงาน และ hash เก่า เก็บภาพใน `artifacts/ui/agency-*.png` ยังไม่ทดสอบ PostgreSQL บนโฮสต์หรือการเชื่อมต่อ Marketplace จริง

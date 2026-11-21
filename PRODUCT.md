@@ -6,7 +6,7 @@
 
 ## Delivered demo and remaining scope
 
-The connected three-role workflow is implemented locally. Registry data and subscriptions are synthetic; replay and live document assessment are distinct modes. Live provider and hosted PostgreSQL validation are separate operational checks. The agency workspace, real billing and marketplace OAuth remain future work. See README and DEMO.en.md for the supported workflow. Older sections below also describe the broader target.
+The connected three-role workflow is implemented locally. Registry data and subscriptions are synthetic; replay and live document assessment are distinct modes. Live provider and hosted PostgreSQL validation are separate operational checks. The local Agency workspace now replaces Reviewer: it provides marketplace/work-queue filters, bilingual product reports and audited Start review actions over shared storefront data. Lazada is an empty source filter; real billing, marketplace OAuth and live feeds remain future work. See AGENCY.md. See README and DEMO.en.md for the supported workflow. Older sections below also describe the broader target.
 
 ## What is TrustCart?
 

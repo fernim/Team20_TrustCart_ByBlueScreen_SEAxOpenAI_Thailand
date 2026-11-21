@@ -8,7 +8,7 @@ async function login(page, role) {
   await page.locator("button[type=submit]").click();
   await expect(page).toHaveURL(
     role === "reviewer"
-      ? /\/reviewer$/
+      ? /\/agency$/
       : role === "buyer"
         ? /\/$/
         : /\/seller$/,
@@ -95,18 +95,17 @@ test("uncertain documents reach reviewer, request returns to seller with retaine
     "Reviewer required",
   );
   await login(page, "reviewer");
-  await page.locator("#filter-shop_id").selectOption("shop1");
-  await page.locator("#filter-action").check();
-  const row = page
-    .locator(".seller-product-entry")
-    .filter({ has: page.locator(`a[href="${href}"]`) });
-  await row.locator("button").click();
-  await expect(page.locator("#reviewer-report")).toContainText(
-    "AI document findings",
-  );
+  await page.locator("#agency-language").selectOption("en");
+  // Resolve the exact product's active submission to avoid earlier test cases.
+  const items = await (await page.request.get("/v1/reviewer/queue")).json();
+  const submission = items.items.find(item => item.product_id === href.split("/").pop());
+  await page.locator(`tr[data-submission="${submission.id}"] .case-title`).click();
+  await expect(page.locator("#case-findings")).toContainText("Extraction confidence");
+  await page.locator("#start-review").click();
+  await expect(page.locator("#decision-form")).toBeVisible();
   await page.locator("#review-note").fill("Please upload a clearer label");
   await page.locator("button[value=request_documents]").click();
-  await expect(page.locator("#reviewer-report")).toContainText("Seller action");
+  await expect(page.locator("#case-overview")).toContainText("Awaiting seller correction");
   await login(page, "seller1");
   await page
     .locator(
@@ -137,7 +136,7 @@ test("role screens retain Shopee theme and fit the viewport", async ({
   page.on("pageerror", (e) => errors.push(e.message));
   for (const role of ["seller1", "reviewer"]) {
     await login(page, role);
-    await expect(page.locator(".integration-nav")).toContainText(role);
+    await expect(page.locator(role === "reviewer" ? "#agency-account" : ".integration-nav")).toContainText(role);
     expect(
       await page.evaluate(() =>
         getComputedStyle(document.documentElement)

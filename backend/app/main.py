@@ -3,10 +3,11 @@ import mimetypes
 from contextlib import asynccontextmanager, closing
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from uuid import UUID
 
 from .api import agency, products, reports, reviewer, seller, verifications
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from .llm import openai_claim_client
 from .verification import (
@@ -29,11 +30,15 @@ def create_app(database: Path) -> FastAPI:
         with closing(store.connect(database)) as connection, connection:
             connection.execute("BEGIN IMMEDIATE")
             initialize_store(connection)
-            connection.execute("CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, version INTEGER NOT NULL, result TEXT NOT NULL)")
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, version INTEGER NOT NULL, result TEXT NOT NULL)"
+            )
             connected_store.initialize(connection)
         yield
 
-    service = FastAPI(title="TrustCart Baseline Lead", version="0.1.0", lifespan=lifespan)
+    service = FastAPI(
+        title="TrustCart Baseline Lead", version="0.1.0", lifespan=lifespan
+    )
     service.middleware("http")(security.access_guard)
     service.include_router(security.router)
     service.include_router(connected.router)
@@ -73,9 +78,20 @@ def create_app(database: Path) -> FastAPI:
     def agency_page():
         return FileResponse(frontend / "agency.html")
 
+    @service.get("/agency/submissions/{submission_id}", include_in_schema=False)
+    def agency_report_page(submission_id: UUID):
+        return FileResponse(frontend / "agency-report.html")
+
     @service.get("/reviewer", include_in_schema=False)
-    def reviewer_page():
-        return FileResponse(frontend / "reviewer.html")
+    def reviewer_page(request: Request):
+        try:
+            submission_id = UUID(request.query_params.get("id", ""))
+        except ValueError:
+            return RedirectResponse("/agency", status_code=303)
+        return RedirectResponse(
+            "/agency/submissions/" + str(submission_id), status_code=303
+        )
+
     return service
 
 

@@ -50,7 +50,7 @@ window.TrustCartSession = (() => {
       bar.append(brand);
       for (const [role, path, label] of [
         ["seller", "/seller", "Seller Centre"],
-        ["reviewer", "/reviewer", "Reviewer Centre"],
+        ["reviewer", "/agency", "Agency workspace"],
       ]) {
         if (account.role === role) {
           const a = document.createElement("a");

@@ -79,9 +79,9 @@ See [the English walkthrough](DEMO.en.md) or [คู่มือเดโมภ�
 
 - **Buyer:** `/` and `/products/{id}` show published product images, price and stock. Only an eligible current approval has a clickable badge with a short explanation. Buyers receive no private documents, AI findings or audit hashes.
 - **Seller:** `/seller` shows only that shop's products. Publication is independent of verification. The demo ฿299/month plan enables unlimited verification submissions without taking payment. Each submission needs a label and registration document, plus an advertising permit when required. Sellers see the stage, blockers, reviewer instructions and prior revisions, and can submit more documents for a new review.
-- **Reviewer:** `/reviewer` filters submissions by shop, status, stage and required action. It displays originals, grounded document findings, rule failures and the audit trace. Approve, Deny and Request documents require a reason and the current chain hash. Approval requires explicit inspection confirmations; prohibited claims and registry failures cannot be overridden.
+- **Agency:** `/agency` replaces the Reviewer workspace, with Thai/English language switching, Shopee/Lazada source filters, action-based work queues, result filters and product/reference search. `/agency/submissions/{id}` opens a dedicated product report; `/reviewer` redirects to Agency. Staff choose Start review before recording a decision. It displays originals, grounded document findings, rule failures and the audit trace. Approve, Deny and Request documents require a reason and the current chain hash. Approval requires explicit inspection confirmations; prohibited claims and registry failures cannot be overridden.
 
-Editing any product invalidates its current badge and supersedes its submission. Historical evidence and traces remain available privately. Late AI results and stale reviewer decisions cannot approve the edited product. The agency workspace is outside this demo's primary flow; legacy APIs and `/workspace` remain reviewer-only diagnostic surfaces.
+Editing any product invalidates its current badge and supersedes its submission. Historical evidence and traces remain available privately. Late AI results and stale reviewer decisions cannot approve the edited product. The Agency workspace uses the existing reviewer account and role; legacy APIs and `/workspace` remain reviewer-only diagnostic surfaces.
 
 ### Live assessment and replay
 
@@ -95,7 +95,7 @@ Editing any product invalidates its current badge and supersedes its submission.
 
 Startup adds `tc_*` tables without deleting existing records. Existing catalog products are assigned to the first demo shop but do not inherit a badge from legacy verification. Submissions retain immutable listing snapshots and private document revisions. Evidence bytes are held in SQLite locally or BYTEA when `TRUSTCART_DATABASE_URL` selects the existing PostgreSQL adapter. Files are limited to PDF/PNG/JPEG/WebP, 2 MiB each, five active documents per submission and ten unencrypted PDF pages.
 
-This change is local and has not been deployed. Hosted PostgreSQL and live OpenAI calls require separate environment validation. Serverless SQLite is ephemeral; use persistent storage for a shared hosted demo. Demo subscription activation is not billing. Production identity, marketplace OAuth, real registry integration, payment collection and an agency workspace remain separate work.
+This change is local and has not been deployed. Hosted PostgreSQL and live OpenAI calls require separate environment validation. Serverless SQLite is ephemeral; use persistent storage for a shared hosted demo. Demo subscription activation is not billing. Production identity, marketplace OAuth, real registry integration, payment collection and live marketplace feeds remain separate work. See [Agency workflow details](AGENCY.md).
 
 The optional `app:app` hosting entrypoint uses the same role sessions. Its old shared Basic gate (`TRUSTCART_DEMO_PASSWORD`) remains for legacy diagnostic access; it does not replace reviewer authorization. New role screens and the public storefront do not use that shared password.
 
@@ -174,7 +174,7 @@ The deterministic generator at scripts/generate_demo_dataset.py produces 18 fict
 
 Expired or revoked fixtures are denied. Permit conflicts and required missing permits remain PENDING. Unsupported registries return UNKNOWN. Drug-category and prohibited supplement claims are screened by the synthetic rule pack. All 40 listings have explicit expected status and rule failures, and every outage variant remains UNKNOWN.
 
-GET /v1/agency/summary aggregates saved synthetic verifications by status, failing rule, category, day, claim phrase and audit validity. The Agency view exposes those totals without seller identity fields.
+GET /v1/agency/summary aggregates saved synthetic verifications by status, failing rule, category, day, claim phrase and audit validity. This remains a legacy diagnostic aggregate without seller identity fields. The current Agency workspace uses `/v1/reviewer/queue` over current shop-owned submissions instead.
 
 The release retains the existing router split, SQLite evidence migration compatibility, evidence-backed rechecks, ThomazAgents.md, and competition declarations. Python 3.9 pytest CI runs on pull requests and pushes to main with read-only repository permissions and no live credentials. Live AI, official registry integration, document authenticity/COA validation and marketplace OAuth remain integration work.
 
@@ -182,7 +182,7 @@ Two normal, unverified reference listings now use short title excerpts from Shop
 
 ## Frontend integration
 
-The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /reviewer reads verification reports. /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
+The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /agency manages the current product verification queue and reports (/reviewer redirects). /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
 
 Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. The storefront, seller and reviewer retain the Shopee-style orange theme, compact controls and reference campaign imagery. Backend integration does not replace the visual theme.
 
