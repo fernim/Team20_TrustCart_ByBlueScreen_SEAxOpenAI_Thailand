@@ -4,12 +4,16 @@ from contextlib import closing
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from ..demo_access import REVIEWER_ACCESS_RESPONSES, require_demo_reviewer
 from ..workflow import Review, audit, continue_trace, edit, reevaluate, risk
 
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[Depends(require_demo_reviewer)],
+    responses=REVIEWER_ACCESS_RESPONSES,
+)
 
 
 @router.get("/v1/review-queue", tags=["Reviewer"])
@@ -31,7 +35,9 @@ def queue(request: Request):
 )
 def review(verification_id: UUID, review: Review, request: Request):
     """Recheck the listing and record the reviewer decision with a note and the current audit hash."""
-    with edit(request.app.state.database, verification_id, review.chain_hash) as (connection, result, payload):
+    with edit(request.app.state.database, verification_id, review.chain_hash, allow_reviewed=True) as (
+        connection, result, payload
+    ):
         trace = continue_trace(result)
         reevaluate(connection, result, payload, trace, request.app.state.extraction_client)
         if review.decision == "approve" and (
@@ -40,7 +46,8 @@ def review(verification_id: UUID, review: Review, request: Request):
             ) or result["confidence"] < 0.75
         ):
             raise HTTPException(409, "Resolve failed checks and uncertainty before approval")
-        trace.add("human_review", json.dumps(dict(actor="demo-reviewer", **review.model_dump()), sort_keys=True))
+        actor = getattr(request.state, "reviewer_actor", "demo-reviewer")
+        trace.add("human_review", json.dumps(dict(actor=actor, **review.model_dump()), sort_keys=True))
         connection.execute("INSERT INTO reviews VALUES (?, ?, ?, ?, ?, ?)", (
             str(uuid4()), result["id"], review.decision, review.note, review.chain_hash, datetime.now(timezone.utc).isoformat()))
         result.update(status="APPROVED" if review.decision == "approve" else "DENIED",

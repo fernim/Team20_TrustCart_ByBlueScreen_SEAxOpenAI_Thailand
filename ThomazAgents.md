@@ -33,6 +33,7 @@ Put routes in the matching `APIRouter`. Keep registry and decision logic in the 
 - Read registry facts through `tool_registry_lookup`. Missing or inconclusive data and outages produce `UNKNOWN` with human review. Apply the shared status policy when required checks conflict or confidence is below 0.75.
 - For an active-record identity mismatch, return `PENDING` and request evidence. Keep unresolved evidence conflicts in human review. Deterministic rules decide status. Ground generated claim phrases in the original listing. Send listing text to the extraction provider only under the approved transfer configuration.
 - For evidence, recheck, and review mutations, validate the current `chain_hash` and audit integrity before updating data. Treat stale revisions as `409`. Append decision steps with `Trace.add`, retain previous entries, and keep related SQLite writes atomic. Check compatibility with existing records whenever the schema changes.
+- Seller uploads and rechecks may update an open case. After a completed reviewer decision, use a new verification for updated seller evidence. The authenticated reviewer workflow can record a subsequent decision and append to the existing audit.
 - Store the declared evidence fields and the SHA-256 digests needed for the synthetic demo. Present R-05 as a comparison of seller declarations against the synthetic registry. Keep risk scores limited to queue ordering. Preserve the demo password gate and keep credentials in environment variables.
 
 ## AGD v2.1 workflow

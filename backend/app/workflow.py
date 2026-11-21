@@ -107,7 +107,7 @@ def load(connection, verification_id):
 
 
 @contextmanager
-def edit(database: Path, verification_id: UUID, chain_hash: str):
+def edit(database: Path, verification_id: UUID, chain_hash: str, *, allow_reviewed: bool = False):
     with closing(sqlite3.connect(database, timeout=20)) as connection, connection:
         connection.execute("BEGIN IMMEDIATE")
         result, listing = load(connection, verification_id)
@@ -115,6 +115,8 @@ def edit(database: Path, verification_id: UUID, chain_hash: str):
             raise HTTPException(409, "Stale chain_hash. Reload the report.")
         if not audit(result)["valid"]:
             raise HTTPException(409, "Audit integrity check failed")
+        if result["reason"] in {"reviewer_approve", "reviewer_deny"} and not allow_reviewed:
+            raise HTTPException(409, "Review is complete. Submit a new verification for updated evidence.")
         if listing is None:
             raise HTTPException(409, "Legacy result has no saved listing. Submit a new verification.")
         if listing.get("advertising_permit_conflict") and not listing.get("advertising_permit"):

@@ -1,11 +1,17 @@
 import json
 import sqlite3
-from contextlib import closing
 from collections import Counter
-from fastapi import APIRouter, Request
+from contextlib import closing
+
+from fastapi import APIRouter, Depends, Request
+
+from ..demo_access import REVIEWER_ACCESS_RESPONSES, require_demo_reviewer
 from ..workflow import audit
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[Depends(require_demo_reviewer)],
+    responses=REVIEWER_ACCESS_RESPONSES,
+)
 
 @router.get("/v1/agency/summary", tags=["Agency"])
 def agency_summary(request: Request):

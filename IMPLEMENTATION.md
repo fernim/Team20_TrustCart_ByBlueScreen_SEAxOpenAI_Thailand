@@ -12,7 +12,7 @@ The core synthetic demo is implemented. The app includes PENDING mismatch handli
 
 Optional OpenAI extraction is implemented behind explicit data-transfer approval and environment credentials. It remains disabled on the hosted demo. Marketplace OAuth is roadmap work. Hosted SQLite is temporary. Product evidence checks compare declared fields and file hashes; document authenticity and OCR require further integration.
 
-Validation: 45 tests pass on the integrated API, including the generated OpenAPI workflow, skipped category checks, blank evidence declarations, badge fallback for invalid audits, and migration of saved listing snapshots and evidence. The original workflow integration reported browser and hosted checks for the L1 loop, reviewer decisions, audit verification, and outage handling.
+Validation: 109 Python tests pass on the competition hardening branch, including reviewer access, completed-review protection, cross-origin write rejection, and audit simulation. The original workflow integration reported browser and hosted checks for the L1 loop, reviewer decisions, audit verification, and outage handling.
 
 ---
 
@@ -25,7 +25,7 @@ Validation: 45 tests pass on the integrated API, including the generated OpenAPI
 4. Recheck: R-05 finds that the licence holder still does not match, confidence 0.60 < 0.75 → reviewer queue.
 5. The reviewer confirms → `DENIED`. The report shows every step, and the tamper check passes.
 6. Toggle the registry offline → a new submission returns `UNKNOWN`, never `APPROVED`.
-7. Tamper with one trace entry → `/v1/audit/{id}` reports the chain as broken.
+7. Simulate a change to a copy of one trace entry → the simulation reports the chain as broken. Verify the saved trace remains valid.
 
 Steps 1–2 and 6 are the minimum demo. Steps 3–5 complete the loop. Step 7 is the wow moment.
 
@@ -91,8 +91,8 @@ Rules for every task (from `AGENTS.md`): write the failing test first, change on
 - **Acceptance:** a stale hash → 409. Approving an L1 case that confidence alone could not approve → the status changes and the trace records the human action.
 
 ### T10. Audit verification and tamper demo (P1, about 25 min)
-- **Endpoints:** `GET /v1/audit/{id}` → `{valid: bool, broken_at?: index}`; `POST /demo/tamper/{id}` edits one stored entry.
-- **Acceptance:** before tampering `valid=true`. After tampering `valid=false` with `broken_at` set.
+- **Endpoints:** `GET /v1/audit/{id}` → `{valid: bool, broken_at?: index}`; `POST /demo/tamper/{id}` changes a copy of one entry during the simulation.
+- **Acceptance:** the simulated copy returns `valid=false` with `broken_at` set. The saved audit is unchanged.
 
 ### T11. Report and widget (P2, about 30 min)
 - `GET /v1/reports/{id}`: status, rule results in both languages, evidence hashes, audit validity, and the synthetic disclaimer.

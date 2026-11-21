@@ -52,7 +52,7 @@ TrustCart checks a listing **before publication** through an API. The design rul
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 105 tests for the demo workflow, API compatibility, dataset invariants, and agency aggregation.
+- **Test results.** `pytest` passes 109 tests for the demo workflow, API compatibility, dataset invariants, agency aggregation, and security controls.
 
 ## Run locally
 
@@ -112,7 +112,9 @@ To run the web app locally, set `TRUSTCART_DEMO_PASSWORD` in the process environ
 
 The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
 
-Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. All demo roles share the password gate. Marketplace OAuth and separate reviewer identities remain roadmap work.
+Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts.
+
+The hosted entry point rejects browser writes from a different origin when the browser reports the request's origin. Direct API clients may authenticate with HTTP Basic. To restrict the reviewer queue, review decisions, and agency summary, configure `TRUSTCART_REVIEWER_PASSWORD` with a distinct secret and use username `reviewer` for those operations. A `demo` login then receives `403` on those endpoints. Open a separate browser profile and sign in as `reviewer` to run the full judge workflow in one session. Without this setting the shared demo login can operate the full workflow. Individual identities, per-record and tenant access controls, and marketplace OAuth remain production work.
 
 Databases from the earlier feature branch are upgraded at startup. Existing listing snapshots and evidence hashes are imported into the current schema, and previous audit entries remain readable. If a saved listing only has the previous permit-conflict flag, mutations return `409`. Submit a new verification with the permit number to run the current comparison.
 
@@ -123,7 +125,7 @@ The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer work
 1. Open Seller and select L1. Submit the listing to receive PENDING.
 2. Use the synthetic sample files to upload label and certificate evidence. The conflicting fields keep the result PENDING at confidence 0.60.
 3. Recheck the case and open Reviewer. Refresh the queue, enter a reason, and deny the selected case.
-4. Verify the audit. Demonstrate tampering and verify the failed audit. Further changes are blocked on the altered case.
+4. Verify the saved audit. Run the tamper simulation to show a broken chain on a copy, then verify the saved audit again.
 5. Submit a new case to restart. Select simulated registry outage to see zero approvals across the 20 records.
 
 ## API workflow
@@ -160,9 +162,11 @@ FastAPI registers five routers from `backend/app/api/`. The API entry point is `
 | GET | /v1/agency/summary | Aggregate saved synthetic verifications without seller identities |
 | POST | /v1/listings/suggest-copy | Screened deterministic copy template |
 | POST | /v1/products/compare | Compare up to 10 saved reports |
-| POST | /demo/tamper/{id} | Intentionally alter a synthetic trace |
+| POST | /demo/tamper/{id} | Simulate a change to a copy of a synthetic trace and return the audit result |
 
 Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
+
+Once a reviewer has recorded a decision, seller evidence uploads and rechecks on that verification return `409`. Submit a fresh verification for updated evidence or an edited listing. A reviewer may record a new decision using the latest audit hash.
 
 If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
 
@@ -172,7 +176,9 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 105 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration.
+Validation: 109 tests pass, including the documented OpenAPI workflow, grounded extraction, dataset invariants, agency aggregation, reviewer access, completed-review protection, cross-origin write rejection, and audit simulation. Risk weights are illustrative and need calibration.
+
+Use the [judge Q&A and demo run sheet](docs/JUDGE_QA.md) to rehearse the six-minute presentation and verify what is deployed before the demo.
 
 ## Dataset and release update
 
@@ -193,3 +199,5 @@ Product edits use optimistic version checks and atomically create fresh verifica
 Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
 
 Frontend integration validation: 105 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed locally. GitHub CI runs both the API and frontend suites.
+
+Competition hardening validation: 109 Python tests, 94 Node component tests, and 16 desktop/mobile Chrome browser tests passed locally. The password-protected workspace also passed an authenticated L1 run through reviewer denial and the audit simulation.
