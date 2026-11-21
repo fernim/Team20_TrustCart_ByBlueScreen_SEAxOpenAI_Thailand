@@ -12,7 +12,7 @@ The core synthetic demo is implemented. The app includes PENDING mismatch handli
 
 Optional OpenAI extraction is implemented behind explicit data-transfer approval and environment credentials. It remains disabled on the hosted demo. Marketplace OAuth is roadmap work. Hosted SQLite is temporary. Product evidence checks compare declared fields and file hashes; document authenticity and OCR require further integration.
 
-Validation: 109 Python tests pass on the competition hardening branch, including reviewer access, completed-review protection, cross-origin write rejection, and audit simulation. The original workflow integration reported browser and hosted checks for the L1 loop, reviewer decisions, audit verification, and outage handling.
+Validation: 112 Python tests pass after integrating shared storage and competition hardening. A local PostgreSQL 15 run verified evidence, reviewer access, final decisions, and audit simulation across two app instances. Hosted PostgreSQL verification depends on the deployed configuration.
 
 ---
 

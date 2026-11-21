@@ -1,4 +1,4 @@
-import sqlite3
+from .. import database as store
 from contextlib import closing
 from uuid import UUID, uuid4
 
@@ -47,7 +47,7 @@ def submit(listing: Listing, response: Response, request: Request) -> Verificati
         listing=listing, listing_title=listing.title or listing.product_name,
         claim_findings=find_overclaims(listing.title, listing.description),
     )
-    with closing(sqlite3.connect(request.app.state.database)) as connection, connection:
+    with closing(store.connect(request.app.state.database)) as connection, connection:
         connection.execute(
             "INSERT INTO verifications (id, result, listing) VALUES (?, ?, ?)",
             (str(result.id), result.model_dump_json(), listing.model_dump_json()),
@@ -64,7 +64,7 @@ def submit(listing: Listing, response: Response, request: Request) -> Verificati
     responses={404: {"description": "Verification not found"}},
 )
 def retrieve(verification_id: UUID, request: Request) -> Verification:
-    with closing(sqlite3.connect(request.app.state.database)) as connection:
+    with closing(store.connect(request.app.state.database)) as connection:
         row = connection.execute(
             "SELECT result FROM verifications WHERE id = ?", (str(verification_id),)
         ).fetchone()

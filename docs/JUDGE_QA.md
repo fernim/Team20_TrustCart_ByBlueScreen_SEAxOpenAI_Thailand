@@ -17,7 +17,7 @@ First round allows six minutes for the demo and pitch plus two minutes of Q&A. T
 | 4:30–5:15 | Show the Agency summary and Swagger | The dashboard counts stored outcomes, rule failures, and audit validity. The API exposes the same workflow to a marketplace. |
 | 5:15–6:00 | Show the test and commit evidence. Close with the pilot ask. | Ask for access to an authorized registry and a labelled dataset to evaluate a controlled marketplace pilot. |
 
-Use a fresh synthetic case for the run. If hosted SQLite loses it between requests, use the local demo and show the corresponding API and test evidence. Keep a screenshot or recording as a clearly labelled backup. If the rehearsal uses a separate reviewer credential, sign in as `reviewer` in a separate browser profile before the demo.
+Use a fresh synthetic case for the run. Verify the case survives reload and subsequent requests before presenting from the hosted demo. If continuity fails, use the local demo and show the corresponding API and test evidence. Keep a screenshot or recording as a clearly labelled backup. If the rehearsal uses a separate reviewer credential, sign in as `reviewer` in a separate browser profile before the demo.
 
 ## Product, rules, and AI
 
@@ -41,9 +41,11 @@ Use a fresh synthetic case for the run. If hosted SQLite loses it between reques
 
 **Is the audit immutable?** The SHA-256 chain links each recorded step to the preceding entry. The hardening branch's demo simulates corruption on a copy. If a saved chain is actually invalid, the API blocks mutations and the shopper badge displays `UNKNOWN`. A privileged storage operator could rewrite the trace and recompute hashes, so production needs independently protected signing or append-only audit storage. [Audit validation](../backend/app/workflow.py) · [Tamper and badge tests](../tests/test_demo_workflow.py)
 
-**What if a dependency fails?** An unavailable registry returns `UNKNOWN` and routes to a human. Optional AI extraction can fall back to deterministic checks. Hosted SQLite is temporary, so a production trial needs durable storage, backups, and tested restore procedures. [Dataset outage tests](../tests/test_dataset.py) · [Deployment limits](../README.md#web-demo-and-api-documentation)
+**What if a dependency fails?** An unavailable registry returns `UNKNOWN` and routes to a human. Optional AI extraction can fall back to deterministic checks. The opt-in PostgreSQL adapter fails the request if the configured database is unavailable. [Dataset outage tests](../tests/test_dataset.py) · [Database adapter](../backend/app/database.py)
 
-**What would you harden before a real pilot?** Use independently authenticated services, role permissions, and record ownership checks. Remove demo-only controls from the pilot surface. Enforce request quotas and size limits at ingress, use durable storage, and define evidence retention. Confirm data-transfer approval before enabling external extraction or registry integration. [API guidance](../ThomazAgents.md) · [Roadmap](../README.md#marketplace-service-roadmap)
+**Does the demo save results across hosted requests?** Instance-local SQLite can lose cases when requests reach different instances. The repository supports opt-in shared PostgreSQL. Confirm the hosted configuration and complete a persistence run before claiming the database is active. Earlier local SQLite records need a separate migration to PostgreSQL. A production pilot would also need backups and tested restores. [Shared storage setup](../README.md#shared-production-storage)
+
+**What would you harden before a real pilot?** Use independently authenticated services, role permissions, and record ownership checks. Remove demo-only controls from the pilot surface. Enforce request quotas and size limits at ingress, verify shared storage, and define evidence retention. Confirm data-transfer approval before enabling external extraction or registry integration. [API guidance](../ThomazAgents.md) · [Roadmap](../README.md#marketplace-service-roadmap)
 
 ## Metrics, business, and competition evidence
 
@@ -59,12 +61,12 @@ Use a fresh synthetic case for the run. If hosted SQLite loses it between reques
 
 Use the exact revision presented by the team. Record actual results before submission.
 
-Local checks on the competition hardening branch passed 109 Python tests, 94 Node component tests, and 16 desktop/mobile browser tests in Chrome. A separate authenticated Chrome run passed L1 through evidence upload, recheck, reviewer denial, and the audit simulation. Use the live URL and deployed commit when describing what judges can access.
+Local checks after the storage merge passed 112 Python tests, 94 Node component tests, and 16 desktop/mobile browser tests in Chrome. Separate authenticated browser checks passed the reviewer workflow. A local PostgreSQL 15 run preserved the decision and evidence across two app instances. Use the live URL and deployed commit when describing what judges can access.
 
 | Evidence | What to record |
 | --- | --- |
 | Code | Git SHA, release status, and linked CI result |
 | Automated checks | Python, frontend component, and browser test results for that revision. Record any checks that could not run. |
-| Hosted demo | URL, source SHA if available, authenticated docs and workflow, and unauthenticated rejection |
+| Hosted demo | URL, source SHA if available, authenticated docs and workflow, unauthenticated rejection, and saved-case continuity |
 | Security controls | Which controls are deployed, which are verified only in the checkout, and any environment configuration the demo requires |
 | Competition submission | Public repository, project summary, demo link, and declarations on reused work |

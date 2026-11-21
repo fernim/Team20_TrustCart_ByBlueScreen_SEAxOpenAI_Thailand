@@ -1,6 +1,6 @@
 import hashlib
 import json
-import sqlite3
+from . import database as store
 from contextlib import closing, contextmanager
 from pathlib import Path
 from typing import Literal
@@ -31,7 +31,11 @@ class Comparison(BaseModel):
     ids: list[UUID] = Field(min_length=1, max_length=10)
 
 
-def initialize_store(connection: sqlite3.Connection) -> None:
+def initialize_store(connection) -> None:
+    if getattr(connection, "dialect", "sqlite") == "postgresql":
+        from .database import initialize_postgres
+        initialize_postgres(connection)
+        return
     connection.execute("CREATE TABLE IF NOT EXISTS verifications (id TEXT PRIMARY KEY, result TEXT NOT NULL)")
     columns = {row[1] for row in connection.execute("PRAGMA table_info(verifications)")}
     if "listing" not in columns:
@@ -108,7 +112,7 @@ def load(connection, verification_id):
 
 @contextmanager
 def edit(database: Path, verification_id: UUID, chain_hash: str, *, allow_reviewed: bool = False):
-    with closing(sqlite3.connect(database, timeout=20)) as connection, connection:
+    with closing(store.connect(database, timeout=20)) as connection, connection:
         connection.execute("BEGIN IMMEDIATE")
         result, listing = load(connection, verification_id)
         if result["chain_hash"] != chain_hash:

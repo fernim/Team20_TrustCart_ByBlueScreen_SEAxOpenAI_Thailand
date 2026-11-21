@@ -52,7 +52,7 @@ TrustCart checks a listing **before publication** through an API. The design rul
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 109 tests for the demo workflow, API compatibility, dataset invariants, agency aggregation, and security controls.
+- **Test coverage.** The Python suite covers the demo workflow, API compatibility, dataset invariants, agency aggregation, security controls, and database adapter behavior. Use the CI run for the release revision when reporting the test count.
 
 ## Run locally
 
@@ -90,7 +90,7 @@ The API checks registration identity, registered category, advertising claims, s
 
 ## Marketplace service roadmap
 
-An authorized live registry connector, durable hosted storage, and marketplace OAuth authentication remain integration work. Claims, evidence, rechecks, review, reports, and audit verification are implemented in the synthetic demo. The public source repository and any future hosted API are separate deliverables.
+An authorized live registry connector and marketplace OAuth authentication remain integration work. The repository supports opt-in PostgreSQL storage, and shared storage still needs verification on the hosted demo. Claims, evidence, rechecks, review, reports, and audit verification are implemented in the synthetic demo.
 
 ## Tests
 
@@ -112,7 +112,7 @@ To run the web app locally, set `TRUSTCART_DEMO_PASSWORD` in the process environ
 
 The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
 
-Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts.
+By default, hosted SQLite is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. See [shared production storage](#shared-production-storage) for the opt-in PostgreSQL configuration.
 
 The hosted entry point rejects browser writes from a different origin when the browser reports the request's origin. Direct API clients may authenticate with HTTP Basic. To restrict the reviewer queue, review decisions, and agency summary, configure `TRUSTCART_REVIEWER_PASSWORD` with a distinct secret and use username `reviewer` for those operations. A `demo` login then receives `403` on those endpoints. Open a separate browser profile and sign in as `reviewer` to run the full judge workflow in one session. Without this setting the shared demo login can operate the full workflow. Individual identities, per-record and tenant access controls, and marketplace OAuth remain production work.
 
@@ -176,7 +176,7 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 109 tests pass, including the documented OpenAPI workflow, grounded extraction, dataset invariants, agency aggregation, reviewer access, completed-review protection, cross-origin write rejection, and audit simulation. Risk weights are illustrative and need calibration.
+The test suite covers the documented OpenAPI workflow, grounded extraction, dataset invariants, agency aggregation, reviewer access, completed-review protection, cross-origin write rejection, and audit simulation. Risk weights are illustrative and need calibration.
 
 Use the [judge Q&A and demo run sheet](docs/JUDGE_QA.md) to rehearse the six-minute presentation and verify what is deployed before the demo.
 
@@ -194,10 +194,20 @@ The release retains the existing router split, SQLite evidence migration compati
 
 The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /reviewer reads verification reports. /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
 
-Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. TrustCart styling uses a teal palette, a distinct hero and rounded product cards. Historical reference artwork remains in source provenance; copied promotional sections are hidden from the live interface.
+Product edits use optimistic version checks and create fresh verification history in the same database transaction. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. TrustCart styling uses a teal palette, a distinct hero and rounded product cards. Historical reference artwork remains in source provenance; copied promotional sections are hidden from the live interface.
 
 Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
 
-Frontend integration validation: 105 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed locally. GitHub CI runs both the API and frontend suites.
+Before the storage integration, the competition hardening branch passed 109 Python tests, 94 Node component tests, and 16 desktop/mobile Chrome tests. The local password-protected workspace passed an authenticated L1 run through reviewer denial and the audit simulation. GitHub CI runs both the API and frontend suites.
 
-Competition hardening validation: 109 Python tests, 94 Node component tests, and 16 desktop/mobile Chrome browser tests passed locally. The password-protected workspace also passed an authenticated L1 run through reviewer denial and the audit simulation.
+## Shared production storage
+
+Set `TRUSTCART_DATABASE_URL` to a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated `trustcart` schema and tables. The first startup creates the verification, product, evidence, and review tables with indexes, isolated from tables in the public schema.
+
+PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
+
+Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. PostgreSQL starts with its own database. Importing previous instance-local Vercel records requires a separate migration.
+
+Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
+
+After combining storage and security changes, 112 Python tests, 94 Node component tests, and 16 desktop/mobile browser tests passed locally. The reviewer browser flow passed on both viewports against a disposable local server. A separate PostgreSQL 15 test passed across two app instances. A prior hosted run using temporary SQLite failed four saved-product continuity checks. Retest hosted continuity with the configured PostgreSQL database before reporting the issue resolved.

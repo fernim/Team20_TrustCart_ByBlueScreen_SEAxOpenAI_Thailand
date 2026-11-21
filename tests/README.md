@@ -34,6 +34,16 @@ The browser suite checks shopper search/language/sorting/cart, native dialog ope
 
 Failure traces are retained under `test-results/`; inspect one with `npx playwright show-trace <trace.zip>`. Generated results are ignored by Git.
 
-Brand-shop regression checks cover eight external reference links, local image files, accessible labels, language updates, and the absence of verification badges. Browser checks load each image at desktop/mobile sizes and save a section screenshot. They do not navigate to or validate the external shops. The showcase is reference artwork, not TrustCart verification or seller endorsement.
+The reference brand showcase is hidden in the integrated interface. Browser checks verify the visible TrustCart hero and popular-product images, plus navigation and product behavior.
 
-These tests cover the implemented UI workflows. They do not establish exhaustive branch coverage, official product certification, live-registry integration, authentication, real checkout, or full accessibility compliance. Browser checks use Chromium only; mobile viewport emulation is not testing on a physical phone.
+## Hosted desktop and mobile checks
+
+Set `TRUSTCART_BASE_URL` to the target origin and run `npm run test:browser` with the login password in the process environment. Set `TRUSTCART_REVIEWER_PASSWORD` when the deployment uses the separate reviewer login. Otherwise, set `TRUSTCART_DEMO_PASSWORD` for the shared demo login. Leave `TRUSTCART_BASE_URL` unset to run the isolated local suite. Keep password values out of command output and source files.
+
+Hosted mode runs 22 checks across desktop and mobile Chromium contexts. It covers the existing storefront flows and adds password protection, evidence/recheck/reviewer actions, stale hashes, agency totals, outage simulation, copy correction and authenticated Swagger. Each created product title is unique so earlier hosted runs do not create ambiguous selectors.
+
+The unauthenticated request context explicitly overrides the configured credentials. Hosted traces are disabled to avoid writing authentication headers into trace artifacts. The suite creates synthetic products and reviews, and leaves the saved audit history available for inspection.
+
+Shared persistent storage is required for saved-product and report continuity across hosted requests. A disappearing product or report remains a test failure. Temporary instance-local SQLite cannot guarantee those flows on Vercel.
+
+These tests cover the implemented UI workflows and, in hosted mode, the demo password gate. They do not establish exhaustive branch coverage, official product certification, live-registry integration, production identity management, real checkout, or full accessibility compliance. Browser checks use Chromium only; mobile viewport emulation is not testing on a physical phone.

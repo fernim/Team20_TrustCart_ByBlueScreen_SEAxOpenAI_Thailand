@@ -2,7 +2,6 @@ import base64
 import binascii
 import os
 import tempfile
-import sqlite3
 from contextlib import closing
 from hmac import compare_digest
 from pathlib import Path
@@ -11,6 +10,7 @@ from uuid import UUID
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
+from backend.app import database as store
 from backend.app.demo_access import allows_browser_write
 from backend.app.main import Listing, Status, Trace, create_app, evaluate_rules
 from backend.app.registry import demo_listings
@@ -152,7 +152,7 @@ def create_demo_app(database: Path):
     @service.post("/demo/tamper/{verification_id}", tags=["Demo"], summary="Simulate audit tampering")
     def tamper(verification_id: UUID, revision: Revision):
         """Simulate tampering on a copy of the saved trace and return its audit result."""
-        with closing(sqlite3.connect(database)) as connection:
+        with closing(store.connect(database)) as connection:
             result, _ = load(connection, verification_id)
         if revision.chain_hash != result["chain_hash"] or not result["trace"] or not audit(result)["valid"]:
             raise HTTPException(409, "Reload a valid report before simulating tampering")
