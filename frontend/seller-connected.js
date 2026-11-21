@@ -234,12 +234,27 @@
       submission = null;
       dirty = false;
       showSelected();
-      await loadProducts();
-      feedback(
-        "Product saved and visible without a badge. Verification is optional.",
-      );
-      if ($("#verify-on-save").checked) await requestVerification();
-      localStorage.setItem("trustcart-products-updated", Date.now());
+      let message = "เผยแพร่สินค้าแล้ว / Product published. Customers can view it now without a verification badge.";
+      feedback(message);
+      try {
+        await loadProducts();
+      } catch (error) {
+        message += " The product list could not refresh: " + error.message;
+      }
+      if ($("#verify-on-save").checked) {
+        try {
+          await requestVerification();
+          message += " Verification is waiting for documents; publication is already complete.";
+        } catch (error) {
+          message += " Verification could not start: " + error.message;
+        }
+      }
+      feedback(message);
+      try {
+        localStorage.setItem("trustcart-products-updated", Date.now());
+      } catch (_) {
+        // Browser storage restrictions must not hide successful publication.
+      }
     });
   };
   $("#listing-images").onchange = (event) =>

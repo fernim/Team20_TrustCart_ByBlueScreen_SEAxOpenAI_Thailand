@@ -75,3 +75,5 @@ Reviews show five items per page, star/photo filters, accessible photo dialogs a
 Storefront product cards and galleries use the local supplement illustration (`demo-supplement.png`) for missing seller photos, empty gallery entries, or image-load failures. A fallback image never grants a verification badge; valid product photos stay unchanged.
 
 The seller subscription offer is a top-right header disclosure menu, shown only after the subscription check confirms an inactive plan. Active subscribers see no upsell or disabled activation panel. The dropdown stays within the viewport on mobile.
+
+Publishing confirmation is separate from verification feedback. After the product save succeeds, keep “Product published” visible even if verification waits for documents or cannot start. A list refresh or browser-storage error must not imply that publication failed.

@@ -45,7 +45,7 @@ test("seller publishes a normal listing without subscribing or uploading documen
   await page.locator("#listing-price").fill("249");
   await page.locator("#listing-stock").fill("7");
   await page.locator("#submit-listing").click();
-  await expect(page.locator("#seller-feedback")).toContainText("Product saved");
+  await expect(page.locator("#seller-feedback")).toContainText("Product published");
   const href = await page.locator("#view-product").getAttribute("href");
   await page.goto(href);
   await expect(page.locator("#product-detail")).toBeVisible();
@@ -80,7 +80,7 @@ test("approved fixture has clickable badge; editing removes it", async ({
     .click();
   await page.locator("#listing-title").fill("Edited product");
   await page.locator("#submit-listing").click();
-  await expect(page.locator("#seller-feedback")).toContainText("Product saved");
+  await expect(page.locator("#seller-feedback")).toContainText("Product published");
   await page.goto(href);
   await expect(page.locator("#product-detail")).toBeVisible();
   await expect(page.locator("#product-detail .product-verified")).toHaveCount(
@@ -169,7 +169,7 @@ test("seller uploads images and edits price and stock on the same public page", 
     .setInputFiles(["frontend/assets/demo-supplement.png"]);
   await expect(page.locator("#image-previews img")).toHaveCount(1);
   await page.locator("#submit-listing").click();
-  await expect(page.locator("#seller-feedback")).toContainText("Product saved");
+  await expect(page.locator("#seller-feedback")).toContainText("Product published");
   const href = await page.locator("#view-product").getAttribute("href");
   await page.goto(href);
   await expect(page.locator("#product-title")).toHaveText(title);
@@ -185,7 +185,7 @@ test("seller uploads images and edits price and stock on the same public page", 
   await page.locator("#listing-stock").fill("0");
   await page.locator("#listing-price").fill("149");
   await page.locator("#submit-listing").click();
-  await expect(page.locator("#seller-feedback")).toContainText("Product saved");
+  await expect(page.locator("#seller-feedback")).toContainText("Product published");
   await page.goto(href);
   await expect(page.locator("#product-detail")).toContainText("149");
   await expect(page.locator("#add-to-cart")).toBeDisabled();
@@ -201,4 +201,21 @@ test('subscription offer lives top right and disappears for active sellers',asyn
  const panel=await page.locator('.seller-plan-panel').boundingBox();expect(panel.x).toBeGreaterThanOrEqual(0);expect(panel.x+panel.width).toBeLessThanOrEqual(page.viewportSize().width);
  await page.locator('#activate-plan').click();await expect(menu).toBeHidden();
  await page.reload();await expect(page.locator('#plan-status')).toContainText('Active until');await expect(menu).toBeHidden();
+});
+
+test('publish confirmation remains visible when optional verification waits for documents',async({page})=>{
+ await login(page,'seller1');
+ await expect(page.locator('#plan-status')).not.toHaveText('');
+ if(await page.locator('#activate-plan').isEnabled()){await page.locator('#verification-plan summary').click();await page.locator('#activate-plan').click();await expect(page.locator('#activate-plan')).toBeDisabled();}
+ await page.locator('#listing-title').fill('Published while awaiting documents');await page.locator('#listing-stock').fill('100');await page.locator('#verify-on-save').check();await page.locator('#submit-listing').click();
+ await expect(page.locator('#seller-result')).toContainText('Waiting for documents');
+ await expect(page.locator('#seller-feedback')).toContainText('Product published');
+ const href=await page.locator('#view-product').getAttribute('href');await page.goto(href);await expect(page.locator('#product-title')).toHaveText('Published while awaiting documents');
+});
+
+test('a verification error does not hide successful publication',async({page})=>{
+ await login(page,'seller2');await page.route('**/v1/seller/products/*/submissions',route=>route.fulfill({status:403,json:{detail:'Activate the demo verification plan first'}}));
+ await page.locator('#listing-title').fill('Published without verification plan');await page.locator('#verify-on-save').check();await page.locator('#submit-listing').click();
+ await expect(page.locator('#seller-feedback')).toContainText('Product published');await expect(page.locator('#seller-feedback')).toContainText('Verification could not start');
+ const href=await page.locator('#view-product').getAttribute('href');await page.goto(href);await expect(page.locator('#product-title')).toHaveText('Published without verification plan');
 });
