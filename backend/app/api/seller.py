@@ -61,7 +61,18 @@ async def evidence(
         declarations["standards"] = standards.strip()
     with edit(request.app.state.database, verification_id, chain_hash) as (connection, result, payload):
         trace = continue_trace(result)
+        if getattr(connection, "dialect", "sqlite") == "postgresql":
+            # Serialize equal hashes across distinct verification row locks.
+            # Sorted acquisition also avoids deadlocks for overlapping uploads.
+            for digest in sorted({digest for _, digest in hashes}):
+                connection.execute("SELECT pg_advisory_xact_lock(?)", (int(digest[:15], 16),))
         for kind, digest in hashes:
+            duplicate = connection.execute(
+                "SELECT 1 FROM evidence WHERE sha256=? AND verification_id<>? LIMIT 1",
+                (digest, str(verification_id)),
+            ).fetchone()
+            if duplicate:
+                trace.add("duplicate_evidence", json.dumps({"kind": kind, "sha256": digest}))
             connection.execute("INSERT INTO evidence VALUES (?, ?, ?, ?, ?, ?)", (
                 str(uuid4()), str(verification_id), kind, digest, json.dumps(declarations), datetime.now(timezone.utc).isoformat()))
             trace.add("evidence", json.dumps({"kind": kind, "sha256": digest, "chain_hash": chain_hash}))

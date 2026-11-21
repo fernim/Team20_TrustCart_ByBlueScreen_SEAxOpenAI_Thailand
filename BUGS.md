@@ -12,7 +12,7 @@ Found while reviewing commit `31ef16b`. Each item says how it was confirmed.
 | B6 | High | Open |
 | B7 | Medium | Open |
 | B8 | Medium | Fixed |
-| B9 | Medium | Open |
+| B9 | Medium | Fixed |
 | B10 | Low | Open |
 | B11 | Low | Open (Roadmap) |
 | B12 | High | Fixed |
@@ -122,6 +122,8 @@ B1 uses configurable Thai claim phrases with positive and negative regression te
 **Impact:** one certificate can be reused across unrelated listings.
 
 **Fix:** on upload, look up the hash in the `evidence` table. If it belongs to another verification, record it in the trace and send the case to human review.
+
+**Resolution evidence (B9):** `tests/test_duplicate_evidence.py` first reproduced two incorrect APPROVED responses, then passed cross-case label/certificate reuse and negative controls. The upload appends `duplicate_evidence`; unresolved duplicates remain in human review at confidence 0.60 after restart/recheck. Same-verification reuse is not flagged, stale uploads return 409, audit hashes remain valid, and outages retain UNKNOWN.
 
 ## B10. R-02 category claims are hardcoded (Low)
 

@@ -138,7 +138,12 @@ def reevaluate(connection, result, payload, trace, extraction_client):
     status, reason, rules = evaluate_rules(
         listing, trace, extraction_client, declarations=declarations,
     )
+    duplicate_evidence = any(entry.step == "duplicate_evidence" for entry in trace.entries)
+    if duplicate_evidence and status not in {Status.UNKNOWN, Status.DENIED}:
+        status, reason = Status.PENDING, "duplicate_evidence_requires_review"
     confidence = {Status.UNKNOWN: 0.0, Status.PENDING: 0.60}.get(status, 1.0)
+    if duplicate_evidence:
+        confidence = min(confidence, 0.60)
     trace.add("risk_policy", RISK_POLICY_HASH)
     trace.add("decision", reason)
     trace.add("review_routing", "required" if confidence < 0.75 else "clear")
