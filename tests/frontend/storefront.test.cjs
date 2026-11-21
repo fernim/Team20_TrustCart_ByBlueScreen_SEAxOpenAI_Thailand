@@ -618,3 +618,23 @@ test('popular product rail opens real local product details and updates language
   assert.match(p.$('#popular-products').textContent,/sold/);
   assert.equal(p.$$('#brand-shops .brand-shop').length,8);
 });
+
+test('approved product results never certify brand-shop references across languages', async (t) => {
+  const p = page(t, (window) => {
+    window.fetch = async (url) => url === '/v1/products'
+      ? { ok: true, json: async () => [] }
+      : { ok: true, json: async () => reportFixture };
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(p.$('.product-card .product-verified'));
+  const originalLinks = p.$$('#brand-shops a').map((link) => link.href);
+  for (const language of ['en', 'th']) {
+    p.$('#language').value = language;
+    p.$('#language').dispatchEvent(new p.window.Event('change'));
+    assert.equal(p.$$('#brand-shops .brand-shop').length, 8);
+    assert.deepEqual(p.$$('#brand-shops a').map((link) => link.href), originalLinks);
+    assert.equal(p.$('#brand-shops .product-verified'), null);
+    assert.equal(p.$('#brand-shops .product-status'), null);
+    assert.match(p.$('#brand-shops a').getAttribute('aria-label'), language === 'en' ? /View on Shopee/ : /ดูบน Shopee/);
+  }
+});
