@@ -9,7 +9,7 @@ test("connected seller offers optional verification and private document workflo
     "verify-on-save",
     "document-form",
     "activate-plan",
-    "assessment-mode",
+    "run-replay-check",
     "submission-history",
   ])
     assert.ok(doc.getElementById(id), id);

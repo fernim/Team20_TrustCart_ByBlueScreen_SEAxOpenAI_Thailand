@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/static/marketplace-ui.css" />
     <script defer src="/static/locale.js"></script>
     <script defer src="/static/verification-view.js"></script>
-    <link rel="stylesheet" href="/static/workflow.css" /><script defer src="/static/session.js"></script><script defer src="/static/workflow.js"></script><script defer src="/static/seller-connected.js"></script>
+    <link rel="stylesheet" href="/static/workflow.css" /><script defer src="/static/session.js"></script><script defer src="/static/checklist-view.js"></script><script defer src="/static/workflow.js"></script><script defer src="/static/seller-connected.js"></script>
   </head>
   <body class="seller-page">
 <nav class="integration-nav" aria-label="Account"><a href="/login">Sign in</a></nav>
@@ -103,7 +103,7 @@ Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริม�
             <label for="listing-stock"><span data-en="Stock quantity">จำนวนสินค้าคงเหลือ</span> <span>*</span></label>
             <input id="listing-stock" type="number" min="0" max="10000000" step="1" value="0" required />
           </section>
-          <label><input id="verify-on-save" type="checkbox" /> ขอตรวจหลังบันทึก / Request verification after saving</label><div class="seller-actions">
+          <label><input id="verify-on-save" type="checkbox" /> เตรียมเอกสารหลังบันทึก / Prepare verification documents after saving</label><div class="seller-actions">
             <button id="save-draft" type="button" class="load-more">
               บันทึกแบบร่างในเครื่อง</button
             ><button id="submit-listing" class="primary" type="submit">
@@ -125,7 +125,7 @@ Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริม�
 <section class="seller-section"><h2>Synthetic demonstration examples</h2><p>These examples use the synthetic registry, not real product certification.</p><select id="demo-case" aria-label="Demo example"></select><button id="load-demo" type="button">Load example listing</button><div id="document-links" class="document-list"></div></section>
 <section class="seller-section" id="verification-controls" hidden><h2>การตรวจสอบ / Verification</h2><button id="request-verification" type="button">Verify this product</button><button id="refresh-verification" type="button">Refresh status</button>
 <form id="document-form"><label for="document-kind">Document type</label><select id="document-kind"><option value="label">Product label</option><option value="certificate">Registration document</option><option value="permit">Advertising permit</option><option value="supporting">Supporting document</option></select><label for="document-file">Private document · PDF, PNG, JPEG, WebP · 2 MiB max</label><input id="document-file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" /><button type="submit">Upload document</button><button type="button" id="demo-documents">Upload selected example documents</button></form>
-<label for="assessment-mode">Assessment source</label><select id="assessment-mode"><option value="live">Live · OpenAI document assessment</option><option value="replay">Replay · exact synthetic examples only</option></select><p class="dialog-note">Live sends the documents to OpenAI when enabled by the operator. Replay does not call OpenAI.</p><button id="run-check" type="button" class="primary">Start check</button><button id="show-history" type="button">Submission history</button><div id="submission-history"></div></section>
+<p class="dialog-note">เมื่อส่งตรวจ ระบบจะส่งเอกสารและข้อความสินค้าไป OpenAI เพื่อสกัดข้อมูล ตรวจตามกฎ แล้วส่งให้ Agency ยืนยัน ผลเบื้องต้นไม่ใช่การอนุมัติ / Submitting sends documents and listing text to OpenAI, applies deterministic checks, then routes to Agency for final review.</p><button id="run-check" type="button" class="primary">ส่งให้ Agency ตรวจ / Submit for review</button><details><summary>Replay demonstration · Synthetic data only</summary><p>Replay does not call OpenAI and still requires Agency review.</p><button id="run-replay-check" type="button">Run Replay checklist and send to Agency</button></details><button id="show-history" type="button">Submission history</button><div id="submission-history"></div></section>
 <article id="seller-result" aria-live="polite"></article>
       </main>
     </div>

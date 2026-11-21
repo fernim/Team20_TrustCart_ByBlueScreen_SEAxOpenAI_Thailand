@@ -66,3 +66,9 @@ A mixed-storage regression verifies that legacy diagnostic product listings igno
 The existing Python 3.15 environment cannot install the pinned psycopg-binary 3.2 wheel. Full merge validation therefore uses an isolated Python 3.13 environment at `/tmp/trustcart-merge-venv`, installed from the unchanged requirements file.
 
 Merge validation passed: `/tmp/trustcart-merge-venv/bin/python -m pytest -q` — 172 tests; `npm test` — 120 tests; `npx playwright test` — 34 desktop/mobile tests. The public storefront remains public, the commit-version GET remains public, and private diagnostic/role endpoints retain their access checks.
+
+## Automatic review submission
+
+Seller Submit for review now calls the Live-only `/submit-review` endpoint. Provider-boundary tests mock the OpenAI Responses API and verify both document and claim requests; no live credentials or network calls are required. Browser tests inject explicit test-only assessors in `serve_connected.py`, then exercise the real submit endpoint, checklist rendering, Agency queue, reviewer confirmation and badge propagation. Replay fixtures also need a reviewer decision; badge tests now create that decision in a separate reviewer session.
+
+Validation for this change: `/tmp/trustcart-merge-venv/bin/python -m pytest -q` — 181 passed; `npm test` — 133 passed; `npx playwright test` — 46 passed. Coverage includes missing documents, unavailable/malformed claim checks, grounded claim filtering, idempotent retries, stale revisions, unrun-check approval rejection and preservation of publication behavior. Real OpenAI connectivity and deployed provider configuration were not validated.

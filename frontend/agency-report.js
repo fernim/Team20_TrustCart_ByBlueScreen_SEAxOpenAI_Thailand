@@ -192,6 +192,7 @@ window.TrustCartAgencyReport = (() => {
       );
     const checks = $("#case-checks");
     checks.replaceChildren();
+    if (window.TrustCartChecklist) checks.append(window.TrustCartChecklist.render(r, ui.lang));
     if (!r.rule_results.length)
       checks.append(ui.node("p", ui.t("no_checks"), "agency-muted"));
     for (const rule of r.rule_results) {

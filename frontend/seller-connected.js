@@ -98,17 +98,22 @@
     flow.render($("#seller-result"), submission);
     $("#request-verification").textContent =
       submission && submission.stage !== "WAITING_DOCUMENTS"
-        ? "ส่งตรวจฉบับใหม่ / Resubmit"
-        : "ขอตรวจสินค้า / Verify this product";
+        ? "เตรียมเอกสารฉบับใหม่ / Prepare resubmission"
+        : "เตรียมเอกสารขอตรวจ / Prepare documents";
     $("#document-form").hidden =
       !submission || submission.stage !== "WAITING_DOCUMENTS";
+    const missingDocuments = (
+      submission?.required_documents || ["label", "certificate"]
+    ).some((kind) => !submission?.documents.some((doc) => doc.kind === kind));
     $("#run-check").disabled =
       !submission ||
+      missingDocuments ||
       !(
         ["WAITING_DOCUMENTS", "UNAVAILABLE"].includes(submission.stage) ||
         (submission.stage === "AI_CHECKING" &&
           submission.lease_until * 1000 < Date.now())
       );
+    $("#run-replay-check").disabled = $("#run-check").disabled;
     $("#document-links").replaceChildren();
     for (const kind of ["label", "certificate", "permit"]) {
       const a = flow.node("a", flow.kinds[kind]);
@@ -204,7 +209,9 @@
     );
     showSelected();
     await loadProducts();
-    feedback("Upload required documents, then start the check.");
+    feedback(
+      "Upload required documents, then Submit for review. Live OpenAI document and claim checks run automatically before Agency review.",
+    );
   }
   async function upload(kind, file) {
     const body = new FormData();
@@ -234,7 +241,8 @@
       submission = null;
       dirty = false;
       showSelected();
-      let message = "เผยแพร่สินค้าแล้ว / Product published. Customers can view it now without a verification badge.";
+      let message =
+        "เผยแพร่สินค้าแล้ว / Product published. Customers can view it now without a verification badge.";
       feedback(message);
       try {
         await loadProducts();
@@ -244,7 +252,8 @@
       if ($("#verify-on-save").checked) {
         try {
           await requestVerification();
-          message += " Verification is waiting for documents; publication is already complete.";
+          message +=
+            " Verification is waiting for documents; publication is already complete.";
         } catch (error) {
           message += " Verification could not start: " + error.message;
         }
@@ -314,27 +323,47 @@
       feedback("Private document saved.");
     });
   };
-  $("#run-check").onclick = () =>
-    action(async () => {
-      if (dirty) throw Error("Save edited listing before checking");
-      feedback("Checking documents… no approval is assumed.");
-      const result = await session.json(
-        "/v1/seller/submissions/" + submission.id + "/run",
-        {
-          chain_hash: submission.chain_hash,
-          mode: $("#assessment-mode").value,
-        },
+  async function submitForReview(mode = "live") {
+    if (dirty) throw Error("Save edited listing before checking");
+    if (!submission) throw Error("Prepare and upload documents first");
+    $("#run-check").disabled = true;
+    $("#run-replay-check").disabled = true;
+    feedback(
+      "Checking documents and claims before Agency review… no approval is assumed.",
+    );
+    flow.render($("#seller-result"), {
+      ...submission,
+      status: "PENDING",
+      stage: "AI_CHECKING",
+      document_check: { state: "checking" },
+      claim_check: { state: "checking" },
+    });
+    try {
+      submission = await session.json(
+        "/v1/seller/submissions/" +
+          submission.id +
+          (mode === "live" ? "/submit-review" : "/run"),
+        mode === "live"
+          ? { chain_hash: submission.chain_hash }
+          : { chain_hash: submission.chain_hash, mode: "replay" },
       );
-      submission = result;
       showSelected();
       await loadProducts();
-      localStorage.setItem("trustcart-products-updated", Date.now());
+      try {
+        localStorage.setItem("trustcart-products-updated", Date.now());
+      } catch (_) {}
       feedback(
-        result.stage === "UNAVAILABLE"
-          ? "Check unavailable. Retry or request reviewer assistance."
-          : `Check complete: ${result.status}`,
+        submission.stage === "UNAVAILABLE"
+          ? "Check complete: UNKNOWN. Automated checks unavailable; Agency can inspect the case. Retry is required before approval."
+          : `Check complete: ${submission.status}. Checklist saved and sent to Agency. No approval badge until reviewer confirmation.`,
       );
-    });
+    } finally {
+      showSelected();
+    }
+  }
+  $("#run-check").onclick = () => action(() => submitForReview());
+  $("#run-replay-check").onclick = () =>
+    action(() => submitForReview("replay"));
   $("#load-demo").onclick = () => {
     if (dirty && !confirm("Discard unsaved edits?")) return;
     selected = null;
@@ -361,9 +390,8 @@
           new File([blob], kind + ".pdf", { type: "application/pdf" }),
         );
       }
-      $("#assessment-mode").value = "replay";
       feedback(
-        "Synthetic sample documents uploaded. Replay mode is explicitly selected.",
+        "Synthetic sample documents uploaded. Submit for review runs live OpenAI checks; Replay demonstration is a separate action.",
       );
     });
   $("#show-history").onclick = () =>

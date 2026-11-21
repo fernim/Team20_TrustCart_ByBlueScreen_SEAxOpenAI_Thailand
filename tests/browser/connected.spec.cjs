@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect, request: playwrightRequest } = require("@playwright/test");
 async function login(page, role) {
   await page.goto("/login");
   await page.locator("#username").selectOption(role);
@@ -31,10 +31,29 @@ async function fixture(page, kind = "clean") {
   await expect(page.locator("#seller-feedback")).toContainText(
     "Synthetic sample documents uploaded",
   );
-  await page.locator("#run-check").click();
+  await page.locator("details").filter({has: page.locator("#run-replay-check")}).locator("summary").click();
+  await page.locator("#run-replay-check").click();
   await expect(page.locator("#seller-feedback")).toContainText(
     "Check complete",
   );
+  if (kind === "clean") {
+    // A badge fixture now requires an explicit decision by a separate reviewer session.
+    const saved = await (await page.request.get("/v1/seller/products/" + href.split("/").pop())).json();
+    const reviewer = await playwrightRequest.newContext({baseURL: new URL(page.url()).origin});
+    try {
+      const account = await (await reviewer.post("/v1/auth/login", {data: {username: "reviewer"}})).json();
+      const headers = {"X-CSRF-Token": account.csrf_token};
+      const started = await (await reviewer.post("/v1/reviewer/submissions/" + saved.verification.id + "/start-review", {headers, data: {chain_hash: saved.verification.chain_hash}})).json();
+      const decision = await reviewer.post("/v1/reviewer/submissions/" + started.id + "/decision", {headers, data: {
+        chain_hash: started.chain_hash, decision: "approve", note: "Inspected synthetic original documents",
+        confirmed_documents: started.documents.map(doc => doc.id),
+        confirmed_fields: Object.fromEntries(["product_name", "registration_reference", "license_holder"].map(key => [key, saved.listing[key]])),
+      }});
+      expect(decision.status()).toBe(200);
+    } finally { await reviewer.dispose(); }
+    await page.locator("#refresh-verification").click();
+    await expect(page.locator("#seller-result")).toContainText("APPROVED");
+  }
   return href;
 }
 test("seller publishes a normal listing without subscribing or uploading documents", async ({

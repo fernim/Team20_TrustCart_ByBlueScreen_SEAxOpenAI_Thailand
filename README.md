@@ -105,7 +105,7 @@ Public catalog data includes listing fields, shop identity, minimal status and `
 - Save a local draft and publish independently of verification. Successful publication remains visible if the optional verification action fails.
 - Activate the **demo ฿299/month** verification plan. This sets an expiry one calendar month ahead and enables submissions; it is not billing, payment, automatic renewal, or a validated commercial offer.
 - Create an immutable submission snapshot; upload a label and certificate/registration document, plus a permit when required by the listing or synthetic registry. Up to five active documents are retained per submission.
-- Run live assessment or choose a labeled sample and replay. View blockers, reviewer notes, current status and private revision history; resubmit for a new evidence review.
+- Choose **Prepare documents**, upload all required evidence, then **Submit for review**. That single action calls OpenAI document and claim extraction, applies deterministic rules, saves the checklist and routes the case to Agency. A clean pre-check remains `PENDING`; only a reviewer confirmation can grant a connected badge. A separate, explicitly labeled Replay demonstration also routes to Agency. View blockers, reviewer notes and revision history; prepare a new submission to replace checked evidence.
 - Use **Refresh products** or **Refresh status** for external updates. Seller product lists load on entry and after local actions; they do not poll while idle or on window focus. Manual refresh preserves unsaved edits.
 
 Any product edit supersedes the active submission and removes its badge. Replacing checked evidence requires a new submission. The backend checks product version, current submission and chain hash; stale reviewer actions and late assessment results cannot approve a newer revision. Assessment runs use a run token and lease to reject concurrent/stale completions.
@@ -143,11 +143,13 @@ Product images must be valid PNG/JPEG/WebP data URLs, at most 2 MiB and 16 milli
 
 `backend/app/document_assessment.py` uses the OpenAI Responses API for extraction/readability/completeness findings. Live calls require explicit transfer approval and both `OPENAI_API_KEY` and `TRUSTCART_AI_TRANSFER_APPROVED=true` in the environment. Optional `OPENAI_DOCUMENT_MODEL` selects the document model; `OPENAI_MODEL` selects the separate listing-claim model. Both default to `gpt-4o-mini` in code.
 
-The document request can transfer the listing and uploaded document content. Text-PDF quotations are checked against extracted page text. Image-only/scanned content, low confidence, inconsistent findings, missing quotations and non-supplement categories require human confirmation. A live document error or missing configuration produces `UNKNOWN`/`UNAVAILABLE`; it never silently switches to replay.
+The document request can transfer the listing and uploaded document content. Text-PDF quotations are checked against extracted page text. Image-only/scanned content, low confidence, inconsistent findings, missing quotations and non-supplement categories require human confirmation. An unavailable/malformed document or claim assessment produces `UNKNOWN`/`UNAVAILABLE`, retains any available findings and routes to Agency; it never silently switches to replay. Reviewers cannot approve while a required automated check is unavailable.
 
-Replay makes no OpenAI document call and accepts only the exact bundled listing and matching label/certificate/permit hashes for three synthetic cases: clean, uncertain and overclaim. It is labeled in Seller Centre. Neither replay nor live extraction authenticates documents.
+Replay makes no OpenAI calls and accepts only the exact bundled listing and matching label/certificate/permit hashes for three synthetic cases: clean, uncertain and overclaim. It is labeled in Seller Centre. Neither replay nor live extraction authenticates documents. Both now require Agency review before approval; historical automatic demo approvals remain readable without rewriting their audit chains.
 
-`backend/app/llm.py` separately extracts literal listing claims and drops phrases absent from the listing. Without configuration, or on handled extraction errors, it returns no extracted claims and deterministic advertising checks continue. This differs from the document-assessment failure path. Neither model can set a verification status.
+`backend/app/llm.py` extracts literal listing claims and drops phrases absent from the listing. Connected review submission uses its required, schema-validated extraction path: missing configuration, provider errors and malformed output are unavailable checks, not clean claims. Grounded findings are saved and reused when the reviewer reruns rules, with no provider call inside a database transaction. The older diagnostic APIs retain their optional extraction behavior. Neither model sets a verification status.
+
+`POST /v1/seller/submissions/{id}/submit-review` takes the current `chain_hash` and always runs Live. The existing `/run` endpoint supports explicit Replay but uses the same Agency approval gate. Missing documents are rejected before any provider call. Retries using the original completed request hash return the saved result without calling providers again; stale versions, competing leases and late completions are rejected.
 
 ## API map
 
@@ -160,7 +162,7 @@ Current frontend scripts use the connected workflow. Legacy diagnostics share th
 | Shop products | `GET/POST /v1/seller/products`, `GET/PUT /v1/seller/products/{id}` |
 | Demo plan | `GET /v1/seller/subscription`, `POST /v1/seller/subscription/activate` |
 | Seller submissions/history | `POST /v1/seller/products/{id}/submissions`, `GET /v1/seller/products/{id}/history`, `GET /v1/seller/submissions/{id}` |
-| Documents and assessment | `POST /v1/seller/submissions/{id}/documents`, `POST /v1/seller/submissions/{id}/run`, `GET /v1/documents/{id}` |
+| Documents and assessment | `POST /v1/seller/submissions/{id}/documents`, `POST /v1/seller/submissions/{id}/submit-review`, `POST /v1/seller/submissions/{id}/run`, `GET /v1/documents/{id}` |
 | Synthetic examples | `GET /v1/seller/demo-cases`, `GET /v1/seller/demo-cases/{case}/{kind}` |
 | Agency | `GET /v1/reviewer/queue`, `GET /v1/reviewer/shops`, `GET /v1/reviewer/submissions`, `GET /v1/reviewer/submissions/{id}` |
 | Agency actions/history | `POST /v1/reviewer/submissions/{id}/start-review`, `POST /v1/reviewer/submissions/{id}/decision`, `GET /v1/reviewer/submissions/{id}/history` |
@@ -181,15 +183,15 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Playwright uses the connected application on port 8768, a temporary SQLite database, real demo role sessions and desktop/mobile Chromium viewports. It disables external database and live AI configuration. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an installed Chromium executable. Tests do not establish live Supabase connectivity, live OpenAI correctness, official registry accuracy, or performance on physical phones.
+Playwright uses the connected application on port 8768, a temporary SQLite database, real demo role sessions and desktop/mobile Chromium viewports. It disables external database and live AI configuration and injects deterministic test-only document/claim assessors for the live-submit browser flow. Provider HTTP shapes are separately tested with mocked OpenAI responses. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an installed Chromium executable. Tests do not establish live Supabase connectivity, live OpenAI correctness, official registry accuracy, or performance on physical phones.
 
 **Latest local validation, 21 November 2026:**
 
 | Check | Result |
 | --- | --- |
-| `/tmp/trustcart-readme-audit-venv/bin/python -m pytest -q` — isolated Python 3.13 environment installed from `requirements.txt` | 174 passed; one Starlette/httpx deprecation warning |
-| `npm ci` then `npm test` | 131 passed |
-| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=… npm run test:browser` — existing local Chromium | 44 passed (desktop/mobile Chromium) |
+| `/tmp/trustcart-merge-venv/bin/python -m pytest -q` — isolated Python 3.13 environment installed from `requirements.txt` | 181 passed; one Starlette/httpx deprecation warning |
+| `npm ci` then `npm test` | 133 passed |
+| `npx playwright test` — local Chromium | 46 passed (desktop/mobile Chromium) |
 
 The pre-existing Python 3.15 `.venv` run had 171 passes and two import failures because `psycopg` was absent; installing the pinned binary extra on that interpreter failed dependency resolution. The successful Python 3.13 run uses the declared dependencies without modifying `.venv` or loosening requirements.
 

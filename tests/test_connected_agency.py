@@ -1,7 +1,7 @@
 import json
 from contextlib import closing
 from test_connected_access import connected, login
-from test_connected_workflow import setup_case, run
+from test_connected_workflow import setup_case, run, approve_review
 from backend.app import database as store
 from backend.app.connected_store import initialize
 
@@ -28,8 +28,9 @@ def test_agency_queue_filters_and_counts_reconcile_current_submissions(connected
     client, password = connected
     _, pending = setup_case(client, password, "uncertain")
     pending = run(client, pending)
-    _, completed = setup_case(client, password)
+    completed_product, completed = setup_case(client, password)
     completed = run(client, completed)
+    completed = approve_review(client, password, completed_product, completed)
     login(client, password, "reviewer")
     response = client.get("/v1/reviewer/queue?marketplace=shopee&work_queue=to_review")
     assert response.status_code == 200, response.text
@@ -159,6 +160,7 @@ def test_start_review_rejects_waiting_completed_and_superseded(connected):
     )
     product, result = setup_case(client, password)
     completed = run(client, result)
+    completed = approve_review(client, password, product, completed)
     login(client, password, "reviewer")
     assert (
         client.post(

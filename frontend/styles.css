@@ -1721,3 +1721,16 @@ dialog h2 {
 .product-thumbnails img { width:60px; height:60px; object-fit:contain; }
 .product-thumbnails button[aria-pressed="true"] { border-color:var(--brand-primary); }
 .product-stock { color:var(--text-secondary); font-size:var(--font-size-body); }
+
+/* Shared seller / Agency pre-review checklist: findings never grant a badge. */
+.automated-checklist {margin:20px 0;padding:18px;background:#fafafa;border:1px solid var(--border-subtle,#e8e8e8);border-radius:4px}
+.automated-checklist h3 {margin:0 0 12px;font-size:16px}
+.automated-checklist ul {list-style:none;margin:0;padding:0}
+.automated-checklist li {display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eee;font-size:13px}
+.automated-checklist li strong {font-weight:500}
+.automated-checklist li span {color:#747474;text-align:right}
+.automated-checklist [data-state="pass"] span {color:#18845b}
+.automated-checklist [data-state="fail"] span,.automated-checklist [data-state="unavailable"] span {color:#b53521}
+.automated-checklist p {color:#757575;font-size:12px;line-height:1.8;margin:12px 0 0}
+.automated-checklist blockquote {overflow-wrap:anywhere;margin:12px 0;padding:8px 12px;border-left:2px solid #ee4d2d}
+@media(max-width:600px){.automated-checklist{padding:14px}.automated-checklist li{flex-direction:column;gap:4px}.automated-checklist li span{text-align:left}}

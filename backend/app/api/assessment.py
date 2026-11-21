@@ -12,6 +12,7 @@ from ..verification import Listing, Status
 from ..workflow import continue_trace
 from ..document_assessment import assess_documents, validate_assessment, Fields
 from ..demo_cases import replay
+from ..llm import assess_claims
 from .connected import require_plan
 from .submissions import active_submission, check_revision, event
 
@@ -64,6 +65,9 @@ def evaluate(result, assessment, client, confirmed=None):
             None,
         )
         declaration = primary["fields"] if primary else None
+    if result.get("claim_check", {}).get("state") == "completed":
+        claims = result["claim_check"]["claims"]
+        client = lambda _: {"claims": claims}
     status, reason, rules = evaluate_rules(
         Listing(**result["listing"]), trace, client, declarations=declaration
     )
@@ -103,6 +107,15 @@ def evaluate(result, assessment, client, confirmed=None):
             ].get("advertising_permit")
         if result["listing"]["category"] != "supplement":
             uncertainty = True
+    if confirmed is None:
+        if result.get("document_check", {}).get("state") == "completed":
+            result["document_check"]["result"] = "review" if uncertainty else "pass"
+        if result.get("claim_check", {}).get("state") == "completed":
+            result["claim_check"]["result"] = (
+                "fail"
+                if any(r["rule"] == "R-03" and r["result"] == "fail" for r in rules)
+                else "pass"
+            )
     if status == Status.APPROVED and uncertainty:
         status, reason = Status.PENDING, "document_review_required"
     stage = (
@@ -141,6 +154,16 @@ class Run(BaseModel):
     mode: Literal["live", "replay"] = "live"
 
 
+class SubmitReview(BaseModel):
+    model_config = {"extra": "forbid"}
+    chain_hash: str = Field(min_length=64, max_length=64)
+
+
+@router.post("/v1/seller/submissions/{submission_id}/submit-review")
+def submit_review(submission_id: UUID, payload: SubmitReview, request: Request):
+    return run(submission_id, Run(chain_hash=payload.chain_hash, mode="live"), request)
+
+
 @router.post("/v1/seller/submissions/{submission_id}/run")
 def run(submission_id: UUID, payload: Run, request: Request):
     user = require(request, "seller")
@@ -174,11 +197,15 @@ def run(submission_id: UUID, payload: Run, request: Request):
             stage="AI_CHECKING",
             status="PENDING",
             confidence=0.0,
-            human_review_required=False,
+            human_review_required=True,
             mode=payload.mode,
             run_token=token,
             lease_until=time.time() + 60,
             last_run_hash=payload.chain_hash,
+            assessment=None,
+            document_check={"state": "checking"},
+            claim_check={"state": "checking"},
+            rule_results=[],
         )
         event(
             result,
@@ -190,7 +217,10 @@ def run(submission_id: UUID, payload: Run, request: Request):
             },
         )
         save_submission(connection, result)
-    # Network/vision processing occurs outside the database transaction.
+    # Provider calls run outside database locks; completion must still own this lease.
+    result["assessment"] = None
+    for key in ("document_check", "claim_check"):
+        result[key] = {"state": "unavailable"}
     try:
         assessor = getattr(request.app.state, "document_assessor", assess_documents)
         raw = (
@@ -198,33 +228,86 @@ def run(submission_id: UUID, payload: Run, request: Request):
             if payload.mode == "replay"
             else assessor(result["listing"], documents)
         )
-        assessment = validate_assessment(raw, documents)
-        result["assessment"] = assessment
+        result["assessment"] = validate_assessment(raw, documents)
+        result["document_check"] = {"state": "completed"}
         event(
             result,
             "document_assessment",
-            {"mode": payload.mode, "findings": assessment},
+            {"mode": payload.mode, "findings": result["assessment"]},
         )
-        evaluate(result, assessment, request.app.state.extraction_client)
     except Exception as error:
-        # Do not expose provider bodies, document text, credentials or network details.
-        result.update(
-            status="UNKNOWN",
-            stage="UNAVAILABLE",
-            reason="document_assessment_unavailable",
-            confidence=0.0,
-            human_review_required=True,
-            assessment=None,
-        )
         event(
             result,
             "assessment_unavailable",
             {
+                "check": "documents",
                 "error_type": type(error).__name__,
                 "retryable": True,
                 "mode": payload.mode,
             },
         )
+    try:
+        text = (
+            result["listing"].get("title", "")
+            + "\n"
+            + result["listing"].get("description", "")
+        )
+        claims = (
+            []
+            if payload.mode == "replay"
+            else assess_claims(text, getattr(request.app.state, "claim_assessor", None))
+        )
+        result["claim_check"] = {"state": "completed", "claims": claims}
+        event(result, "claim_assessment", {"mode": payload.mode, "claims": claims})
+    except Exception as error:
+        event(
+            result,
+            "assessment_unavailable",
+            {
+                "check": "claims",
+                "error_type": type(error).__name__,
+                "retryable": True,
+                "mode": payload.mode,
+            },
+        )
+    # Deterministic rules consume only grounded findings. Models never decide status.
+    evaluate(result, result["assessment"], None)
+    incomplete = any(
+        result[key]["state"] != "completed" for key in ("document_check", "claim_check")
+    )
+    if incomplete:
+        result.update(
+            status="UNKNOWN",
+            stage="UNAVAILABLE",
+            confidence=0.0,
+            reason="automated_checks_unavailable",
+            human_review_required=True,
+        )
+        if result["claim_check"]["state"] != "completed":
+            for rule in result["rule_results"]:
+                if rule["rule"] == "R-03" and rule["result"] == "pass":
+                    rule.update(
+                        result="skip",
+                        reason_en="Live claim extraction unavailable",
+                        reason_th="ยังตรวจคำกล่าวอ้างด้วย AI ไม่ได้",
+                    )
+                    event(result, "R-03", rule)
+    result["precheck_status"] = result["status"]
+    if result["status"] == "APPROVED":
+        result.update(status="PENDING", reason="agency_review_required")
+    result.update(
+        stage="UNAVAILABLE" if result["status"] == "UNKNOWN" else "REVIEWER_REQUIRED",
+        human_review_required=True,
+    )
+    event(
+        result,
+        "agency_review_routing",
+        {
+            "status": result["status"],
+            "precheck_status": result["precheck_status"],
+            "required": True,
+        },
+    )
     with transaction(request.app.state.database) as connection:
         current, _ = active_submission(connection, submission_id, user["shop_id"])
         if current.get("run_token") != token or current["stage"] != "AI_CHECKING":
@@ -266,6 +349,13 @@ def decision(submission_id: UUID, payload: Decision, request: Request):
                 409, "Wait for the active assessment or its retry timeout"
             )
         if payload.decision == "approve":
+            if any(
+                key in result and result[key].get("state") != "completed"
+                for key in ("document_check", "claim_check")
+            ):
+                raise HTTPException(
+                    409, "Complete both automated checks before approval"
+                )
             if any(
                 r["rule"] == "R-03" and r["result"] == "fail"
                 for r in result["rule_results"]

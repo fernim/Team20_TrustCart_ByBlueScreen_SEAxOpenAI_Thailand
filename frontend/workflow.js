@@ -49,6 +49,7 @@ window.TrustCartFlow = (() => {
         "dialog-note",
       ),
     );
+    if (window.TrustCartChecklist) target.append(window.TrustCartChecklist.render(result, document.documentElement.lang));
     const pipeline = node("ol", undefined, "submission-progress");
     const current =
       {
@@ -103,7 +104,7 @@ window.TrustCartFlow = (() => {
       result.stage === "WAITING_DOCUMENTS"
         ? missing.length
           ? "Upload: " + missing.map((k) => kinds[k]).join(", ")
-          : "Documents ready. Choose Live or Replay and start checking."
+          : "Documents ready. Submit for review to run OpenAI checks and send the checklist to Agency."
         : ["REVIEWER_REQUIRED", "IN_REVIEW"].includes(result.stage)
           ? "Next action: Reviewer — inspect document findings."
           : result.stage === "SELLER_ACTION"

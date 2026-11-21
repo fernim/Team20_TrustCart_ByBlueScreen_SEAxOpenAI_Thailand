@@ -33,11 +33,33 @@ def run(client, result, mode="replay"):
     return response.json()
 
 
+def approve_review(client, password, product, result):
+    login(client, password, "reviewer")
+    response = client.post(
+        "/v1/reviewer/submissions/" + result["id"] + "/decision",
+        json={
+            "chain_hash": result["chain_hash"],
+            "decision": "approve",
+            "note": "Inspected original documents and recorded checklist",
+            "confirmed_documents": [doc["id"] for doc in result["documents"]],
+            "confirmed_fields": {
+                key: product["listing"][key]
+                for key in ("product_name", "registration_reference", "license_holder")
+            },
+        },
+    )
+    assert response.status_code == 200, response.text
+    login(client, password)
+    return response.json()
+
+
 def test_replay_approval_and_buyer_document_isolation(connected):
     client, password = connected
     product, result = setup_case(client, password)
     result = run(client, result)
-    assert result["status"] == "APPROVED" and result["mode"] == "replay"
+    assert result["status"] == "PENDING" and result["mode"] == "replay"
+    assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
+    result = approve_review(client, password, product, result)
     assert len(result["rule_results"]) == 5
     doc = result["documents"][0]["id"]
     assert client.get("/v1/documents/" + doc).status_code == 200
@@ -268,6 +290,7 @@ def test_unrecognized_replay_and_ungrounded_live_extraction_fail_closed(connecte
         return assessment
 
     client.app.state.document_assessor = forged
+    client.app.state.claim_assessor = lambda _: {"claims": []}
     assessed = run(client, result, "live")
     assert assessed["status"] == "PENDING" and assessed["human_review_required"]
 
@@ -336,5 +359,6 @@ def test_permit_document_requires_grounded_permit_number(connected):
         return assessment
 
     client.app.state.document_assessor = missing_permit
+    client.app.state.claim_assessor = lambda _: {"claims": []}
     assessed = run(client, result, "live")
     assert assessed["status"] == "PENDING" and assessed["human_review_required"]

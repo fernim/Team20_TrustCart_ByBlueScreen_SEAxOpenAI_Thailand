@@ -10,6 +10,10 @@ from app import create_demo_app
 
 if __name__ == "__main__":
     with tempfile.TemporaryDirectory(prefix="trustcart-connected-") as directory:
-        uvicorn.run(
-            create_demo_app(Path(directory) / "test.sqlite3"), host="127.0.0.1", port=8768
-        )
+        service = create_demo_app(Path(directory) / "test.sqlite3")
+        # Test-only dependency injection: exercise the real live-submit flow offline.
+        # The real HTTP request shape is covered by mocked provider-boundary API tests.
+        from backend.app.demo_cases import replay
+        service.state.document_assessor = replay
+        service.state.claim_assessor = lambda text: {"claims": []}
+        uvicorn.run(service, host="127.0.0.1", port=8768)

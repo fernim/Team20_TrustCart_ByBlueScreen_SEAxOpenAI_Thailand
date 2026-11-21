@@ -94,6 +94,8 @@ def request_submission(product_id: UUID, payload: SubmissionRequest, request: Re
             documents=list(previous["documents"]) if previous else [],
             rule_results=[],
             assessment=None,
+            document_check={"state": "not_run"},
+            claim_check={"state": "not_run"},
             mode=None,
             created_at=now(),
             trace=[],
