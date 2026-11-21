@@ -7,11 +7,13 @@ test('shopper search, language, sort, cart, and native keyboard dialog', async (
   await expect(page.locator('.product-card')).toHaveCount(1);
   await page.locator('#language').selectOption('en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await page.locator('.product-card').click();
+  await page.locator('.product-card .product-open').click();
   await expect(page.locator('#product-dialog')).toBeVisible();
   await page.locator('#quantity').fill('2');
   await page.locator('#add-to-cart').click();
   await expect(page.locator('#cart-count')).toHaveText('2');
+  // Native dialog close restores focus asynchronously before the next action.
+  await expect(page.locator('.product-card .product-open')).toBeFocused();
   await page.locator('#open-cart').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#cart-dialog')).toBeVisible();
