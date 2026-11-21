@@ -256,6 +256,9 @@ test('seller summaries show media price stock and status with Edit and View prod
   await expect(row.locator('.seller-product-row')).toHaveText('แก้ไข / Edit');
   await expect(row.locator('.seller-view-product')).toContainText('View product');
   await row.locator('.seller-product-row').click();
+  // Loading the saved product finishes by focusing its title. The old price is
+  // already visible before that asynchronous load and cannot signal readiness.
+  await expect(page.locator('#listing-title')).toBeFocused();
   await expect(page.locator('#listing-price')).toHaveValue('249.50');
   await page.locator('#listing-price').fill('149.00');
   await page.locator('#listing-stock').fill('0');

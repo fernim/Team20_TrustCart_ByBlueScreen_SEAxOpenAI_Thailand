@@ -10,7 +10,7 @@ Found while reviewing commit `31ef16b`. Each item says how it was confirmed.
 | B4 | Low | Fixed |
 | B5 | Low | Fixed |
 | B6 | High | Open |
-| B7 | Medium | Open |
+| B7 | Medium | Fixed |
 | B8 | Medium | Fixed |
 | B9 | Medium | Fixed |
 | B10 | Low | Fixed |
@@ -104,6 +104,8 @@ B1 uses configurable Thai claim phrases with positive and negative regression te
 **Source:** README line 175 says "105 tests pass", but line 205 says "108 Python tests".
 
 **Fix:** at code freeze, run `pytest -q` and the Node and browser suites, then write one set of figures.
+
+**Resolution evidence (B7):** The full local suites pass 133 Python, 108 Node, and 22 desktop/mobile browser tests; every current README count matches. A browser trace exposed a pre-existing Edit-focus race that typed a price into the title; the test now waits for Edit completion before filling the price. Historical hosted results are labeled separately, with no live-service retest or deployment claimed.
 
 ## B8. ISO 9001 alone is accepted as evidence (Medium)
 
