@@ -8,9 +8,9 @@ from app import create_demo_app
 def test_demo_gate_and_transactions(tmp_path, monkeypatch):
     monkeypatch.setenv("TRUSTCART_DEMO_PASSWORD", "test-only")
     with TestClient(create_demo_app(tmp_path / "demo.sqlite3")) as client:
-        for route in ("/", "/v1/demo/transactions", "/docs", "/openapi.json"):
+        for route in ("/v1/demo/transactions", "/docs", "/openapi.json"):
             assert client.get(route).status_code == 401
-        assert client.get("/", auth=("demo", "wrong")).status_code == 401
+        assert client.get("/").status_code == 200
         auth = ("demo", "test-only")
         assert "TrustCart" in client.get("/", auth=auth).text
         response = client.get("/v1/demo/transactions", auth=auth)

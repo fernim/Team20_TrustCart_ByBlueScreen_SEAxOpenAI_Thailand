@@ -19,6 +19,8 @@ from .verification import (
     evaluate_rules as evaluate_rules,
 )
 from .workflow import initialize_store
+from . import security, connected_store
+from .api import connected, submissions, documents, assessment
 
 
 def create_app(database: Path) -> FastAPI:
@@ -28,9 +30,16 @@ def create_app(database: Path) -> FastAPI:
             connection.execute("BEGIN IMMEDIATE")
             initialize_store(connection)
             connection.execute("CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, version INTEGER NOT NULL, result TEXT NOT NULL)")
+            connected_store.initialize(connection)
         yield
 
     service = FastAPI(title="TrustCart Baseline Lead", version="0.1.0", lifespan=lifespan)
+    service.middleware("http")(security.access_guard)
+    service.include_router(security.router)
+    service.include_router(connected.router)
+    service.include_router(submissions.router)
+    service.include_router(documents.router)
+    service.include_router(assessment.router)
     service.state.database = database
     service.state.extraction_client = openai_claim_client
     service.include_router(verifications.router)
@@ -50,6 +59,10 @@ def create_app(database: Path) -> FastAPI:
     @service.get("/products/{product_id}", include_in_schema=False)
     def product_page(product_id: str):
         return FileResponse(frontend / "index.html")
+
+    @service.get("/login", include_in_schema=False)
+    def login_page():
+        return FileResponse(frontend / "login.html")
 
     @service.get("/seller", include_in_schema=False)
     def seller_page():
