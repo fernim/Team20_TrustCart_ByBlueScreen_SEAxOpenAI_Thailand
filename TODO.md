@@ -1,6 +1,6 @@
 # TODO
 
-Updated after the ordered gap fixes: 137 Python tests, 114 Node component tests, and 26 local desktop/mobile browser tests pass. The historical committed-history snapshot at `31ef16b` contains 5 of 7 commits with the `[codex]` tag. Code freeze is at **17:00**. `IMPLEMENTATION.md` has full specs and acceptance tests for each task. Bugs are tracked in [BUGS.md](BUGS.md).
+Updated after the ordered gap fixes: 137 Python tests, 114 Node component tests, and 32 local desktop/mobile browser tests pass. The historical committed-history snapshot at `31ef16b` contains 5 of 7 commits with the `[codex]` tag. Code freeze is at **17:00**. `IMPLEMENTATION.md` has full specs and acceptance tests for each task. Bugs are tracked in [BUGS.md](BUGS.md).
 
 ## Done
 
@@ -38,7 +38,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 - [x] **Add `GET /version` without authentication (B12).** Returns only `{"commit": VERCEL_GIT_COMMIT_SHA or "local"}`. Four regression cases cover configured/unset SHA and password, the exact public route, and continued protection of other routes. Deployment remains assigned to the Vercel team member.
 
 - [ ] **Hosted continuity (B6).** The last hosted run failed 4 of 20 saved-product continuity checks. Deploy PostgreSQL storage, then rerun the hosted desktop and mobile checks.
-- [x] **README counts (B7).** Full local runs pass 137 Python, 114 Node, and 26 desktop/mobile browser tests. README counts now agree. The browser suite waits for the asynchronous seller Edit action to finish focusing the title before editing the price, fixing the observed test-input race. Historical hosted counts remain separately labeled; no live services were used.
+- [x] **README counts (B7).** Full local runs pass 137 Python, 114 Node, and 32 desktop/mobile browser tests. README counts now agree. The browser suite waits for the asynchronous seller Edit action to finish focusing the title before editing the price, fixing the observed test-input race. Historical hosted counts remain separately labeled; no live services were used.
 
 ### P1 (rule gaps that judges may probe)
 
@@ -78,7 +78,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 
 ## Completion update
 
-The core demo loop, reports, widgets, Thai claim regression fixes, registry permit checks, and three UI workspaces are implemented. The gap-fix validation passes 137 Python, 114 Node, and 26 local browser tests. The copy-template and comparison endpoints are also implemented. T6 is tested using fake clients; live OpenAI transfer remains disabled pending approval and credentials. OAuth is roadmap work.
+The core demo loop, reports, widgets, Thai claim regression fixes, registry permit checks, and three UI workspaces are implemented. The gap-fix validation passes 137 Python, 114 Node, and 32 local browser tests. The copy-template and comparison endpoints are also implemented. T6 is tested using fake clients; live OpenAI transfer remains disabled pending approval and credentials. OAuth is roadmap work.
 
 Local browser testing completed the L1 evidence-to-review loop and tamper demonstration. The reset control resets the form and retains audit history. Evidence files are hashed, with declared fields compared against the synthetic registry. Hosted storage remains temporary.
 

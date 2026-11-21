@@ -105,7 +105,7 @@ B1 uses configurable Thai claim phrases with positive and negative regression te
 
 **Fix:** at code freeze, run `pytest -q` and the Node and browser suites, then write one set of figures.
 
-**Resolution evidence (B7):** The full local suites pass 137 Python, 114 Node, and 26 desktop/mobile browser tests; every current README count matches. A browser trace exposed a pre-existing Edit-focus race that typed a price into the title; the test now waits for Edit completion before filling the price. Historical hosted results are labeled separately, with no live-service retest or deployment claimed.
+**Resolution evidence (B7):** The full local suites pass 137 Python, 114 Node, and 32 desktop/mobile browser tests; every current README count matches. A browser trace exposed a pre-existing Edit-focus race that typed a price into the title; the test now waits for Edit completion before filling the price. Historical hosted results are labeled separately, with no live-service retest or deployment claimed.
 
 ## B8. ISO 9001 alone is accepted as evidence (Medium)
 

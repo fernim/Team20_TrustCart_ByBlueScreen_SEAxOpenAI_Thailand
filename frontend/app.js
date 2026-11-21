@@ -1010,6 +1010,12 @@
     const actions = element("div", "detail-actions");
     actions.append(add, viewCart);
     details.append(heading, metadata, pricePanel, quantity, actions);
+    if (product.sellerProduct) {
+      const workspaceLink = element("a", "text-button", state.language === "th" ? "หลักฐานและการตรวจสอบ" : "Evidence and review");
+      workspaceLink.id = "workspace-case-link";
+      workspaceLink.href = `/workspace?product=${encodeURIComponent(product.id)}`;
+      details.append(workspaceLink);
+    }
 
     const gallery = element("div", "product-gallery");
     const mainImage = productImage(product);

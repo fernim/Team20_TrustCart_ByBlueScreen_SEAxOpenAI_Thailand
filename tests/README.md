@@ -28,9 +28,11 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Playwright starts FastAPI on port 8766 against a disposable SQLite database. It refuses to reuse an existing server. It runs Chromium at desktop (1440 px) and mobile (390 px) viewport sizes. No marketplace or registry site is contacted; the backend uses its synthetic adapter. A preinstalled Chromium executable can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+Playwright starts the password-gated demo on port 8766 with disposable SQLite data and generates credentials for that run. It refuses to reuse an existing server. It runs Chromium at desktop (1440 px) and mobile (390 px) viewport sizes against the synthetic registry adapter. A preinstalled Chromium executable can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
 
 The browser suite checks shopper search/language/sorting/cart, native dialog opening and Escape/focus restoration, seller creation and correction, persistence after reload, reviewer audit expansion, customer badges, native draft-discard confirmations, cross-page navigation, stylesheet loading, and viewport overflow. These scenarios complement the larger mocked failure-path suite.
+
+The linked marketplace and workspace tests verify edits to a saved product, evidence upload, recheck, reviewer denial, storefront badge refresh, and safe handling of failed lookup and case switching.
 
 Failure traces are retained under `test-results/`; inspect one with `npx playwright show-trace <trace.zip>`. Generated results are ignored by Git.
 

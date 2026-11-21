@@ -52,7 +52,7 @@
   .notice { background:#e8f2f4; padding:12px; border-radius:8px; }
   [hidden] { display:none !important; }
 </style>
-<header><nav><strong>TrustCart</strong><a href="/docs">API docs</a></nav></header>
+<header><nav><strong>TrustCart</strong><a href="/">Marketplace</a><a href="/docs">API docs</a></nav></header>
 <main>
   <section class="intro">
     <h1>Marketplace verification</h1>
@@ -66,6 +66,8 @@
   </div>
   <section class="panel workspace">
     <p class="notice">Synthetic demonstration. Use synthetic product documents only. Decisions cover the checks shown in each report.</p>
+    <div class="fields"><label>Saved marketplace product<select id="workspace-product"><option value="">Select a saved product</option></select></label></div>
+    <div class="actions"><button id="load-workspace-product">Open saved product</button><button id="refresh-workspace-products">Refresh products</button><a id="workspace-product-link" hidden>View marketplace product</a><a href="/seller">Add a marketplace product</a></div>
     <div id="seller-view">
       <h2>Submit a listing</h2>
       <div class="actions"><label>Scenario <select id="scenario"></select></label><button id="reset">Reset demo form</button></div>
@@ -74,7 +76,7 @@
           <label>Product name<input id="product-name" required maxlength="200"></label>
           <label>Licence holder<input id="holder" required maxlength="200"></label>
           <label>Registration reference<input id="reference" required maxlength="200"></label>
-          <label>Category<select id="category"><option value="supplement">Supplement</option><option value="cosmetic">Cosmetic</option></select></label>
+          <label>Category<select id="category"><option value="supplement">Supplement</option><option value="cosmetic">Cosmetic</option><option value="drug">Medicine</option></select></label>
           <label>Advertising permit<input id="permit" maxlength="200"></label>
           <label>Title<input id="title" maxlength="2000"></label>
           <label>Description<textarea id="description" maxlength="10000"></textarea></label>
@@ -88,6 +90,7 @@
           <label>Evidence product name<input id="evidence-product" required maxlength="200"></label>
           <label>Evidence licence holder<input id="evidence-holder" required maxlength="200"></label>
           <label>Evidence reference<input id="evidence-reference" required maxlength="200"></label>
+          <label>Declared standards<input id="evidence-standards" maxlength="200" placeholder="ISO 22000, GMP"></label>
           <label>Synthetic label<input id="label-file" type="file"></label>
           <label>Synthetic certificate<input id="certificate-file" type="file"></label>
         </div>
@@ -161,6 +164,8 @@
   let records = [];
   let scenarios = {};
   let selectedCase = null;
+  let linkedProduct = null;
+  let savedProducts = [];
   async function api(path, options) {
     const response = await fetch(path, options);
     if (!response.ok) {
@@ -244,8 +249,59 @@
       }
   }
   function feedback(message) { byId("feedback").textContent = message; }
+  function clearCase() {
+    selectedCase = null;
+    linkedProduct = null;
+    byId("workspace-product-link").hidden = true;
+    byId("selected-summary").textContent = "No case selected.";
+    byId("selected-case").textContent = "No case selected.";
+    byId("selected-rules").replaceChildren();
+    byId("lookup-id").value = "";
+  }
+  function notifyMarketplace() {
+    try { localStorage.setItem("trustcart-products-updated", String(Date.now())); } catch (_) {}
+  }
+  async function refreshProducts() {
+    const selected = byId("workspace-product").value;
+    savedProducts = await (await api("/v1/products")).json();
+    const placeholder = document.createElement("option");
+    placeholder.value = ""; placeholder.textContent = "Select a saved product";
+    byId("workspace-product").replaceChildren(placeholder);
+    for (const product of savedProducts) {
+      const option = document.createElement("option");
+      option.value = product.id;
+      option.textContent = (product.listing.title || product.listing.product_name) + " · " + product.verification.status;
+      byId("workspace-product").append(option);
+    }
+    byId("workspace-product").value = selected;
+  }
+  async function openProduct(id) {
+    clearCase();
+    if (!id) throw new Error("Select a saved marketplace product.");
+    const product = await (await api("/v1/products/" + encodeURIComponent(id))).json();
+    linkedProduct = product;
+    fillListing(product.listing);
+    byId("workspace-product").value = product.id;
+    try { await loadCase(product.verification.id); } catch (error) { clearCase(); throw error; }
+    history.replaceState(null, "", "/workspace?product=" + encodeURIComponent(product.id));
+    feedback("Marketplace product and current verification loaded.");
+  }
   function selectCase(result) {
     selectedCase = result;
+    if (linkedProduct && linkedProduct.verification.id !== result.id) linkedProduct = null;
+    const product = linkedProduct || savedProducts.find(item => item.verification.id === result.id);
+    const link = byId("workspace-product-link");
+    link.hidden = !product;
+    if (product) {
+      linkedProduct = product;
+      linkedProduct.verification = result;
+      link.href = "/products/" + encodeURIComponent(product.id);
+      byId("workspace-product").value = product.id;
+      history.replaceState(null, "", "/workspace?product=" + encodeURIComponent(product.id));
+    } else {
+      byId("workspace-product").value = "";
+      history.replaceState(null, "", "/workspace");
+    }
     byId("selected-case").textContent = JSON.stringify(result, null, 2);
     byId("lookup-id").value = result.id;
     const audit = result.audit && result.audit.valid ? "Audit valid" : "Audit requires attention";
@@ -260,11 +316,12 @@
   }
   async function loadCase(id) {
     const result = await (await api("/v1/reports/" + encodeURIComponent(id))).json();
+    if (selectedCase?.id !== result.id && result.listing) fillListing(result.listing);
     selectCase(result);
     return result;
   }
   async function action(callback) {
-    const buttons = document.querySelectorAll(".workspace button");
+    const buttons = document.querySelectorAll(".workspace button, .workspace input, .workspace select, .workspace textarea");
     buttons.forEach(button => button.disabled = true);
     try { await callback(); } catch (error) { feedback(error.message); }
     finally { buttons.forEach(button => button.disabled = false); }
@@ -278,9 +335,10 @@
     await api(path + suffix, {method:"POST", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({chain_hash:selectedCase.chain_hash, ...extra})});
     await loadCase(selectedCase.id);
+    notifyMarketplace();
+    await refreshProducts();
   }
-  function fillScenario() {
-    const listing = scenarios[byId("scenario").value];
+  function fillListing(listing) {
     for (const [id,key] of Object.entries({
       "product-name":"product_name",holder:"license_holder",reference:"registration_reference",
       category:"category",permit:"advertising_permit",title:"title",description:"description"
@@ -288,6 +346,13 @@
     byId("evidence-product").value = listing.product_name;
     byId("evidence-holder").value = listing.license_holder;
     byId("evidence-reference").value = listing.registration_reference;
+    byId("evidence-standards").value = "";
+  }
+  function fillScenario() {
+    clearCase();
+    byId("workspace-product").value = "";
+    history.replaceState(null, "", "/workspace");
+    fillListing(scenarios[byId("scenario").value]);
   }
   document.querySelectorAll("[data-view]").forEach(button => {
     button.onclick = () => {
@@ -296,6 +361,8 @@
     };
   });
   byId("scenario").onchange = fillScenario;
+  byId("load-workspace-product").onclick = () => action(() => openProduct(byId("workspace-product").value));
+  byId("refresh-workspace-products").onclick = () => action(async () => { await refreshProducts(); feedback("Saved marketplace products refreshed."); });
   byId("reset").onclick = () => {
     fillScenario();
     selectedCase = null;
@@ -310,17 +377,24 @@
     event.preventDefault();
     action(async () => {
       const listing = {
+        ...(linkedProduct ? linkedProduct.listing : {}),
         product_name:byId("product-name").value, license_holder:byId("holder").value,
         registration_reference:byId("reference").value, category:byId("category").value,
         title:byId("title").value, description:byId("description").value,
         advertising_permit:byId("permit").value || null,
         simulate_registry_outage:byId("registry").value === "true"
       };
-      const result = await (await api("/v1/verifications", {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(listing)
+      const editing = linkedProduct;
+      const saved = await (await api(editing ? "/v1/products/" + encodeURIComponent(editing.id) : "/v1/verifications", {
+        method:editing ? "PUT" : "POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(editing ? {...listing, expected_version:editing.version} : listing)
       })).json();
+      const result = editing ? saved.verification : saved;
+      if (editing) linkedProduct = saved;
       await loadCase(result.id);
-      feedback("Listing verified. Status " + result.status + ".");
+      notifyMarketplace();
+      await refreshProducts();
+      feedback((editing ? "Marketplace product updated. Status " : "Listing verified. Status ") + result.status + ".");
     });
   };
   byId("suggest-copy").onclick = () => action(async () => {
@@ -344,13 +418,16 @@
     data.append("product_name", byId("evidence-product").value);
     data.append("license_holder", byId("evidence-holder").value);
     data.append("registration_reference", byId("evidence-reference").value);
+    data.append("standards", byId("evidence-standards").value);
     for (const kind of ["label","certificate"]) {
-      const file = samples ? new File(["Synthetic " + kind + " for demo"], kind + ".txt", {type:"text/plain"}) : byId(kind + "-file").files[0];
+      const file = samples ? new File(["Synthetic " + kind + " for case " + selectedCase.id], kind + ".txt", {type:"text/plain"}) : byId(kind + "-file").files[0];
       if (!file) throw new Error("Choose both synthetic files.");
       data.append(kind,file);
     }
     await api(path + "/evidence", {method:"POST",body:data});
     await loadCase(selectedCase.id);
+    notifyMarketplace();
+    await refreshProducts();
     feedback("Evidence hashes saved and rules checked.");
   }
   byId("evidence-form").onsubmit = event => {event.preventDefault(); action(() => uploadEvidence(false));};
@@ -396,6 +473,7 @@
   });
   (async () => {
     try {
+      const requestedProduct = new URLSearchParams(location.search).get("product");
       scenarios = await (await api("/v1/demo/scenarios")).json();
       for (const [id,listing] of Object.entries(scenarios)) {
         const option = document.createElement("option");
@@ -403,6 +481,8 @@
         byId("scenario").append(option);
       }
       fillScenario();
+      await refreshProducts();
+      if (requestedProduct) await openProduct(requestedProduct);
     } catch (error) {feedback(error.message);}
   })();
 </script>

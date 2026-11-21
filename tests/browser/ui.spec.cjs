@@ -1,5 +1,77 @@
 const { test, expect } = require('@playwright/test');
 
+test('marketplace and workspace share product edits evidence and reviewer decisions', async ({page, context, request}) => {
+  const listing = {title:`Linked product ${test.info().project.name}-${Date.now()}`,description:'Product details ผลิตภัณฑ์เสริมอาหาร',
+    category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'199.00',stock:4};
+  const created = await request.post('/v1/products', {data:listing});
+  expect(created.status()).toBe(201);
+  const product = await created.json();
+  await page.goto(`/products/${product.id}`);
+  await expect(page.locator('#product-title .product-verified')).toHaveCount(1);
+  await expect(page.locator('#workspace-case-link')).toHaveAttribute('href',`/workspace?product=${product.id}`);
+  const workspace = await context.newPage();
+  await workspace.goto(await page.locator('#workspace-case-link').getAttribute('href'));
+  await expect(workspace.locator('#workspace-product')).toHaveValue(product.id);
+  await expect(workspace.locator('#selected-case')).toContainText(product.verification.id);
+  await expect(workspace.locator('#product-name')).toHaveValue(listing.product_name);
+  await workspace.locator('#title').fill(listing.title+' edited');
+  await workspace.getByRole('button',{name:'Verify listing',exact:true}).click();
+  await expect(workspace.locator('#feedback')).toContainText('Marketplace product updated');
+  await expect(page.locator('#product-title')).toContainText(listing.title+' edited');
+  await workspace.locator('#evidence-standards').fill('ISO 22000');
+  await workspace.getByRole('button',{name:'Use synthetic sample files'}).click();
+  await expect(workspace.locator('#feedback')).toContainText('Evidence hashes saved');
+  await workspace.locator('#recheck').click();
+  await expect(workspace.locator('#feedback')).toContainText('Recheck appended');
+  await workspace.getByRole('tab',{name:'Reviewer',exact:true}).click();
+  await workspace.locator('#review-note').fill('Synthetic linked-case reviewer denial');
+  await workspace.locator('#deny').click();
+  await expect(workspace.locator('#selected-summary')).toContainText('DENIED');
+  await expect(page.locator('#product-title .product-verified')).toHaveCount(0);
+  const current = await (await request.get(`/v1/products/${product.id}`)).json();
+  expect(current.version).toBe(2);
+  expect(current.listing.price).toBe('199.00');
+  expect(current.verification.status).toBe('DENIED');
+  await expect(workspace.locator('#workspace-product-link')).toHaveAttribute('href',`/products/${product.id}`);
+  await workspace.reload();
+  await expect(workspace.locator('#selected-summary')).toContainText('DENIED');
+  await expect(workspace.locator('#selected-case')).toContainText(current.verification.id);
+  expect((await (await request.get(`/v1/audit/${current.verification.id}`)).json()).valid).toBe(true);
+  await workspace.close();
+});
+
+test('workspace cannot mutate a stale selected case after a product lookup failure', async ({page, request}) => {
+  const created = await request.post('/v1/products',{data:{title:'Synthetic lookup test',description:'Product details ผลิตภัณฑ์เสริมอาหาร',
+    category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'100',stock:1}});
+  const product = await created.json();
+  await page.goto(`/workspace?product=${product.id}`);
+  await expect(page.locator('#selected-case')).toContainText(product.verification.id);
+  await page.route(`**/v1/products/${product.id}`, route => route.fulfill({status:404,contentType:'application/json',body:'{"detail":"Product not found"}'}));
+  await page.locator('#load-workspace-product').click();
+  await expect(page.locator('#feedback')).toContainText('Product not found');
+  await expect(page.locator('#workspace-product-link')).toBeHidden();
+  await page.locator('#recheck').click();
+  await expect(page.locator('#feedback')).toContainText('Submit or load a case first');
+  const unchanged = await (await request.get(`/v1/verifications/${product.verification.id}`)).json();
+  expect(unchanged.chain_hash).toBe(product.verification.chain_hash);
+});
+
+test('workspace report lookup switches the linked product form and reload target', async ({page,request}) => {
+  const data={description:'Product details ผลิตภัณฑ์เสริมอาหาร',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'100',stock:1};
+  const first=await (await request.post('/v1/products',{data:{...data,title:'Synthetic linked first'}})).json();
+  const second=await (await request.post('/v1/products',{data:{...data,title:'Synthetic linked second'}})).json();
+  await page.goto(`/workspace?product=${first.id}`);
+  await expect(page.locator('#title')).toHaveValue('Synthetic linked first');
+  await page.getByRole('tab',{name:'Shopper',exact:true}).click();
+  await page.locator('#lookup-id').fill(second.verification.id);
+  await page.locator('#lookup').click();
+  await expect(page.locator('#feedback')).toContainText('Report loaded');
+  await expect(page.locator('#title')).toHaveValue('Synthetic linked second');
+  await expect(page).toHaveURL(new RegExp(`product=${second.id}$`));
+  await page.reload();
+  await expect(page.locator('#selected-case')).toContainText(second.verification.id);
+});
+
 test('shopper search, language, sort, cart, and native keyboard dialog', async ({ page }) => {
   await page.goto('/');
   await page.locator('#search').fill('headphones');
@@ -170,6 +242,8 @@ test('product detail gallery, stock controls and verified badge survive the Shop
 
 test('product pages support direct visits, reload, back, forward and header search',async({page})=>{
   await page.goto('/');
+  await page.locator('#search').fill('headphones');
+  await page.locator('#search').press('Enter');
   const link=page.locator('[data-product="0"] .product-open');
   await expect(link).toHaveAttribute('href','/products/0');
   await link.click();
@@ -278,6 +352,8 @@ test('seller summaries show media price stock and status with Edit and View prod
   await page.goto('/');
   await expect(page.locator('.preferred')).toHaveCount(0);
   await page.locator('[data-category="1"]').click();
+  await page.locator('#search').fill('DHC');
+  await page.locator('#search').press('Enter');
   const market=page.locator('#products [data-product="14"]');
   await expect(market).toContainText('DHC');
   await expect(market.locator('img')).toHaveAttribute('src','/static/assets/product-dhc-40.jpg');
