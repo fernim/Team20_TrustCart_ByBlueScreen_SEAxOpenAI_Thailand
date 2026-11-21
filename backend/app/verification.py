@@ -4,14 +4,17 @@ import re
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Tuple
+from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 from typing_extensions import Annotated
 
 from . import registry
 from .llm import extract_claims
 from .rules import advertising_claims
+from .claims import ClaimFinding, find_overclaims
+from .media import validate_images
 
 
 ListingText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -28,6 +31,14 @@ class Listing(BaseModel):
     simulate_registry_outage: bool = Field(default=False, description="Demo-only, request-scoped outage simulation. Forces UNKNOWN.")
     advertising_permit: Optional[str] = Field(default=None, max_length=200)
     registry_source: str = Field(default="synthetic", max_length=50)
+    images: list[str] = Field(default_factory=list, max_length=5)
+    price: Optional[Decimal] = Field(default=None, ge=0, max_digits=10, decimal_places=2)
+    stock: Optional[Annotated[int, Field(strict=True, ge=0, le=10000000)]] = None
+
+    @field_validator("images")
+    @classmethod
+    def valid_images(cls, value):
+        return validate_images(value)
 
 
 class Status(str, Enum):
@@ -70,6 +81,9 @@ class Verification(BaseModel):
     trace: list[TraceEntry]
     chain_hash: str
     rule_results: list[dict] = Field(default_factory=list)
+    listing: Optional[Listing] = None
+    listing_title: str = ""
+    claim_findings: list[ClaimFinding] = Field(default_factory=list)
 
 
 def evaluate_rules(
@@ -98,6 +112,7 @@ def evaluate_rules(
     add("R-02", category_result, "Registered category check", "ตรวจสอบประเภทผลิตภัณฑ์")
     if listing.title or listing.description:
         matches, missing = advertising_claims(listing.title, listing.description, listing.category.casefold())
+        overclaims = find_overclaims(listing.title, listing.description)
         text = listing.title + "\n" + listing.description
         extracted = extract_claims(text, extraction_client)
         trace.add("claim_extraction", json.dumps(extracted, ensure_ascii=False, sort_keys=True))
@@ -105,11 +120,11 @@ def evaluate_rules(
             if claim["type"] == "disease_claim" and not any(item["phrase"] == claim["phrase"] for item in matches):
                 start = text.index(claim["phrase"])
                 matches.append({"phrase": claim["phrase"], "start": start, "end": start + len(claim["phrase"])})
-        failed = bool(matches) or missing
+        failed = bool(matches) or missing or bool(overclaims)
         add("R-03", "fail" if failed else "pass", "Advertising text check", "ตรวจสอบข้อความโฆษณา",
-            dict(matches=matches, missing_required_term=missing))
+            dict(matches=matches, missing_required_term=missing, overclaims=[finding.model_dump() for finding in overclaims]))
         if failed and status == Status.APPROVED:
-            status, reason = Status.DENIED, "advertising_claim_failed"
+            status, reason = Status.DENIED, "advertising_overclaim" if overclaims else "advertising_claim_failed"
     else:
         add("R-03", "skip", "No advertising text submitted", "ไม่ได้ส่งข้อความโฆษณา")
     permit_problem = bool(record and (

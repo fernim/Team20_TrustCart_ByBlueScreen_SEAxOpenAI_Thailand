@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrustCart · Reviewer</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/tokens.css" />
+    <link rel="stylesheet" href="/static/marketplace-ui.css" />
+    <script defer src="/static/verification-view.js"></script>
+    <script defer src="/static/reviewer.js"></script>
+  </head>
+  <body class="reviewer-page">
+<nav class="integration-nav" aria-label="Verification tools"><a href="/workspace">Evidence, review and agency workspace</a><span>TrustCart · Synthetic data</span><a href="/docs">API docs</a></nav>
+    <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
+    <nav class="demo-views" aria-label="Views">
+      <a href="/">หน้าลูกค้า / Customer</a
+      ><span aria-current="page">หน้าผู้ตรวจสอบ / Reviewer</span>
+      <a href="/seller">หน้าผู้ขาย / Seller</a>
+    </nav>
+    <header class="reviewer-brandbar">
+      <div class="container">
+        <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
+        ><span class="workspace-title">Reviewer Centre <small>ศูนย์ตรวจสอบสินค้า</small></span>
+      </div>
+    </header>
+    <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#report-lookup" aria-current="location">ค้นหารายงาน</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">READ-ONLY DEMO<br />ทะเบียนจำลอง<br />ไม่มีการอนุมัติโดยผู้ตรวจสอบ</div></aside><main id="main" class="reviewer-shell">
+      <header>
+        <p class="reviewer-eyebrow">TRUSTCART · REVIEWER</p>
+        <h1>รายงานการตรวจสอบสินค้า</h1>
+        <p>ตรวจสอบสถานะสินค้าและดูรายการที่ต้องแก้ไข</p>
+      </header>
+      <section id="demo-reports" hidden>
+        <label for="demo-report-select">รายงานสินค้าในรอบนี้</label>
+        <select id="demo-report-select">
+          <option value="">เลือกสินค้าเพื่อดูผล</option>
+        </select>
+      </section>
+      <div class="workspace-notice"><strong>พื้นที่ตรวจสอบแบบอ่านอย่างเดียว</strong><span>แสดงผลจากระบบและประวัติการตรวจสอบ · ใช้ข้อมูลทะเบียนจำลอง</span></div><form id="report-lookup">
+        <label for="report-id">รหัสรายงาน</label>
+        <div class="reviewer-lookup">
+          <input
+            id="report-id"
+            name="id"
+            required
+            autocomplete="off"
+            placeholder="วางรหัสรายงานจาก API"
+            aria-describedby="lookup-help"
+          /><button class="primary" type="submit">เปิดรายงาน</button>
+        </div>
+        <p id="lookup-help" class="dialog-note">
+          เปิดลิงก์ Reviewer จากหน้าลูกค้าเพื่อดูผลล่าสุด หรือใช้รหัสจาก POST
+          /v1/verifications
+        </p>
+      </form>
+      <p id="reviewer-error" role="alert" hidden></p>
+      <p id="reviewer-loading" role="status" hidden>กำลังโหลดรายงาน…</p>
+      <article id="reviewer-report" aria-live="polite"></article>
+    </main></div>
+  <p class="dialog-note" style="text-align:center"><a href="/workspace">TrustCart evidence, review and agency workspace</a> · Synthetic data</p>
+</body>
+</html>

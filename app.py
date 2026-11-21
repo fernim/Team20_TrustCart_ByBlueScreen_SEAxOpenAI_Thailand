@@ -80,7 +80,10 @@ def create_demo_app(database: Path):
 
     def demo_openapi():
         schema = original_openapi()
-        schema["components"]["schemas"]["Listing"]["example"] = DEMO_EXAMPLE
+        schemas = schema["components"]["schemas"]
+        listing_schema = schemas.get("Listing", schemas.get("Listing-Input"))
+        listing_schema["example"] = DEMO_EXAMPLE
+        schemas.setdefault("Listing", listing_schema)
         schema["components"]["securitySchemes"] = {
             "DemoPassword": {"type": "http", "scheme": "basic"}
         }
@@ -112,7 +115,7 @@ def create_demo_app(database: Path):
         response.headers["Referrer-Policy"] = "no-referrer"
         return response
 
-    @service.get("/", response_class=HTMLResponse, include_in_schema=False)
+    @service.get("/workspace", response_class=HTMLResponse, include_in_schema=False)
     def home():
         return dashboard
 

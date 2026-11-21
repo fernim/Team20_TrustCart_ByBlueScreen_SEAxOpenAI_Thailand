@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from ..verification import Listing, Status, Trace, Verification, evaluate_rules
 from ..workflow import RISK_POLICY_HASH
+from ..claims import find_overclaims
 
 
 router = APIRouter()
@@ -43,6 +44,8 @@ def submit(listing: Listing, response: Response, request: Request) -> Verificati
         human_review_required=human_review_required, trace=trace.entries,
         chain_hash=trace.entries[-1].chain_hash,
         rule_results=rule_results,
+        listing=listing, listing_title=listing.title or listing.product_name,
+        claim_findings=find_overclaims(listing.title, listing.description),
     )
     with closing(sqlite3.connect(request.app.state.database)) as connection, connection:
         connection.execute(
