@@ -6,23 +6,13 @@ This plan breaks the target product in the pitch deck and `PRODUCT.md` into test
 
 ---
 
-## 1. Current state (checked at commit `eae94a3`)
+## 1. Current state
 
-| Area | Delivered | File |
-| --- | --- | --- |
-| `POST /v1/verifications`, `GET /v1/verifications/{id}` | ✅ | `backend/app/main.py` |
-| Statuses | `APPROVED`, `DENIED`, `UNKNOWN`. **`PENDING` is missing.** | `main.py` `Status` |
-| R-01 identity (active, product name, licence holder) | ✅ | `evaluate()` |
-| R-02 category (registry category = listing category) | ✅ partial: claims versus category is not checked | `evaluate()` |
-| R-03, R-04, R-05 | ❌ | |
-| Registry adapter | ✅ one fixture, `DEMO-001`; `RegistryUnavailable` exists but nothing raises it | `backend/app/registry.py` |
-| Hash-chained `Trace.add` | ✅ | `main.py` |
-| SQLite persistence (`verifications(id, result JSON)`) | ✅ | `main.py` |
-| Demo dashboard with 20 **static** transactions, password gate, `/docs` | ✅ static scenarios that do not call the rules | `app.py`, `demo.html` |
-| LLM extraction, evidence, recheck, reports, widget, review queue, tamper and outage demo toggles, suggest-copy, OAuth | ❌ | |
-| Tests | 8 pass | `tests/` |
+The core synthetic demo is implemented. The app includes PENDING mismatch handling, R-01 through R-05, JSON registry fixtures, phrase-based Thai/English claim checks, registry permit comparison, evidence hashes and declarations, rechecks, a reviewer queue, optimistic chain-hash validation, audit verification, reports, badges, comparison, and screened copy templates. Three UI workspaces exercise these endpoints, alongside 20 evaluated transactions and an outage control.
 
-**A policy gap to fix first.** `evaluate()` returns `DENIED` on a product or licence-holder mismatch. `AGENTS.md` requires such a mismatch against an active record to become `PENDING` with an evidence request. It becomes `DENIED` only when evidence or a reviewer confirms it. Task T1 fixes this.
+Optional OpenAI extraction is implemented behind explicit data-transfer approval and environment credentials. It remains disabled on the hosted demo. Marketplace OAuth is roadmap work. Hosted SQLite is temporary. Product evidence checks compare declared fields and file hashes; document authenticity and OCR require further integration.
+
+Validation: 32 tests pass. Local browser verification completed L1 submission, evidence, recheck, reviewer denial, valid audit, and deliberate tamper detection. The deployed Vercel API also passed the same full workflow, stale-hash rejection, reports, widget, outage, docs, and password checks.
 
 ---
 
@@ -175,12 +165,3 @@ Work on short-lived branches and merge into `main` often. Only one person edits 
 - [ ] No secrets in the repository. Give judges the demo password through the submission form only.
 - [ ] README Declarations are current, including the link to the earlier project.
 - [ ] Update the pitch slides to match what was actually built, with features that were not built labelled "Roadmap".
-
-
-## Integration update on 21 November 2026
-
-Delivered in the hosted demo: PENDING mismatch policy, JSON registry/listing fixtures for seven initial scenarios, request-scoped outage simulation, deterministic R-03 checks, and bilingual rule-result fields. Each of the 20 dashboard records now runs through the same rules as API submissions.
-
-T12 is partially delivered. T6 through T11 and T13 remain pending, including evidence uploads, rechecks, reviewer decisions, and audit/tamper controls. Permit conflicts currently use a declared synthetic flag. Advertising text checks run when title or description is submitted, preserving original identity/category-only callers.
-
-Validation: 18 tests pass. Browser testing confirmed 20 UNKNOWN results and zero approvals during simulated outage.

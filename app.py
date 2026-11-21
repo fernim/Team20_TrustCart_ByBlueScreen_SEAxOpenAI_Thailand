@@ -2,23 +2,21 @@ import base64
 import binascii
 import os
 import tempfile
+import json
+import sqlite3
+from contextlib import closing
 from hmac import compare_digest
 from pathlib import Path
 
-from fastapi import Request
+from fastapi import Request, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
 from backend.app.main import Listing, Trace, create_app, evaluate_rules, Status
 from backend.app.registry import demo_listings
+from backend.app.workflow import Revision, audit
+from uuid import UUID
 
 
-PRODUCTS = (
-    "Turmeric Blend", "Daily Fibre", "Firming Serum", "Botanical Blend",
-    "Green Blend", "Oat Fibre", "Ocean Wellness", "Citrus Blend", "Rice Bran",
-    "Cocoa Fibre", "Herbal Blend", "Aloe Gel", "Ginger Blend", "Plant Fibre",
-    "Oat Cream", "Berry Blend", "Daily Moisturiser", "Lemongrass Blend",
-    "Pumpkin Fibre", "Rice Cleanser",
-)
 DEMO_EXAMPLE = {
     "registration_reference": "DEMO-001",
     "product_name": "Demo Supplement",
@@ -30,7 +28,7 @@ DEMO_EXAMPLE = {
 def demo_transactions(offline=False):
     records = []
     cases = list(demo_listings().items())
-    for number, product in enumerate(PRODUCTS, start=1):
+    for number in range(1, 21):
         case_id, payload = cases[(number - 1) % len(cases)]
         listing = Listing(**payload)
         listing.simulate_registry_outage = offline
@@ -62,7 +60,10 @@ def create_demo_app(database: Path):
         "to explore the 20 rule-evaluated synthetic scenarios. The working verification endpoint "
         "checks synthetic registration identity and category and returns a "
         "Location header for retrieving the decision. Demo scenarios for R-03 "
-        "through R-05 include deterministic claim screening, declared permit conflicts, and pending evidence work. "
+        "through R-05 include phrase-based claim screening, registry permit comparison, and seller evidence checks. "
+        "Upload synthetic evidence, recheck, and send a reviewer decision with the latest chain_hash. "
+        "Use /v1/reports, /v1/widgets and /v1/audit for shopper results. Stale hashes and failed audit checks return 409. "
+        "The shared demo login grants access to all three demonstration roles. "
         "Sign in with username demo and the shared demo password. "
         "Use Try it out on POST /v1/verifications with the example body, "
         "then copy the returned id into GET /v1/verifications/{verification_id}. "
@@ -72,10 +73,10 @@ def create_demo_app(database: Path):
         "Hosted SQLite storage is temporary and a result may be unavailable "
         "after a function restart or on another instance."
     )
-    ListingSchema = service.openapi
+    original_openapi = service.openapi
 
     def demo_openapi():
-        schema = ListingSchema()
+        schema = original_openapi()
         schema["components"]["schemas"]["Listing"]["example"] = DEMO_EXAMPLE
         schema["components"]["securitySchemes"] = {
             "DemoPassword": {"type": "http", "scheme": "basic"}
@@ -121,6 +122,25 @@ def create_demo_app(database: Path):
     def example():
         """Return a sample body for POST /v1/verifications."""
         return DEMO_EXAMPLE
+
+    @service.get("/v1/demo/scenarios", tags=["Demo"])
+    def scenarios():
+        return demo_listings()
+
+    @service.post("/demo/tamper/{verification_id}", tags=["Demo"])
+    def tamper(verification_id: UUID, revision: Revision):
+        """Intentionally corrupt a synthetic trace to demonstrate audit detection."""
+        with closing(sqlite3.connect(database, timeout=20)) as connection, connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute("SELECT result FROM verifications WHERE id=?", (str(verification_id),)).fetchone()
+            if row is None:
+                raise HTTPException(404, "Verification not found")
+            result = json.loads(row[0])
+            if revision.chain_hash != result["chain_hash"] or not audit(result)["valid"]:
+                raise HTTPException(409, "Reload a valid report before tampering")
+            result["trace"][0]["outcome"] = "Intentional synthetic tamper demonstration"
+            connection.execute("UPDATE verifications SET result=? WHERE id=?", (json.dumps(result), str(verification_id)))
+        return audit(result)
 
     return service
 

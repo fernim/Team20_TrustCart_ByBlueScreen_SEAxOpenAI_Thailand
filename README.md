@@ -38,10 +38,10 @@ TrustCart checks a listing **before publication** through an API. The design rul
 
 **Prepared before the event (existing personal project).**
 
-- Prior prototype repository: <!-- TODO: add the link. The current repository is private; make it public or explain this in the submission form. --> `zhunbeiboshi-del/TrustCart-BlueScreen`
+- Prior prototype repository: `zhunbeiboshi-del/TrustCart-BlueScreen`. Access and public availability require team confirmation before submission.
 - Seven planning documents were copied unchanged from that project as product specification and reference: `PRODUCT.md`, `REGISTRATION.md`, `DEMO.md`, `DEMO.en.md`, `DEPLOY.md`, `DEPLOY.en.md`, and `GAPS_AND_QA.md`. They describe the target product. Features they list are delivered only when this repository's code and tests contain them.
 - Research, the pitch deck, and diagrams were also prepared before the event.
-- No code from the earlier prototype was copied. This repository's code was rewritten during the hackathon.
+- The team must confirm the provenance statement about whether code from the earlier prototype was copied before submitting the declaration.
 - Commit `514f11e` has no message. It was part of the same day's work.
 
 **Open-source libraries:** FastAPI, Uvicorn, Pydantic, and pytest. `requirements.txt` lists them.
@@ -50,9 +50,9 @@ TrustCart checks a listing **before publication** through an API. The design rul
 
 - **`AGENTS.md` first.** It gives Codex the stack, run and test commands, eight safety rules, and the status policy, so every task starts from the same constraints.
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
-- **Visible log.** Commits made through Codex carry the `[codex]` tag. At the time of writing, 4 of 5 commits are tagged. <!-- TODO: update counts at code freeze: git log --oneline | grep -c "\[codex\]" -->
+- **Visible log.** Commits made through Codex carry the `[codex]` tag. Including the workflow completion commit, 6 of 8 committed revisions carry the `[codex]` tag.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 8 of 8 tests. <!-- TODO: update at code freeze -->
+- **Test results.** `pytest` passes 32 tests for the completed demo workflow.
 
 ## Run locally
 
@@ -82,14 +82,15 @@ Invoke-RestMethod -Uri ('http://127.0.0.1:8000' + $submission.Headers.Location)
 | Status | Meaning in the baseline |
 | --- | --- |
 | `APPROVED` | The synthetic fixture is active and its product, licence holder, and category match. |
-| `DENIED` | A supported category or registration identity check failed against the fixture. |
+| `PENDING` | Evidence or reviewer action is required, including unresolved identity or permit conflicts. |
+| `DENIED` | A conclusive check failed or a reviewer confirmed denial. |
 | `UNKNOWN` | The reference is missing, the category is unmapped, or the registry is unavailable. The response flags the case for human review. |
 
 The API covers R-01 registration identity and the registry category match from R-02. Each decision step contributes to the SHA-256 trace. SQLite preserves results across app restarts. Confidence is `1.0` for a conclusive fixture check and `0.0` when the result is unknown.
 
 ## Marketplace service roadmap
 
-An authorized registry connector, marketplace authentication, claims and evidence checks, and a reviewer workflow are future integration work. The public source repository and any future hosted API are separate deliverables.
+An authorized live registry connector, durable hosted storage, and marketplace OAuth authentication remain integration work. Claims, evidence, rechecks, review, reports, and audit verification are implemented in the synthetic demo. The public source repository and any future hosted API are separate deliverables.
 
 ## Tests
 
@@ -111,6 +112,39 @@ To run the web app locally, set `TRUSTCART_DEMO_PASSWORD` in the process environ
 
 The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
 
-Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. The dashboard now evaluates all 20 records through the rule engine. R-03 screens submitted Thai/English advertising text and returns matched phrase positions. Declared permit conflicts route to PENDING. Evidence uploads, rechecks, reviewer decisions, and audit-tamper controls remain roadmap work. The outage control is scoped to each request so one visitor cannot change another visitor's registry state.
+Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. All demo roles share the password gate. Marketplace OAuth and separate reviewer identities remain roadmap work.
 
-Validation for this implementation stage: 18 tests pass.
+The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer workspaces support submission, evidence upload, recheck, risk ordering, reviewer decisions, reports, badges, and audit checks. Mutations use the current chain hash and reject stale or tampered cases. Demo reset clears the form while retaining saved history.
+
+## Complete L1 demo
+
+1. Open Seller and select L1. Submit the listing to receive PENDING.
+2. Use the synthetic sample files to upload label and certificate evidence. The conflicting fields keep the result PENDING at confidence 0.60.
+3. Recheck the case and open Reviewer. Refresh the queue, enter a reason, and deny the selected case.
+4. Verify the audit. Demonstrate tampering and verify the failed audit. Further changes are blocked on the altered case.
+5. Submit a new case to restart. Select simulated registry outage to see zero approvals across the 20 records.
+
+## API workflow
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | /v1/verifications | Submit listing |
+| GET | /v1/verifications/{id} | Retrieve result |
+| POST | /v1/verifications/{id}/evidence | Multipart synthetic files and declared product fields |
+| POST | /v1/verifications/{id}/recheck | Append a rule recheck with current chain_hash |
+| GET | /v1/review-queue | Risk-ranked uncertain cases |
+| POST | /v1/verifications/{id}/review | Reviewer decision, note, current chain_hash |
+| GET | /v1/reports/{id} | Rules, evidence hashes, risk and audit |
+| GET | /v1/widgets/{id} | Bilingual badge data |
+| GET | /v1/audit/{id} | Hash-chain integrity |
+| POST | /v1/listings/suggest-copy | Screened deterministic copy template |
+| POST | /v1/products/compare | Compare up to 10 saved reports |
+| POST | /demo/tamper/{id} | Intentionally alter a synthetic trace |
+
+## Optional AI extraction
+
+The extraction client uses OpenAI structured output and drops every phrase absent from the listing. Deterministic rules evaluate the extracted phrases. Without configuration, keyword rules run locally.
+
+Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
+
+Validation: 32 tests pass, including Thai false-positive regressions, grounded extraction, the L1 loop, stale hashes, evidence retries, legacy database migration, and tamper detection. Risk weights are illustrative and need calibration.

@@ -1,0 +1,8 @@
+{
+  "version": "RISK-v1",
+  "calibration": "Illustrative demo weights, pending platform calibration",
+  "unavailable": 40,
+  "failed_rules": {"R-01": 30, "R-02": 10, "R-03": 25, "R-04": 20, "R-05": 20},
+  "high": 80,
+  "medium": 30
+}

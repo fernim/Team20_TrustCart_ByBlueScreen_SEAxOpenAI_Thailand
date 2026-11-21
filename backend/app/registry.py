@@ -14,6 +14,7 @@ class RegistryRecord:
     license_holder: str
     category: str
     active: bool
+    advertising_permit: Optional[str] = None
 
 
 _DATA = Path(__file__).resolve().parent.parent / "data"

@@ -8,8 +8,8 @@
     "title": "reverses diabetes"
   },
   "L2": {
-    "registration_reference": "DEMO-001",
-    "product_name": "Demo Supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "product_name": "Demo Collagen",
     "license_holder": "Demo Brand",
     "category": "supplement",
     "description": "ผลิตภัณฑ์เสริมอาหาร"
@@ -19,11 +19,11 @@
     "product_name": "Firming Serum",
     "license_holder": "Demo Brand",
     "category": "cosmetic",
-    "description": "ผลิตภัณฑ์เสริมอาหาร"
+    "description": "Demo cosmetic listing"
   },
   "L4": {
-    "registration_reference": "DEMO-001",
-    "product_name": "Demo Supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "product_name": "Demo Collagen",
     "license_holder": "Demo Brand",
     "category": "supplement",
     "description": "ผลิตภัณฑ์เสริมอาหาร",
@@ -37,18 +37,18 @@
     "description": "ผลิตภัณฑ์เสริมอาหาร"
   },
   "L6": {
-    "registration_reference": "DEMO-001",
-    "product_name": "Demo Supplement",
+    "registration_reference": "DEMO-FISH-OIL",
+    "product_name": "Demo Fish Oil",
     "license_holder": "Demo Brand",
     "category": "supplement",
     "description": "ผลิตภัณฑ์เสริมอาหาร"
   },
   "L7": {
-    "registration_reference": "DEMO-001",
-    "product_name": "Demo Supplement",
+    "registration_reference": "DEMO-FISH-OIL",
+    "product_name": "Demo Fish Oil",
     "license_holder": "Demo Brand",
     "category": "supplement",
     "description": "ผลิตภัณฑ์เสริมอาหาร",
-    "advertising_permit_conflict": true
+    "advertising_permit": "DEMO-AD-CONFLICT"
   }
 }

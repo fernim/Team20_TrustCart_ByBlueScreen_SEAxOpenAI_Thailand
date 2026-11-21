@@ -38,14 +38,79 @@
   .UNKNOWN { background:#e8eef4; color:#3d536b; }
   dialog { padding:24px; width:min(775px,calc(100% - 24px)); border:1px solid var(--edge); border-radius:14px; color:inherit; }
   dialog::backdrop { background:#102d39aa; }
-  pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#eef4f6; padding:16px; border-radius:10px; font-size:.875rem; }
+  pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#eef4f6; padding:16px; border-radius:10px; font-size:.875rem; max-height:420px; overflow:auto; }
   footer { padding:0 0 35px; color:var(--muted); }
+  .views { display:flex; gap:10px; flex-wrap:wrap; padding-bottom:20px; }
+  .views button[aria-selected="true"] { background:var(--green); color:white; }
+  .workspace { padding:20px; }
+  .fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:20px 0; }
+  .fields label { display:flex; flex-direction:column; align-items:stretch; }
+  input,textarea { font:inherit; width:100%; border:1px solid #9cabb2; padding:10px; border-radius:8px; color:var(--ink); }
+  textarea { min-height:90px; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin:16px 0; }
+  #feedback { min-height:26px; }
+  .notice { background:#e8f2f4; padding:12px; border-radius:8px; }
+  [hidden] { display:none !important; }
 </style>
 <header><nav><strong>TrustCart</strong><a href="/docs">API docs</a></nav></header>
 <main>
   <section class="intro">
     <h1>Marketplace verification</h1>
     <p>Check health-product listings before publication. Explore synthetic orders and the decision trail behind each listing.</p>
+  </section>
+  <div class="views" role="tablist" aria-label="Workspace">
+    <button role="tab" aria-selected="true" data-view="seller">Seller</button>
+    <button role="tab" aria-selected="false" data-view="shopper">Shopper</button>
+    <button role="tab" aria-selected="false" data-view="reviewer">Reviewer</button>
+  </div>
+  <section class="panel workspace">
+    <p class="notice">Synthetic demonstration. Use synthetic product documents only. Decisions cover the checks shown in each report.</p>
+    <div id="seller-view">
+      <h2>Submit a listing</h2>
+      <div class="actions"><label>Scenario <select id="scenario"></select></label><button id="reset">Reset demo form</button></div>
+      <form id="listing-form">
+        <div class="fields">
+          <label>Product name<input id="product-name" required maxlength="200"></label>
+          <label>Licence holder<input id="holder" required maxlength="200"></label>
+          <label>Registration reference<input id="reference" required maxlength="200"></label>
+          <label>Category<select id="category"><option value="supplement">Supplement</option><option value="cosmetic">Cosmetic</option></select></label>
+          <label>Advertising permit<input id="permit" maxlength="200"></label>
+          <label>Title<input id="title" maxlength="2000"></label>
+          <label>Description<textarea id="description" maxlength="10000"></textarea></label>
+        </div>
+        <div class="actions"><button class="primary" type="submit">Verify listing</button><button type="button" id="suggest-copy">Use screened copy template</button></div>
+      </form>
+      <h2 style="margin-top:24px">Seller evidence</h2>
+      <p>Upload a synthetic label and certificate. The service stores their hashes and the declared product fields.</p>
+      <form id="evidence-form">
+        <div class="fields">
+          <label>Evidence product name<input id="evidence-product" required maxlength="200"></label>
+          <label>Evidence licence holder<input id="evidence-holder" required maxlength="200"></label>
+          <label>Evidence reference<input id="evidence-reference" required maxlength="200"></label>
+          <label>Synthetic label<input id="label-file" type="file"></label>
+          <label>Synthetic certificate<input id="certificate-file" type="file"></label>
+        </div>
+        <div class="actions"><button type="submit">Upload evidence</button><button type="button" id="sample-evidence">Use synthetic sample files</button><button type="button" id="recheck">Recheck selected case</button></div>
+      </form>
+    </div>
+    <div id="shopper-view" hidden>
+      <h2>Shopper trust report</h2>
+      <p>Load a submitted verification to view its badge, rule results, evidence hashes, and audit check.</p>
+      <label>Verification ID<input id="lookup-id" placeholder="Paste a verification ID"></label>
+      <div class="actions"><button id="lookup">Load report</button></div>
+    </div>
+    <div id="reviewer-view" hidden>
+      <div class="actions"><h2>Reviewer queue</h2><button id="refresh-queue">Refresh queue</button></div>
+      <p>Risk scores rank work using illustrative RISK-v1 weights. The shared demo sign-in grants reviewer access.</p>
+      <div id="queue"></div>
+      <div class="fields"><label>Review note<input id="review-note" maxlength="1000" placeholder="Record the reason for this decision"></label></div>
+      <div class="actions"><button id="approve">Approve selected case</button><button id="deny">Deny selected case</button><button id="audit">Verify audit</button><button id="tamper">Demonstrate tampering</button></div>
+    </div>
+    <p id="feedback" role="status" aria-live="polite"></p>
+    <h2>Selected verification</h2>
+    <p id="selected-summary">Submit or load a verification to begin.</p>
+    <div class="table-wrap"><table><thead><tr><th>Rule</th><th>Result</th><th>Reason</th></tr></thead><tbody id="selected-rules"></tbody></table></div>
+    <details><summary>Audit trace and API response</summary><pre id="selected-case">No case selected.</pre></details>
   </section>
   <section id="metrics" class="metrics" aria-label="Transaction counts"></section>
   <section class="panel">
@@ -66,13 +131,13 @@
   <section class="panel bar">
     <div><h2>One verification API for the listing flow</h2>
     <p>Marketplaces submit listings before publication. Sellers receive reasons and evidence requests. Shoppers see a decision report, and reviewers investigate uncertain cases.</p>
-    <p>Each transaction runs identity, category, and advertising text checks against synthetic fixtures. Declared permit conflicts request review. Evidence upload and reviewer decisions are planned.</p>
+    <p>Each transaction runs identity, category, advertising text, and permit checks against synthetic fixtures. Sellers upload evidence and reviewers resolve uncertain cases with an audit trail.</p>
     <p>Confidence below 0.75 routes a case to human review. Registry outages and unmapped categories produce Unknown. Every decision step contributes to the audit trace.</p>
     </div>
   </section>
   <section class="panel bar">
     <div><h2>API as a service</h2>
-    <p>Planned marketplace integration includes authorized registry adapters, scoped marketplace credentials, evidence rechecks, and a risk-ranked reviewer queue. AI extraction is planned for phrases present in the listing, while deterministic rules determine the result.</p>
+    <p>The demo includes evidence rechecks and a risk-ranked reviewer queue. Optional grounded AI extraction supports literal phrases from a listing. Authorized live registry integration and marketplace OAuth credentials are roadmap work.</p>
     <p>Illustrative business model from the product brief includes a free seller allowance, a brand subscription, and marketplace pricing per API call. Live registry integration and production persistence require further development.</p>
     </div>
   </section>
@@ -87,9 +152,14 @@
   const statuses = ["APPROVED","PENDING","DENIED","UNKNOWN"];
   const currency = new Intl.NumberFormat("en-TH", { style:"currency", currency:"THB" });
   let records = [];
+  let scenarios = {};
+  let selectedCase = null;
   async function api(path, options) {
     const response = await fetch(path, options);
-    if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === "string" ? error.detail : "Request failed (" + response.status + ")");
+    }
     return response;
   }
   function report(title, reason, result) {
@@ -166,5 +236,162 @@
         byId("metrics").append(card);
       }
   }
+  function feedback(message) { byId("feedback").textContent = message; }
+  function selectCase(result) {
+    selectedCase = result;
+    byId("selected-case").textContent = JSON.stringify(result, null, 2);
+    byId("lookup-id").value = result.id;
+    const audit = result.audit && result.audit.valid ? "Audit valid" : "Audit requires attention";
+    byId("selected-summary").textContent = result.status + " · " + result.reason.replaceAll("_"," ") +
+      " · Confidence " + Math.round(result.confidence * 100) + "% · " + audit + " · Synthetic data";
+    const rows = (result.rule_results || []).map(rule => {
+      const row = document.createElement("tr");
+      for (const value of [rule.rule, rule.result, rule.reason_en]) row.insertCell().textContent = value;
+      return row;
+    });
+    byId("selected-rules").replaceChildren(...rows);
+  }
+  async function loadCase(id) {
+    const result = await (await api("/v1/reports/" + encodeURIComponent(id))).json();
+    selectCase(result);
+    return result;
+  }
+  async function action(callback) {
+    const buttons = document.querySelectorAll(".workspace button");
+    buttons.forEach(button => button.disabled = true);
+    try { await callback(); } catch (error) { feedback(error.message); }
+    finally { buttons.forEach(button => button.disabled = false); }
+  }
+  function requireCase() {
+    if (!selectedCase) throw new Error("Submit or load a case first.");
+    return "/v1/verifications/" + selectedCase.id;
+  }
+  async function mutate(suffix, extra = {}) {
+    const path = requireCase();
+    await api(path + suffix, {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({chain_hash:selectedCase.chain_hash, ...extra})});
+    await loadCase(selectedCase.id);
+  }
+  function fillScenario() {
+    const listing = scenarios[byId("scenario").value];
+    for (const [id,key] of Object.entries({
+      "product-name":"product_name",holder:"license_holder",reference:"registration_reference",
+      category:"category",permit:"advertising_permit",title:"title",description:"description"
+    })) byId(id).value = listing[key] || "";
+    byId("evidence-product").value = listing.product_name;
+    byId("evidence-holder").value = listing.license_holder;
+    byId("evidence-reference").value = listing.registration_reference;
+  }
+  document.querySelectorAll("[data-view]").forEach(button => {
+    button.onclick = () => {
+      for (const view of ["seller","shopper","reviewer"]) byId(view + "-view").hidden = view !== button.dataset.view;
+      document.querySelectorAll("[data-view]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
+    };
+  });
+  byId("scenario").onchange = fillScenario;
+  byId("reset").onclick = () => {
+    fillScenario();
+    selectedCase = null;
+    byId("selected-case").textContent = "Submit or load a verification to begin.";
+    byId("selected-summary").textContent = "No case selected.";
+    byId("selected-rules").replaceChildren();
+    byId("label-file").value = "";
+    byId("certificate-file").value = "";
+    feedback("Demo form reset. Previous reports remain in the audit history.");
+  };
+  byId("listing-form").onsubmit = event => {
+    event.preventDefault();
+    action(async () => {
+      const listing = {
+        product_name:byId("product-name").value, license_holder:byId("holder").value,
+        registration_reference:byId("reference").value, category:byId("category").value,
+        title:byId("title").value, description:byId("description").value,
+        advertising_permit:byId("permit").value || null,
+        simulate_registry_outage:byId("registry").value === "true"
+      };
+      const result = await (await api("/v1/verifications", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(listing)
+      })).json();
+      await loadCase(result.id);
+      feedback("Listing verified. Status " + result.status + ".");
+    });
+  };
+  byId("suggest-copy").onclick = () => action(async () => {
+    const listing = {
+      product_name:byId("product-name").value, license_holder:byId("holder").value,
+      registration_reference:byId("reference").value, category:byId("category").value,
+      title:byId("title").value, description:byId("description").value,
+      advertising_permit:byId("permit").value || null
+    };
+    const suggestion = await (await api("/v1/listings/suggest-copy", {
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(listing)
+    })).json();
+    byId("title").value = suggestion.listing.title;
+    byId("description").value = suggestion.listing.description;
+    feedback("Screened template applied. Submit the listing for a fresh verification.");
+  });
+  async function uploadEvidence(samples) {
+    const path = requireCase();
+    const data = new FormData();
+    data.append("chain_hash", selectedCase.chain_hash);
+    data.append("product_name", byId("evidence-product").value);
+    data.append("license_holder", byId("evidence-holder").value);
+    data.append("registration_reference", byId("evidence-reference").value);
+    for (const kind of ["label","certificate"]) {
+      const file = samples ? new File(["Synthetic " + kind + " for demo"], kind + ".txt", {type:"text/plain"}) : byId(kind + "-file").files[0];
+      if (!file) throw new Error("Choose both synthetic files.");
+      data.append(kind,file);
+    }
+    await api(path + "/evidence", {method:"POST",body:data});
+    await loadCase(selectedCase.id);
+    feedback("Evidence hashes saved and rules checked.");
+  }
+  byId("evidence-form").onsubmit = event => {event.preventDefault(); action(() => uploadEvidence(false));};
+  byId("sample-evidence").onclick = () => action(() => uploadEvidence(true));
+  byId("recheck").onclick = () => action(async () => {await mutate("/recheck"); feedback("Recheck appended to the audit history.");});
+  byId("lookup").onclick = () => action(async () => {await loadCase(byId("lookup-id").value.trim()); feedback("Report loaded.");});
+  byId("refresh-queue").onclick = () => action(async () => {
+    const queue = await (await api("/v1/review-queue")).json();
+    byId("queue").replaceChildren();
+    if (!queue.length) byId("queue").textContent = "No cases currently require review.";
+    for (const item of queue) {
+      const button = document.createElement("button");
+      button.textContent = item.id.slice(0,8) + " · " + item.status + " · Risk " + item.risk.score;
+      button.onclick = () => action(async () => {await loadCase(item.id); feedback("Reviewer case loaded.");});
+      byId("queue").append(button);
+    }
+  });
+  for (const decision of ["approve","deny"]) byId(decision).onclick = () => action(async () => {
+    const note = byId("review-note").value.trim();
+    if (!note) throw new Error("Enter a review note.");
+    await mutate("/review", {decision,note});
+    feedback("Human decision recorded with the current chain hash.");
+  });
+  byId("audit").onclick = () => action(async () => {
+    requireCase();
+    const audit = await (await api("/v1/audit/" + selectedCase.id)).json();
+    feedback(audit.valid ? "Audit chain valid." : "Tampering detected at step " + audit.broken_at + ".");
+    await loadCase(selectedCase.id);
+  });
+  byId("tamper").onclick = () => action(async () => {
+    requireCase();
+    await api("/demo/tamper/" + selectedCase.id, {
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({chain_hash:selectedCase.chain_hash})
+    });
+    await loadCase(selectedCase.id);
+    feedback("Synthetic trace altered. Audit detects the change and further decisions are blocked. Submit a new case to restart.");
+  });
+  (async () => {
+    try {
+      scenarios = await (await api("/v1/demo/scenarios")).json();
+      for (const [id,listing] of Object.entries(scenarios)) {
+        const option = document.createElement("option");
+        option.value = id; option.textContent = id + " · " + listing.product_name;
+        byId("scenario").append(option);
+      }
+      fillScenario();
+    } catch (error) {feedback(error.message);}
+  })();
 </script>
 </html>

@@ -3,12 +3,27 @@
     "product_name": "Demo Supplement",
     "license_holder": "Demo Brand",
     "category": "supplement",
-    "active": true
+    "active": true,
+    "advertising_permit": "DEMO-AD-001"
   },
   "DEMO-REVOKED": {
     "product_name": "Firming Serum",
     "license_holder": "Demo Brand",
     "category": "cosmetic",
     "active": false
+  },
+  "DEMO-COLLAGEN": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "advertising_permit": "DEMO-AD-COLLAGEN"
+  },
+  "DEMO-FISH-OIL": {
+    "product_name": "Demo Fish Oil",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "advertising_permit": "DEMO-AD-FISH"
   }
 }
