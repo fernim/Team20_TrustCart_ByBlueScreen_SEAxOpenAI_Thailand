@@ -11,7 +11,7 @@ Found while reviewing commit `31ef16b`. Each item says how it was confirmed.
 | B5 | Low | Fixed |
 | B6 | High | Open |
 | B7 | Medium | Open |
-| B8 | Medium | Open |
+| B8 | Medium | Fixed |
 | B9 | Medium | Open |
 | B10 | Low | Open |
 | B11 | Low | Open (Roadmap) |
@@ -112,6 +112,8 @@ B1 uses configurable Thai claim phrases with positive and negative regression te
 **Expected:** ISO 9001 is a quality-management standard, not a product-safety certificate, so it cannot satisfy R-05 by itself.
 
 **Fix:** add a failing test that expects ISO 9001 evidence alone to fail R-05 (or go to review) and ISO 22000 evidence to pass, then implement the check.
+
+**Resolution evidence (B8):** `tests/test_evidence_standards.py` reproduced the incorrect ISO 9001 approval and missing stored standards, then passed all four fixture-based cases. Uploads accept optional `standards` declarations; ISO 9001 alone fails R-05 with PENDING/0.60, while ISO 22000 passes matching identity checks. Rechecks retain the declaration and outages remain UNKNOWN. File authenticity is not asserted.
 
 ## B9. Duplicate evidence hashes are not flagged (Medium)
 

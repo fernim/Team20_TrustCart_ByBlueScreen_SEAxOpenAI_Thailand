@@ -42,7 +42,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 
 ### P1 (rule gaps that judges may probe)
 
-- [ ] **Standards certificate (B8).** Reject E-series evidence that contains ISO 9001 alone. Write the failing test first.
+- [x] **Standards certificate (B8).** Optional comma-separated `standards` declarations persist with uploaded evidence. E11 (ISO 9001 alone) fails R-05 and routes to review; E10 (ISO 22000), E9 (GMP), and ISO 9001 plus ISO 22000 pass when identity matches. Four regression cases cover upload, restart/recheck, audit integrity, and outage. This compares declared standards, not document authenticity.
 - [ ] **Duplicate evidence hash (B9).** Flag a `sha256` that is already stored for a different verification, and send that case to review.
 - [ ] **R-02 category claims (B10).** Move the 4 hardcoded phrases in `verification.py:106` to `claim_rules.json`, then compare claims with the registered category.
 

@@ -158,10 +158,20 @@ def evaluate_rules(
                 ("registration_reference", listing.registration_reference),
             )
         )
-        add("R-05", "pass" if matches else "fail",
-            "Declared evidence fields match registry" if matches else "Evidence conflict requires human review",
-            "ตรวจสอบข้อมูลหลักฐานกับทะเบียน", {"declarations_match": matches})
-        if not matches and status != Status.DENIED:
+        declared_standards = {
+            " ".join(value.casefold().split())
+            for value in declarations.get("standards", "").split(",") if value.strip()
+        }
+        standards_sufficient = not declared_standards or bool(declared_standards & {"iso 22000", "gmp"})
+        evidence_passes = matches and standards_sufficient
+        add("R-05", "pass" if evidence_passes else "fail",
+            "Declared evidence fields match registry" if evidence_passes else "Evidence conflict requires human review",
+            "ตรวจสอบข้อมูลหลักฐานกับทะเบียน", {
+                "declarations_match": matches,
+                "declared_standards": sorted(declared_standards),
+                "standards_sufficient": standards_sufficient,
+            })
+        if not evidence_passes and status != Status.DENIED:
             status, reason = Status.PENDING, "evidence_conflict"
     return status, reason, results
 

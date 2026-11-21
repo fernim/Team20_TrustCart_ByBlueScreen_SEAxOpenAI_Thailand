@@ -33,6 +33,7 @@ async def evidence(
     registration_reference: Annotated[ListingText, Form(description="Registration reference declared in the evidence.")],
     label: UploadFile = File(description="Nonempty synthetic label file, up to 2 MiB."),
     certificate: UploadFile = File(description="Nonempty synthetic certificate file, up to 2 MiB."),
+    standards: Annotated[str, Form(max_length=200, description="Optional comma-separated declared standards, such as ISO 22000 or GMP. ISO 9001 alone is insufficient. This is not certificate authentication.")] = "",
 ):
     """Save the declared identity and SHA-256 file digests, then return the updated verification.
 
@@ -56,6 +57,8 @@ async def evidence(
             raise HTTPException(422, "Evidence files must contain data")
         hashes.append((kind, digest.hexdigest()))
     declarations = dict(product_name=product_name, license_holder=license_holder, registration_reference=registration_reference)
+    if standards.strip():
+        declarations["standards"] = standards.strip()
     with edit(request.app.state.database, verification_id, chain_hash) as (connection, result, payload):
         trace = continue_trace(result)
         for kind, digest in hashes:
