@@ -24,6 +24,20 @@ from ..workflow import audit, continue_trace
 
 router = APIRouter(tags=["Connected workflow"])
 
+# Historic smoke-test fixtures. Only replace the exact old display title for
+# the known product so the saved listing and its audit snapshot remain intact.
+DEMO_CATALOG_TITLES = {
+    "0d8925ae-7de3-4f83-96cd-debb3d1e4777": (
+        "Linked product desktop-1795248207995 edited", "Daily Supplement · Essentials Pack",
+    ),
+    "13faac8f-0639-4ddf-bea5-843f5e2dd6d0": (
+        "Linked product desktop-1795249039636 edited", "Daily Supplement · Home Pack",
+    ),
+    "8a4c870f-b534-47fd-a884-a199bebc8043": (
+        "Linked product mobile-1795249115474 edited", "Daily Supplement · Travel Pouch",
+    ),
+}
+
 
 class SaleListing(Listing):
     registration_reference: str = Field(
@@ -61,6 +75,9 @@ def require_plan(connection, shop):
 
 def decorated(connection, product, owner, public=False):
     result = dict(product)
+    demo_titles = DEMO_CATALOG_TITLES.get(product["id"])
+    if not owner[1] and demo_titles and product["listing"].get("title") == demo_titles[0]:
+        result["listing"] = dict(product["listing"], title=demo_titles[1])
     submission = read_submission(connection, owner[1]) if owner[1] else None
     current = bool(submission and submission["product_version"] == product["version"])
     result["shop_id"] = owner[0]
