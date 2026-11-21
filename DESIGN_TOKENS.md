@@ -39,3 +39,13 @@ The customer/reviewer/seller view navigation lives in the customer footer so it 
 A Shopee Mall reference showcase uses nine locally bundled campaign/brand images recorded in `frontend/assets/sources.json`. Its tiles explicitly open the corresponding Shopee pages in a separate tab; these are reference shops, not TrustCart seller endorsements or product verification. A popular-product rail uses the local catalog’s recorded demo sales and opens local product details. It does not assert live weekly sales. Promotions remain illustrative and checkout remains unavailable.
 
 Validation includes DOM component tests and desktop/mobile Playwright flows for navigation, image loading, language changes, product details and layout overflow. The current visual match covers the storefront homepage; authenticated Shopee accounts, checkout and other remote pages are not cloned.
+
+## Product detail view
+
+The product dialog follows the public Shopee product-page layout observed at `https://shopee.co.th/product/38793442/783511072`: breadcrumb, large left gallery, right purchase panel with title, price and quantity, then separate specification and description sections. This reference informs layout only; registry details, ratings, shipping promises and medical copy are not imported.
+
+The dialog is capped at 1200px with a 450px gallery column and collapses to one column at 760px. Price uses a pale surface and orange 32px type (28px on mobile). Thumbnail buttons expose their selected state and an image counter. Plus/minus controls and direct entry retain stock and cart limits. Zero or missing seller stock disables quantity controls and adding to cart. The outlined add-to-cart action is paired with a solid “View cart” action, which opens the existing cart without placing an order.
+
+Saved product images, prices, stock and descriptions remain the source of the rendered listing. Only qualifying passing products have the clickable blue product badge; its popup remains a short customer status. The reviewer retains the detailed report and audit trace. Source-listing links remain in descriptions for the existing reference products. Seller descriptions preserve line breaks and render as plain text.
+
+Validation covers bounded plus/minus controls, thumbnail switching, badge eligibility and popup, stock edits, cart handoff, language switching, native dialog dismissal/focus, and desktop/mobile dialog overflow.

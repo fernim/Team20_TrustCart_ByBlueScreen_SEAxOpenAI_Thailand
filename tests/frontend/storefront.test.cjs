@@ -619,6 +619,29 @@ test('popular product rail opens real local product details and updates language
   assert.equal(p.$$('#brand-shops .brand-shop').length,8);
 });
 
+test('Shopee-style detail separates gallery purchase and description with bounded quantity controls', async (t) => {
+  const listing={title:'Detail product',description:'First line\nSecond line <script>text</script>',category:'supplement',price:'249.50',stock:3,images:['data:image/png;base64,aA==','data:image/png;base64,aQ==']};
+  const p=page(t,w=>{w.fetch=async()=>({ok:true,json:async()=>[{id:'detail',listing,verification:reportFixture}]});});
+  await new Promise(r=>setImmediate(r));
+  submit(p,'Detail product');
+  p.$('[data-product="detail"] .product-open').click();
+  assert.ok(p.$('.product-purchase .detail-price'));
+  assert.equal(p.$('.product-purchase .product-description'),null);
+  assert.match(p.$('.product-description-section').textContent,/First line/);
+  assert.equal(p.$('.product-description-section script'),null);
+  assert.equal(p.$('#decrease-quantity').disabled,true);
+  p.$('#increase-quantity').click(); p.$('#increase-quantity').click();
+  assert.equal(p.$('#quantity').value,'3');
+  assert.equal(p.$('#increase-quantity').disabled,true);
+  p.$('#decrease-quantity').click();
+  assert.equal(p.$('#quantity').value,'2');
+  p.$('.product-thumbnails button:last-child').click();
+  assert.match(p.$('#gallery-position').textContent,/2.*2/);
+  p.$('#product-title .product-verified').click();
+  assert.equal(p.$('#product-status-dialog').open,true);
+  assert.equal(p.$('#product-status-dialog .reviewer-trace'),null);
+});
+
 test('approved product results never certify brand-shop references across languages', async (t) => {
   const p = page(t, (window) => {
     window.fetch = async (url) => url === '/v1/products'

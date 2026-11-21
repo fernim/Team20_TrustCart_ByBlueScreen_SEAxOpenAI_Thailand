@@ -749,6 +749,18 @@
     renderProducts();
   });
   Object.assign(text.th, {
+    productNavigation: "เส้นทางสินค้า",
+    productImages: "รูปสินค้า",
+    specifications: "ข้อมูลจำเพาะของสินค้า",
+    productDescription: "รายละเอียดสินค้า",
+    descriptionMissing: "ผู้ขายยังไม่ได้ระบุรายละเอียดสินค้า",
+    sourceListing: "ดูรายการอ้างอิงบน Shopee",
+    sourceNote: "ข้อมูลบรรจุภัณฑ์จากรายการอ้างอิง · ยังไม่ได้ตรวจยืนยัน",
+    viewCart: "ดูตะกร้าสินค้า",
+    decreaseQuantity: "ลดจำนวน",
+    increaseQuantity: "เพิ่มจำนวน",
+    stockMissing: "ยังไม่ระบุจำนวนคงเหลือ",
+    outOfStock: "สินค้าหมด",
     quantity: "จำนวน",
     add: "เพิ่มไปยังตะกร้า",
     added: "เพิ่มสินค้าลงตะกร้าแล้ว",
@@ -779,6 +791,18 @@
       "สร้างโดย Team BlueScreen โดยอ้างอิงรูปแบบหน้าแรกของ Shopee Thailand เพื่อสาธิตหน้าร้านเท่านั้น ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ Shopee",
   });
   Object.assign(text.en, {
+    productNavigation: "Product navigation",
+    productImages: "Product images",
+    specifications: "Product specifications",
+    productDescription: "Product description",
+    descriptionMissing: "The seller has not added a description yet.",
+    sourceListing: "View source listing on Shopee",
+    sourceNote: "Packaging information from the source listing · not verified",
+    viewCart: "View cart",
+    decreaseQuantity: "Decrease quantity",
+    increaseQuantity: "Increase quantity",
+    stockMissing: "Stock not provided",
+    outOfStock: "Out of stock",
     quantity: "Quantity",
     add: "Add to cart",
     added: "Added to cart",
@@ -814,45 +838,72 @@
   let currentInfo = "help";
   function renderDetail() {
     const product = selectedProduct;
+    const categoryName = categories[product.category][state.language === "th" ? 0 : 1];
+    const breadcrumb = element("nav", "detail-breadcrumb");
+    breadcrumb.setAttribute("aria-label", t("productNavigation"));
+    const back = element("button", "text-button", "TrustCart");
+    back.type = "button";
+    back.dataset.close = "";
+    breadcrumb.append(back, element("span", "", "›"), element("span", "", categoryName),
+      element("span", "", "›"), element("span", "detail-breadcrumb-name", name(product)));
+
     const layout = element("div", "product-detail-layout");
-    const details = element("div");
+    const details = element("section", "product-purchase");
+    details.setAttribute("aria-labelledby", "product-title");
     const heading = element("h2", "", name(product));
     heading.id = "product-title";
     if (hasProductVerification(product))
       heading.prepend(productCheckmark(product), document.createTextNode(" "));
-    const amount = element("div", "detail-price", price(product.price));
+    const metadata = element("div", "detail-metadata", categoryName);
+    if (!product.sellerProduct && product.sold > 0)
+      metadata.append(element("span", "", `${t("sold")} ${product.sold.toLocaleString("en-US")}`));
+    const pricePanel = element("div", "detail-price-panel");
+    if (product.original > product.price && product.price !== null) {
+      pricePanel.append(element("del", "detail-original-price", price(product.original)));
+    }
+    pricePanel.append(element("div", "detail-price", price(product.price)));
     const limit = product.sellerProduct ? Math.min(99, product.stock || 0) : 99;
     const stock = element("p", "product-stock");
     stock.id = "product-stock";
     if (product.sellerProduct) stock.textContent = product.stock == null
-      ? (state.language === "th" ? "ยังไม่ระบุจำนวนคงเหลือ" : "Stock not provided")
-      : product.stock === 0 ? (state.language === "th" ? "สินค้าหมด" : "Out of stock")
+      ? t("stockMissing") : product.stock === 0 ? t("outOfStock")
       : (state.language === "th" ? `มีสินค้าทั้งหมด ${product.stock} ชิ้น` : `${product.stock} in stock`);
     const quantity = element("div", "quantity");
     const label = element("label", "", t("quantity"));
     label.htmlFor = "quantity";
     const input = element("input");
-    Object.assign(input, {
-      id: "quantity",
-      type: "number",
-      min: "1",
-      max: String(limit),
-      step: "1",
-      value: "1",
-    });
-    quantity.append(label, input);
-    const add = element("button", "primary", t("add"));
-    add.disabled = product.price === null || limit === 0;
+    Object.assign(input, { id: "quantity", type: "number", min: "1", max: String(limit), step: "1", value: "1" });
     input.disabled = limit === 0;
+    input.setAttribute("aria-describedby", "product-stock");
+    const controls = element("div", "quantity-controls");
+    const decrease = element("button", "quantity-step", "−");
+    const increase = element("button", "quantity-step", "+");
+    decrease.id = "decrease-quantity";
+    increase.id = "increase-quantity";
+    decrease.type = increase.type = "button";
+    decrease.setAttribute("aria-label", t("decreaseQuantity"));
+    increase.setAttribute("aria-label", t("increaseQuantity"));
+    const updateQuantityButtons = () => {
+      decrease.disabled = limit === 0 || Number(input.value) <= 1;
+      increase.disabled = limit === 0 || Number(input.value) >= limit;
+    };
+    for (const [button, delta] of [[decrease, -1], [increase, 1]]) {
+      button.addEventListener("click", () => {
+        const value = Number(input.value);
+        input.value = String(Math.max(1, Math.min(limit, (Number.isInteger(value) ? value : 1) + delta)));
+        updateQuantityButtons();
+      });
+    }
+    input.addEventListener("input", updateQuantityButtons);
+    updateQuantityButtons();
+    controls.append(decrease, input, increase);
+    quantity.append(label, controls, stock);
+    const add = element("button", "detail-add-to-cart", t("add"));
+    add.disabled = product.price === null || limit === 0;
     add.id = "add-to-cart";
     add.addEventListener("click", () => {
       const quantity = Number(input.value);
-      if (
-        !Number.isInteger(quantity) ||
-        quantity < 1 ||
-        quantity > limit ||
-        (cart.get(product.id) || 0) + quantity > limit
-      ) {
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > limit || (cart.get(product.id) || 0) + quantity > limit) {
         toast(product.sellerProduct
           ? (state.language === "th" ? `จำนวนรวมในตะกร้าต้องไม่เกิน ${limit} ชิ้น` : `Cart quantity must not exceed ${limit}`)
           : t("quantityError"));
@@ -864,67 +915,65 @@
       $("#product-dialog").close();
       toast(t("added"));
     });
-    details.append(heading, amount, stock, quantity, add);
-    if (product.overclaim) {
-      const description = element(
-        "p",
-        "product-description",
-        state.language === "th" ? product.descriptionTh : product.descriptionEn,
-      );
+    const viewCart = element("button", "primary", t("viewCart"));
+    viewCart.id = "detail-view-cart";
+    viewCart.type = "button";
+    viewCart.addEventListener("click", () => {
+      $("#product-dialog").close();
+      // Restore focus to the original product before opening the next native dialog.
+      requestAnimationFrame(showCart);
+    });
+    const actions = element("div", "detail-actions");
+    actions.append(add, viewCart);
+    details.append(heading, metadata, pricePanel, quantity, actions);
 
-      details.insertBefore(description, amount);
-    }
-    if (product.sellerProduct)
-      details.insertBefore(
-        element("p", "product-description", product.descriptionTh || ""),
-        amount,
-      );
+    const gallery = element("div", "product-gallery");
+    const mainImage = productImage(product);
+    mainImage.loading = "eager";
+    gallery.append(mainImage);
+    const imageSources = product.images?.length ? product.images : [mainImage.getAttribute("src")];
+    const thumbnails = element("div", "product-thumbnails");
+    thumbnails.setAttribute("aria-label", t("productImages"));
+    const position = element("p", "gallery-position", `1 / ${imageSources.length}`);
+    position.id = "gallery-position";
+    position.setAttribute("aria-live", "polite");
+    imageSources.forEach((src, index) => {
+      const button = element("button");
+      button.type = "button";
+      button.setAttribute("aria-label", `${name(product)} · ${index + 1}`);
+      button.setAttribute("aria-pressed", String(index === 0));
+      const thumbnail = productImage(product);
+      thumbnail.src = src;
+      button.append(thumbnail);
+      button.addEventListener("click", () => {
+        mainImage.src = src;
+        mainImage.alt = `${name(product)} · ${index + 1}`;
+        position.textContent = `${index + 1} / ${imageSources.length}`;
+        thumbnails.querySelectorAll("button").forEach(node => node.setAttribute("aria-pressed", String(node === button)));
+      });
+      thumbnails.append(button);
+    });
+    gallery.append(thumbnails, position);
+    layout.append(gallery, details);
+
+    const descriptionSection = element("section", "product-description-section");
+    descriptionSection.setAttribute("aria-labelledby", "product-description-title");
+    const specsTitle = element("h3", "", t("specifications"));
+    const specs = element("dl", "detail-specifications");
+    specs.append(element("dt", "", t("categories")), element("dd", "", categoryName));
+    const descriptionTitle = element("h3", "", t("productDescription"));
+    descriptionTitle.id = "product-description-title";
+    const description = product.sourceDescription ||
+      (state.language === "th" ? product.descriptionTh : product.descriptionEn) || t("descriptionMissing");
+    descriptionSection.append(specsTitle, specs, descriptionTitle, element("p", "product-description", description));
     if (product.sourceUrl) {
-      const source = element(
-        "a",
-        "source-reference",
-        "ดูรายการอ้างอิงบน Shopee",
-      );
+      const source = element("a", "source-reference", t("sourceListing"));
       source.href = product.sourceUrl;
       source.target = "_blank";
       source.rel = "noopener noreferrer";
-      details.insertBefore(
-        element("p", "product-description", product.sourceDescription),
-        amount,
-      );
-      details.insertBefore(
-        element(
-          "p",
-          "detail-note",
-          "ข้อมูลบรรจุภัณฑ์จากรายการอ้างอิง · ยังไม่ได้ตรวจยืนยัน",
-        ),
-        amount,
-      );
-      details.insertBefore(source, amount);
+      descriptionSection.append(element("p", "detail-note", t("sourceNote")), source);
     }
-    const gallery = element("div", "product-gallery");
-    const mainImage = productImage(product);
-    gallery.append(mainImage);
-    if (product.images?.length > 1) {
-      const thumbnails = element("div", "product-thumbnails");
-      product.images.forEach((src, index) => {
-        const button = element("button");
-        button.type = "button";
-        button.setAttribute("aria-label", `${name(product)} · ${index + 1}`);
-        button.setAttribute("aria-pressed", String(index === 0));
-        const thumbnail = productImage(product);
-        thumbnail.src = src;
-        button.append(thumbnail);
-        button.addEventListener("click", () => {
-          mainImage.src = src;
-          thumbnails.querySelectorAll("button").forEach(node => node.setAttribute("aria-pressed", String(node === button)));
-        });
-        thumbnails.append(button);
-      });
-      gallery.append(thumbnails);
-    }
-    layout.append(gallery, details);
-    $("#product-detail").replaceChildren(layout);
+    $("#product-detail").replaceChildren(breadcrumb, layout, descriptionSection);
   }
   function renderCart() {
     let adjusted = false;
