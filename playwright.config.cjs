@@ -2,7 +2,9 @@ const { defineConfig } = require('@playwright/test');
 const path = require('node:path');
 const python = path.resolve(process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python');
 const hosted = Boolean(process.env.TRUSTCART_BASE_URL);
-if (hosted && !process.env.TRUSTCART_DEMO_PASSWORD) throw new Error('TRUSTCART_DEMO_PASSWORD is required for hosted tests');
+const reviewerPassword = process.env.TRUSTCART_REVIEWER_PASSWORD;
+const hostedPassword = reviewerPassword || process.env.TRUSTCART_DEMO_PASSWORD;
+if (hosted && !hostedPassword) throw new Error('A demo or reviewer password is required for hosted tests');
 module.exports = defineConfig({
   testDir: './tests/browser',
   testMatch: hosted ? ['**/ui.spec.cjs', '**/hosted.spec.cjs'] : '**/ui.spec.cjs',
@@ -11,7 +13,7 @@ module.exports = defineConfig({
   reporter: 'list',
   use: {
     baseURL: process.env.TRUSTCART_BASE_URL || 'http://127.0.0.1:8766',
-    httpCredentials: hosted ? { username: 'demo', password: process.env.TRUSTCART_DEMO_PASSWORD } : undefined,
+    httpCredentials: hosted ? { username: reviewerPassword ? 'reviewer' : 'demo', password: hostedPassword } : undefined,
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } : {},
     trace: hosted ? 'off' : 'retain-on-failure',
@@ -23,6 +25,7 @@ module.exports = defineConfig({
   webServer: hosted ? undefined : {
     command: `"${python}" tests/browser/serve.py`,
     url: 'http://127.0.0.1:8766/v1/products',
+    env: { TRUSTCART_DATABASE_URL: '', TRUSTCART_AI_TRANSFER_APPROVED: '' },
     reuseExistingServer: false,
     timeout: 30000,
   },

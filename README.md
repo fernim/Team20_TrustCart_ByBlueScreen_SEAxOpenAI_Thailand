@@ -116,7 +116,9 @@ Three overclaim fixtures use the matching NeoCell, Deva C and DHC reference phot
 
 The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
 
-Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. All demo roles share the password gate. Marketplace OAuth and separate reviewer identities remain roadmap work.
+Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. The [shared storage settings](#shared-production-storage) describe the PostgreSQL option.
+
+The hosted entry point rejects browser writes from a different origin when the browser reports the request's origin. Direct API clients may authenticate with HTTP Basic. To restrict the reviewer queue, review decisions, and agency summary, configure `TRUSTCART_REVIEWER_PASSWORD` with a distinct secret and use username `reviewer` for those operations. A `demo` login then receives `403` on those endpoints. Open a separate browser profile and sign in as `reviewer` to run the full judge workflow in one session. Without this setting the shared demo login can operate the full workflow. Individual identities, per-record and tenant access controls, and marketplace OAuth remain production work.
 
 Databases from the earlier feature branch are upgraded at startup. Existing listing snapshots and evidence hashes are imported into the current schema, and previous audit entries remain readable. If a saved listing only has the previous permit-conflict flag, mutations return `409`. Submit a new verification with the permit number to run the current comparison.
 
@@ -127,16 +129,17 @@ The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer work
 1. Open Seller and select L1. Submit the listing to receive PENDING.
 2. Use the synthetic sample files to upload label and certificate evidence. The conflicting fields keep the result PENDING at confidence 0.60.
 3. Recheck the case and open Reviewer. Refresh the queue, enter a reason, and deny the selected case.
-4. Verify the audit. Demonstrate tampering and verify the failed audit. Further changes are blocked on the altered case.
+4. Verify the saved audit. Run the tamper simulation to show a broken chain on a copy, then verify the saved audit again.
 5. Submit a new case to restart. Select simulated registry outage to see zero approvals across the 20 records.
 
 ## API workflow
 
-FastAPI registers five routers from `backend/app/api/`. The API entry point is `backend.app.main:app`. The password-protected local demo uses `app:app`.
+FastAPI registers six routers from `backend/app/api/`. The local API entry point is `backend.app.main:app`. Use `app:app` for the password-protected demo and its access checks.
 
 | Router | API area |
 | --- | --- |
 | `verifications.py` | Listing submission and retrieval |
+| `products.py` | Versioned product creation, updates, and retrieval |
 | `seller.py` | Evidence, rechecks, and copy suggestions |
 | `reviewer.py` | Review queue and decisions |
 | `reports.py` | Reports, badges, comparison, and audit checks |
@@ -164,9 +167,11 @@ FastAPI registers five routers from `backend/app/api/`. The API entry point is `
 | GET | /v1/agency/summary | Aggregate saved synthetic verifications without seller identities |
 | POST | /v1/listings/suggest-copy | Screened deterministic copy template |
 | POST | /v1/products/compare | Compare up to 10 saved reports |
-| POST | /demo/tamper/{id} | Intentionally alter a synthetic trace |
+| POST | /demo/tamper/{id} | Simulate a change to a copy of a trace and return the audit result |
 
 Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
+
+Once a reviewer has recorded a decision, seller evidence uploads and rechecks on that verification return `409`. Submit a fresh verification for updated evidence or an edited listing. A reviewer may record a new decision using the latest audit hash.
 
 If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
 
@@ -176,7 +181,9 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 105 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration.
+API checks cover the OpenAPI workflow, grounded extraction, evidence validation, reviewer access, completed-review protection, cross-origin write rejection, and audit simulation. Risk weights are illustrative and need calibration.
+
+See the [API judge Q&A and demo run sheet](docs/JUDGE_QA.md) for verification evidence.
 
 ## Dataset and release update
 
@@ -215,7 +222,7 @@ The seller list displays each saved product’s image, price, stock and verifica
 
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Latest merged local validation: 111 Python tests, 107 Node component tests, and 22 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
+Local validation passed 115 Python tests, 107 Node component tests, and 22 desktop and mobile browser tests. The automated suites use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
 
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
 

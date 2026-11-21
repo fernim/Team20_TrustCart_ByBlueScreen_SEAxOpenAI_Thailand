@@ -1,5 +1,7 @@
 # TrustCart — Demo Script & Judge Test Cases (English)
 
+For the current rehearsal, use the [judge Q&A and run sheet](docs/JUDGE_QA.md). This script records the earlier design and includes roadmap scenarios.
+
 **One line to remember:** A real registration number is not a real product.
 
 Every team will build "check the FDA number + check the ad wording". TrustCart is different because it checks **who the number belongs to (R-01)**,
@@ -37,7 +39,7 @@ Rules: R-01 Registration identity · R-02 Product category · R-03 Advertising c
 | 6 | Shopper | L7 OceanHealth Outlet | R-04 advertising permit conflict → Pending · reviewer |
 | 7 | Top bar | Switch registry 🟢 → 🔴 | Every listing becomes **Unknown**; nothing passes silently (switch back to 🟢) |
 | 8 | Reviewer | Look back at L1 | **Risk score breakdown** by factor + every step recorded |
-| 9 | Reviewer | ⛔ → 🔐 → 🧪 → 🔐 | ✔ valid → **✘ tampering detected at step 6** |
+| 9 | Reviewer | Verify audit, simulate tampering, verify saved audit again | The simulated copy fails the audit. The saved chain stays valid. |
 | 10 | API plug-in | ▶ Call the real API | JSON matching the Tech document + revenue table (APIaaS for Shopee) |
 | 11 | `/docs` | Swagger | Full `/v1` API |
 
