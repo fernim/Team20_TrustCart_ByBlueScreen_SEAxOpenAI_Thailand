@@ -29,7 +29,9 @@
     ["เครื่องเขียน หนังสือ และงานอดิเรก", "Books & stationery"],
     ["ตั๋วและบัตรกำนัล", "Tickets & vouchers"],
     ["ช้อปปี้เพย์ใกล้ตัว", "Nearby deals"],
+    ["ยา", "Medicine"],
   ];
+  const medicineCategory = categories.length - 1;
   const catalog = [
     [
       "หูฟังไร้สาย แบบครอบหู สีดำ",
@@ -364,7 +366,9 @@
       : "฿" + value.toLocaleString("en-US");
   const findProduct = (id) =>
     catalog.find((product) => String(product.id) === String(id));
-  const image = (category) => `/static/assets/category-${category}.webp`;
+  const image = (category) => category === medicineCategory
+    ? "/static/assets/demo-supplement.png"
+    : `/static/assets/category-${category}.webp`;
   function element(tag, className, content) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -766,7 +770,7 @@
     specifications: "ข้อมูลจำเพาะของสินค้า",
     productDescription: "รายละเอียดสินค้า",
     descriptionMissing: "ผู้ขายยังไม่ได้ระบุรายละเอียดสินค้า",
-    sourceListing: "ดูรายการอ้างอิงบน Shopee",
+    sourceListing: "ดูแหล่งข้อมูลสินค้า",
     sourceNote: "ข้อมูลบรรจุภัณฑ์จากรายการอ้างอิง · ยังไม่ได้ตรวจยืนยัน",
     viewCart: "ดูตะกร้าสินค้า",
     decreaseQuantity: "ลดจำนวน",
@@ -814,7 +818,7 @@
     specifications: "Product specifications",
     productDescription: "Product description",
     descriptionMissing: "The seller has not added a description yet.",
-    sourceListing: "View source listing on Shopee",
+    sourceListing: "View product source",
     sourceNote: "Packaging information from the source listing · not verified",
     viewCart: "View cart",
     decreaseQuantity: "Decrease quantity",
@@ -853,6 +857,7 @@
   });
   const cart = new Map();
   let selectedProduct = null;
+  const detailSelections = new Map();
   let catalogLoaded = false;
   let catalogFailed = false;
   function routeProductId() {
@@ -915,6 +920,10 @@
   let currentInfo = "help";
   function renderDetail() {
     const product = selectedProduct;
+    const active = document.activeElement;
+    const focusKey = $("#product-detail").contains(active) ? { id: active.id, key: active.dataset.detailFocus } : null;
+    const selection = detailSelections.get(product.id) || { gallery: 0, quantity: 1 };
+    detailSelections.set(product.id, selection);
     const categoryName = categories[product.category][state.language === "th" ? 0 : 1];
     const breadcrumb = element("nav", "detail-breadcrumb");
     breadcrumb.setAttribute("aria-label", t("productNavigation"));
@@ -951,7 +960,7 @@
     const label = element("label", "", t("quantity"));
     label.htmlFor = "quantity";
     const input = element("input");
-    Object.assign(input, { id: "quantity", type: "number", min: "1", max: String(limit), step: "1", value: "1" });
+    Object.assign(input, { id: "quantity", type: "number", min: "1", max: String(limit), step: "1", value: String(Math.max(1, Math.min(limit || 1, selection.quantity))) });
     input.disabled = limit === 0;
     input.setAttribute("aria-describedby", "product-stock");
     const controls = element("div", "quantity-controls");
@@ -963,6 +972,7 @@
     decrease.setAttribute("aria-label", t("decreaseQuantity"));
     increase.setAttribute("aria-label", t("increaseQuantity"));
     const updateQuantityButtons = () => {
+      selection.quantity = Number(input.value) || 1;
       decrease.disabled = limit === 0 || Number(input.value) <= 1;
       increase.disabled = limit === 0 || Number(input.value) >= limit;
     };
@@ -1006,20 +1016,24 @@
     mainImage.loading = "eager";
     gallery.append(mainImage);
     const imageSources = product.images?.length ? product.images : [mainImage.getAttribute("src")];
+    selection.gallery = Math.min(selection.gallery, imageSources.length - 1);
+    mainImage.src = imageSources[selection.gallery];
     const thumbnails = element("div", "product-thumbnails");
     thumbnails.setAttribute("aria-label", t("productImages"));
-    const position = element("p", "gallery-position", `1 / ${imageSources.length}`);
+    const position = element("p", "gallery-position", `${selection.gallery + 1} / ${imageSources.length}`);
     position.id = "gallery-position";
     position.setAttribute("aria-live", "polite");
     imageSources.forEach((src, index) => {
       const button = element("button");
       button.type = "button";
       button.setAttribute("aria-label", `${name(product)} · ${index + 1}`);
-      button.setAttribute("aria-pressed", String(index === 0));
+      button.dataset.detailFocus = `gallery-${index}`;
+      button.setAttribute("aria-pressed", String(index === selection.gallery));
       const thumbnail = productImage(product);
       thumbnail.src = src;
       button.append(thumbnail);
       button.addEventListener("click", () => {
+        selection.gallery = index;
         mainImage.src = src;
         mainImage.alt = `${name(product)} · ${index + 1}`;
         position.textContent = `${index + 1} / ${imageSources.length}`;
@@ -1047,7 +1061,14 @@
       source.rel = "noopener noreferrer";
       descriptionSection.append(element("p", "detail-note", t("sourceNote")), source);
     }
-    $("#product-detail").replaceChildren(breadcrumb, layout, descriptionSection);
+    const sections = window.ProductDetail.enhance({ product, catalog, language: state.language,
+      productCard, details, descriptionSection, specs, imageSource: mainImage.src });
+    $("#product-detail").replaceChildren(breadcrumb, layout, ...sections);
+    if (focusKey) {
+      const target = [...$("#product-detail").querySelectorAll("[id], [data-detail-focus]")].find(el =>
+        (focusKey.id && el.id === focusKey.id) || (focusKey.key && el.dataset.detailFocus === focusKey.key));
+      if (target && !target.disabled) target.focus({ preventScroll: true });
+    }
   }
   function renderCart() {
     let adjusted = false;
@@ -1337,7 +1358,9 @@
               ? 1
               : listing.category === "cosmetic"
                 ? 0
-                : 9,
+                : listing.category === "drug"
+                  ? medicineCategory
+                  : 9,
           price: listing.price == null ? null : Number(listing.price),
           stock: listing.stock ?? null,
           images: listing.images || [],

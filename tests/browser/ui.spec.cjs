@@ -311,3 +311,67 @@ test('reviewer summaries open the latest report while keeping prior audits acces
   await expect(page.locator('.reviewer-trace')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width+1);
 });
+
+test('medicine category persists from seller to customer filter and detail', async ({page}) => {
+  await page.goto('/seller');
+  await page.locator('#listing-category').selectOption('drug');
+  const title = `Medicine category ${test.info().project.name}`;
+  await page.locator('#listing-title').fill(title);
+  await page.locator('#listing-price').fill('100');
+  const savedResponse = page.waitForResponse(response => response.url().endsWith('/v1/products') && response.request().method() === 'POST');
+  await page.locator('#seller-form button[type="submit"]').click();
+  const saved = await (await savedResponse).json();
+  expect(saved.listing.category).toBe('drug');
+  // A supplement registry cannot certify a drug listing.
+  expect(saved.verification.status).toBe('DENIED');
+  await page.goto('/');
+  await page.locator('.category').filter({hasText:/^ยา$/}).click();
+  const card = page.locator(`[data-product="${saved.id}"]`);
+  await expect(card).toBeVisible();
+  await expect(card.locator('.product-verified')).toHaveCount(0);
+  await card.locator('.product-title-link').click();
+  await expect(page.locator('.detail-metadata')).toHaveText('ยา');
+  await page.locator('#language').selectOption('en');
+  await expect(page.locator('.detail-metadata')).toHaveText('Medicine');
+});
+
+test('full product page reviews filters photos and related navigation work', async ({page}) => {
+  const errors=[];
+  page.on('pageerror', error=>errors.push(error.message));
+  await page.goto('/products/14');
+  await expect(page.locator('.detail-shop')).toBeVisible();
+  await expect(page.locator('.review-average')).toHaveText('4.1');
+  await expect(page.locator('#detail-reviews')).toContainText('รีวิวตัวอย่าง');
+  await expect(page.locator('.review-card')).toHaveCount(5);
+  await page.locator('.detail-section-nav a[href="#detail-reviews"]').click();
+  await page.locator('[data-review-filter="photos"]').click();
+  await expect(page.locator('.review-card')).toHaveCount(3);
+  const photo=page.locator('.review-photo').first();
+  await photo.click();
+  await expect(page.locator('#review-photo-dialog')).toBeVisible();
+  await expect.poll(()=>page.locator('#review-photo-dialog > img').evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#review-photo-dialog')).not.toBeVisible();
+  await expect(photo).toBeFocused();
+  await page.locator('[data-review-filter="1"]').click();
+  await expect(page.locator('.reviews-empty')).toBeVisible();
+  await page.locator('[data-review-filter="all"]').click();
+  await page.locator('[data-review-page="next"]').click();
+  await expect(page.locator('.review-card')).toHaveCount(3);
+  await page.locator('#language').selectOption('en');
+  await expect(page.locator('#detail-reviews')).toContainText('Sample reviews');
+  await expect(page.locator('.review-card')).toHaveCount(3);
+  await page.locator('[data-review-filter="photos"]').click();
+  await page.screenshot({path:test.info().outputPath('product-reviews.png')});
+  await page.locator('#product-title').scrollIntoViewIfNeeded();
+  await page.screenshot({path:test.info().outputPath('product-page.png'),fullPage:true});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  const link=page.locator('#detail-related .product-title-link').first();
+  const target=await link.getAttribute('href');
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(target+'$'));
+  await page.goBack();
+  await expect(page).toHaveURL(/\/products\/14/);
+  await expect(page.locator('[data-review-filter="photos"]')).toHaveAttribute('aria-pressed','true');
+  expect(errors).toEqual([]);
+});

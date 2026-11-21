@@ -21,3 +21,5 @@ Run `python -m scripts.repair_demo_products --base-url http://localhost:8000` to
 The repair uses versioned product API updates and preserves existing prices, stock and historical reports. It does not change other listings and reruns are no-ops. Generic artwork remains only to identify the preceding demo data for migration.
 
 These real references have no supplied registration or licence-holder evidence. They use an unsupported reference source and receive UNKNOWN through the existing verifier, with no customer badge. The manufacturer page establishes photo/name/pack correspondence, not registry approval. No registry records, registration numbers or verification policy are changed. Prices and stock remain demo values.
+
+The seller category selector includes ยา (`drug`). Saved medicines appear under the separate ยา / Medicine customer category and product-page label. The existing backend drug-category checks and badge eligibility remain unchanged.
