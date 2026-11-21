@@ -179,3 +179,21 @@ def reviewer_submission(submission_id: UUID, request: Request):
         result = read_submission(connection, submission_id)
         result["audit"] = audit(result)
         return result
+
+
+class StartReview(BaseModel):
+    chain_hash: str = Field(min_length=64, max_length=64)
+
+
+@router.post('/v1/reviewer/submissions/{submission_id}/start-review')
+def start_review(submission_id: UUID, payload: StartReview, request: Request):
+    user = require(request, 'reviewer')
+    with transaction(request.app.state.database) as connection:
+        result, _ = active_submission(connection, submission_id)
+        check_revision(result, payload.chain_hash)
+        if result['stage'] not in ('REVIEWER_REQUIRED', 'UNAVAILABLE'):
+            raise HTTPException(409, 'Only a current case awaiting staff review can be started')
+        event(result, 'review_started', {'actor': user['id'], 'chain_hash': payload.chain_hash})
+        result['stage'] = 'IN_REVIEW'
+        save_submission(connection, result)
+        return result

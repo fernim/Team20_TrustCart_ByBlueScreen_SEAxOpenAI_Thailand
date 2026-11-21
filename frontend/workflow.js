@@ -4,6 +4,7 @@ window.TrustCartFlow = (() => {
     NOT_REQUESTED: "ยังไม่ขอตรวจ / Not requested",
     WAITING_DOCUMENTS: "รอเอกสาร / Waiting for documents",
     AI_CHECKING: "AI กำลังตรวจ / AI checking",
+    IN_REVIEW: "เจ้าหน้าที่กำลังตรวจ / Staff reviewing",
     REVIEWER_REQUIRED: "รอเจ้าหน้าที่ / Reviewer required",
     SELLER_ACTION: "ผู้ขายต้องแก้ไข / Seller action",
     COMPLETED: "ตรวจเสร็จแล้ว / Completed",
@@ -56,6 +57,7 @@ window.TrustCartFlow = (() => {
         AI_CHECKING: 1,
         UNAVAILABLE: 3,
         REVIEWER_REQUIRED: 3,
+        IN_REVIEW: 3,
         COMPLETED: 4,
         SUPERSEDED: 4,
       }[result.stage] ?? 0;
@@ -102,7 +104,7 @@ window.TrustCartFlow = (() => {
         ? missing.length
           ? "Upload: " + missing.map((k) => kinds[k]).join(", ")
           : "Documents ready. Choose Live or Replay and start checking."
-        : result.stage === "REVIEWER_REQUIRED"
+        : ["REVIEWER_REQUIRED", "IN_REVIEW"].includes(result.stage)
           ? "Next action: Reviewer — inspect document findings."
           : result.stage === "SELLER_ACTION"
             ? "Next action: Seller — correct the listing or start a new submission with clearer documents."

@@ -61,3 +61,56 @@ def test_marketplace_backfill_is_additive_and_idempotent(connected):
         initialize(connection)
         saved = json.loads(connection.execute('SELECT result FROM products WHERE id=?', (product['id'],)).fetchone()[0])
     assert saved == {**raw, 'marketplace': 'shopee'}
+
+
+def test_start_review_is_audited_preserves_result_and_rejects_stale_hash(connected):
+    client, password = connected
+    _, result = setup_case(client, password, 'uncertain')
+    result = run(client, result)
+    endpoint = '/v1/reviewer/submissions/' + result['id'] + '/start-review'
+    assert client.post(endpoint, json={'chain_hash': result['chain_hash']}).status_code == 403
+    login(client, password, 'reviewer')
+    assert client.post(endpoint, json={'chain_hash': '0' * 64}).status_code == 409
+    started = client.post(endpoint, json={'chain_hash': result['chain_hash']})
+    assert started.status_code == 200, started.text
+    started = started.json()
+    assert started['stage'] == 'IN_REVIEW'
+    for key in ('status', 'confidence', 'rule_results', 'human_review_required'):
+        assert started[key] == result[key]
+    assert started['trace'][:-1] == result['trace']
+    assert started['trace'][-1]['step'] == 'review_started'
+    assert started['chain_hash'] != result['chain_hash']
+    assert client.post(endpoint, json={'chain_hash': result['chain_hash']}).status_code == 409
+    assert client.get('/v1/reviewer/queue?work_queue=in_progress').json()['counts']['in_progress'] == 1
+    response = client.post('/v1/reviewer/submissions/' + result['id'] + '/decision', json={'chain_hash': started['chain_hash'], 'decision': 'request_documents', 'note': 'Provide clearer original documents'})
+    assert response.status_code == 200, response.text
+    assert response.json()['stage'] == 'SELLER_ACTION'
+
+
+def test_start_review_never_turns_unavailability_into_approval(connected):
+    client, password = connected
+    _, result = setup_case(client, password)
+    result = run(client, result, 'live')
+    assert result['status'] == 'UNKNOWN'
+    login(client, password, 'reviewer')
+    started = client.post('/v1/reviewer/submissions/' + result['id'] + '/start-review', json={'chain_hash': result['chain_hash']})
+    assert started.status_code == 200
+    assert started.json()['status'] == 'UNKNOWN'
+    assert started.json()['confidence'] < 0.75
+    assert not client.get('/v1/catalog/products').json()[0]['badge_eligible']
+
+
+def test_start_review_rejects_waiting_completed_and_superseded(connected):
+    client, password = connected
+    _, waiting = setup_case(client, password)
+    login(client, password, 'reviewer')
+    assert client.post('/v1/reviewer/submissions/' + waiting['id'] + '/start-review', json={'chain_hash': waiting['chain_hash']}).status_code == 409
+    product, result = setup_case(client, password)
+    completed = run(client, result)
+    login(client, password, 'reviewer')
+    assert client.post('/v1/reviewer/submissions/' + completed['id'] + '/start-review', json={'chain_hash': completed['chain_hash']}).status_code == 409
+    product, result = setup_case(client, password, 'uncertain')
+    result = run(client, result)
+    client.put('/v1/seller/products/' + product['id'], json={**product['listing'], 'expected_version': 1})
+    login(client, password, 'reviewer')
+    assert client.post('/v1/reviewer/submissions/' + result['id'] + '/start-review', json={'chain_hash': result['chain_hash']}).status_code == 409

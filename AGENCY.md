@@ -13,3 +13,9 @@ Existing local products are additively backfilled as `shopee` in their persisted
 Work queues: To review (`REVIEWER_REQUIRED`, `UNAVAILABLE`); In progress (`AI_CHECKING`, `IN_REVIEW`); Waiting for documents (`WAITING_DOCUMENTS`); Seller correction (`SELLER_ACTION`); Completed (`COMPLETED`). Verification results remain APPROVED / PENDING / DENIED / UNKNOWN independently of these work groups. Registry data remains synthetic, not official certification.
 
 กลุ่มงาน: รอเจ้าหน้าที่ตรวจ, กำลังดำเนินการ, รอเอกสาร, รอผู้ขายแก้ไข และเสร็จสิ้น แยกจากผลตรวจ APPROVED / PENDING / DENIED / UNKNOWN ข้อมูลทะเบียนเป็นข้อมูลจำลอง ไม่ใช่การรับรองอย่างเป็นทางการ
+
+## Start review / เริ่มตรวจ
+
+`POST /v1/reviewer/submissions/{id}/start-review` accepts the current `chain_hash`. Only current cases in `REVIEWER_REQUIRED` or `UNAVAILABLE` can enter `IN_REVIEW`. The reviewer identity and supplied hash are appended through `Trace.add`; status, confidence and recorded rule results do not change. Stale hashes, invalid audits, completed/waiting cases and superseded products are rejected. Staff may use the existing decision endpoint after starting review.
+
+การเริ่มตรวจต้องใช้ `chain_hash` ล่าสุด และใช้ได้เฉพาะคำขอปัจจุบันที่รอเจ้าหน้าที่หรือยังตรวจไม่ได้ ระบบบันทึกผู้ตรวจและ hash ในประวัติ และเปลี่ยนเฉพาะกลุ่มงานเป็น `IN_REVIEW` โดยไม่เปลี่ยนผลตรวจ ความมั่นใจ หรือผลกฎ hash เก่า ประวัติไม่ถูกต้อง งานที่ยังรอเอกสาร งานเสร็จแล้ว และฉบับเก่าจะถูกปฏิเสธ หลังเริ่มตรวจใช้ endpoint ตัดสินใจเดิมได้

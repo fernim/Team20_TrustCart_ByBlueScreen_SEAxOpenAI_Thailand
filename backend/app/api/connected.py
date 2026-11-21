@@ -253,7 +253,7 @@ def reviewer_submissions(
             if (
                 action_required
                 and not expired
-                and result["stage"] not in ("REVIEWER_REQUIRED", "UNAVAILABLE")
+                and result["stage"] not in ("REVIEWER_REQUIRED", "UNAVAILABLE", "IN_REVIEW")
             ):
                 continue
             result["shop_name"] = connection.execute(
