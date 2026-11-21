@@ -15,6 +15,9 @@ class RegistryRecord:
     category: str
     active: bool
     advertising_permit: Optional[str] = None
+    registration_status: str = "ACTIVE"
+    permit_required: bool = False
+    permit_active: bool = True
 
 
 _DATA = Path(__file__).resolve().parent.parent / "data"

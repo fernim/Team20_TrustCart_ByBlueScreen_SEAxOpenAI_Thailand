@@ -62,6 +62,7 @@
     <button role="tab" aria-selected="true" data-view="seller">Seller</button>
     <button role="tab" aria-selected="false" data-view="shopper">Shopper</button>
     <button role="tab" aria-selected="false" data-view="reviewer">Reviewer</button>
+    <button role="tab" aria-selected="false" data-view="agency">Agency</button>
   </div>
   <section class="panel workspace">
     <p class="notice">Synthetic demonstration. Use synthetic product documents only. Decisions cover the checks shown in each report.</p>
@@ -105,6 +106,12 @@
       <div id="queue"></div>
       <div class="fields"><label>Review note<input id="review-note" maxlength="1000" placeholder="Record the reason for this decision"></label></div>
       <div class="actions"><button id="approve">Approve selected case</button><button id="deny">Deny selected case</button><button id="audit">Verify audit</button><button id="tamper">Demonstrate tampering</button></div>
+    </div>
+    <div id="agency-view" hidden>
+      <h2>Agency overview</h2>
+      <p>Aggregate checks from saved synthetic verifications. Claim phrases are quoted test inputs. Counts include deliberate audit-tamper demonstrations.</p>
+      <button id="refresh-agency">Refresh aggregate</button>
+      <pre id="agency-summary">Run verifications, then refresh to view status, rule, category, day and audit totals.</pre>
     </div>
     <p id="feedback" role="status" aria-live="polite"></p>
     <h2>Selected verification</h2>
@@ -284,7 +291,7 @@
   }
   document.querySelectorAll("[data-view]").forEach(button => {
     button.onclick = () => {
-      for (const view of ["seller","shopper","reviewer"]) byId(view + "-view").hidden = view !== button.dataset.view;
+      for (const view of ["seller","shopper","reviewer","agency"]) byId(view + "-view").hidden = view !== button.dataset.view;
       document.querySelectorAll("[data-view]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
     };
   });
@@ -360,6 +367,11 @@
       button.onclick = () => action(async () => {await loadCase(item.id); feedback("Reviewer case loaded.");});
       byId("queue").append(button);
     }
+  });
+  byId("refresh-agency").onclick = () => action(async () => {
+    const aggregate = await (await api("/v1/agency/summary")).json();
+    byId("agency-summary").textContent = JSON.stringify(aggregate, null, 2);
+    feedback("Agency totals reconciled from saved synthetic records.");
   });
   for (const decision of ["approve","deny"]) byId(decision).onclick = () => action(async () => {
     const note = byId("review-note").value.trim();

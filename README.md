@@ -52,7 +52,7 @@ TrustCart checks a listing **before publication** through an API. The design rul
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Through the consolidated API integration, 7 of 9 committed revisions carry the `[codex]` tag.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 41 tests for the demo workflow and API compatibility.
+- **Test results.** `pytest` passes 44 tests for the demo workflow, API compatibility, dataset invariants, and agency aggregation.
 
 ## Run locally
 
@@ -156,3 +156,13 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
 Validation: 41 tests pass, including Thai false-positive regressions, grounded extraction, the L1 loop, stale hashes, evidence validation and retries, legacy database migration, tamper detection, and the password gate for the API routers. Risk weights are illustrative and need calibration.
+
+## Dataset and release update
+
+The deterministic generator at scripts/generate_demo_dataset.py produces 18 fictional DEMO registry references, 40 tagged listings, and 16 evidence-case definitions. The evidence definitions include unsupported COA cases explicitly marked as roadmap. Existing DEMO aliases remain compatible. No official registration numbers are generated. Submitted numeric references must match the expected grouped format; malformed or unsupported references return UNKNOWN.
+
+Expired or revoked fixtures are denied. Permit conflicts and required missing permits remain PENDING. Unsupported registries return UNKNOWN. Drug-category and prohibited supplement claims are screened by the synthetic rule pack. All 40 listings have explicit expected status and rule failures, and every outage variant remains UNKNOWN.
+
+GET /v1/agency/summary aggregates saved synthetic verifications by status, failing rule, category, day, claim phrase and audit validity. The Agency view exposes those totals without seller identity fields.
+
+The release retains the existing router split, SQLite evidence migration compatibility, evidence-backed rechecks, ThomazAgents.md, and competition declarations. Python 3.9 pytest CI runs on pull requests and pushes to main with read-only repository permissions and no live credentials. Live AI, official registry integration, document authenticity/COA validation and marketplace OAuth remain integration work.

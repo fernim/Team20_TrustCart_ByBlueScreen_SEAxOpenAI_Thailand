@@ -1,0 +1,98 @@
+{
+  "E1": {
+    "kind": "identity_mismatch",
+    "synthetic": true,
+    "content": "Synthetic evidence identity_mismatch",
+    "expected": "fail"
+  },
+  "E2": {
+    "kind": "identity_match",
+    "synthetic": true,
+    "content": "Synthetic evidence identity_match",
+    "expected": "pass"
+  },
+  "E3": {
+    "kind": "empty_file",
+    "synthetic": true,
+    "content": "Synthetic evidence empty_file",
+    "expected": "reject"
+  },
+  "E4": {
+    "kind": "stale_hash",
+    "synthetic": true,
+    "content": "Synthetic evidence stale_hash",
+    "expected": "reject"
+  },
+  "E5": {
+    "kind": "label_match",
+    "synthetic": true,
+    "content": "Synthetic evidence label_match",
+    "expected": "pass"
+  },
+  "E6": {
+    "kind": "missing_thai_term",
+    "synthetic": true,
+    "content": "Synthetic evidence missing_thai_term",
+    "expected": "fail"
+  },
+  "E7": {
+    "kind": "certificate_match",
+    "synthetic": true,
+    "content": "Synthetic evidence certificate_match",
+    "expected": "pass"
+  },
+  "E8": {
+    "kind": "holder_mismatch",
+    "synthetic": true,
+    "content": "Synthetic evidence holder_mismatch",
+    "expected": "fail"
+  },
+  "E9": {
+    "kind": "GMP",
+    "synthetic": true,
+    "content": "Synthetic evidence GMP",
+    "expected": "pass"
+  },
+  "E10": {
+    "kind": "ISO 22000",
+    "synthetic": true,
+    "content": "Synthetic evidence ISO 22000",
+    "expected": "pass"
+  },
+  "E11": {
+    "kind": "ISO 9001",
+    "synthetic": true,
+    "content": "Synthetic evidence ISO 9001",
+    "expected": "fail"
+  },
+  "E12": {
+    "kind": "expired_standard",
+    "synthetic": true,
+    "content": "Synthetic evidence expired_standard",
+    "expected": "fail"
+  },
+  "E13": {
+    "kind": "coa_below",
+    "synthetic": true,
+    "content": "Synthetic evidence coa_below",
+    "expected": "roadmap"
+  },
+  "E14": {
+    "kind": "coa_above",
+    "synthetic": true,
+    "content": "Synthetic evidence coa_above",
+    "expected": "roadmap"
+  },
+  "E15": {
+    "kind": "permit_mismatch",
+    "synthetic": true,
+    "content": "Synthetic evidence permit_mismatch",
+    "expected": "fail"
+  },
+  "E16": {
+    "kind": "duplicate_hash",
+    "synthetic": true,
+    "content": "Synthetic evidence duplicate_hash",
+    "expected": "risk_signal"
+  }
+}

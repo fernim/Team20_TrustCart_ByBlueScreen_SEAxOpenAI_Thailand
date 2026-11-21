@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
-from .api import reports, reviewer, seller, verifications
+from .api import agency, reports, reviewer, seller, verifications
 from .llm import openai_claim_client
 from .verification import (
     Listing as Listing,
@@ -33,6 +33,7 @@ def create_app(database: Path) -> FastAPI:
     service.include_router(seller.router)
     service.include_router(reviewer.router)
     service.include_router(reports.router)
+    service.include_router(agency.router)
     return service
 
 
