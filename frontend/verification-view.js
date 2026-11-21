@@ -33,10 +33,12 @@
     const blockers = [];
     for (const [rule, label, passedText, action] of stages) {
       const entries = traceEntries.filter((entry) => entry.step === rule);
+      const ruleResult = Array.isArray(result.rule_results)
+        ? result.rule_results.find(item => item.rule === rule) : null;
       const passed =
-        entries.length > 0 &&
+        ruleResult ? ruleResult.result === "pass" : entries.length > 0 &&
         entries.every((entry) => ["matched", "passed"].includes(entry.outcome));
-      const state = !entries.length
+      const state = !entries.length && !ruleResult
         ? "not_checked"
         : passed
           ? "passed"

@@ -6,6 +6,54 @@ Built by Team BlueScreen for the Sea × OpenAI Regional Codex Hackathon Thailand
 
 TrustCart gives marketplaces a pre-publication verification API for health-product listings. A marketplace submits a listing and receives a status, a reason, an audit trace, and a URL for retrieving the decision. The baseline runs end to end with a synthetic registry and a local SQLite database. Its approvals apply only to synthetic fixtures.
 
+> **All data is synthetic.** TrustCart does not connect to the Thai FDA registry or any marketplace. It is not affiliated with Shopee or Thai FDA, and its results are decision support. They are not certification, legal advice, or medical advice.
+
+## Problem
+
+A real 13-digit Thai FDA registration number does not prove that the listed product holds it. Shoppers cannot tell whether the number on a health-product listing belongs to that product. Listings also claim to treat, prevent, or reverse disease. Enforcement happens after publication: Thai FDA reports 121,494 illegal health-product ads closed between 2023 and April 2026. Sources are listed in the pitch deck. Small sellers usually learn the rules when a listing is taken down.
+
+## Solution
+
+TrustCart checks a listing **before publication** through an API. The design rule is *AI extracts and suggests, deterministic rules decide, humans govern*:
+
+- Rules R-01 to R-05 decide the status. A language model is never allowed to set one.
+- A registry outage, missing reference, or unmapped category returns `UNKNOWN` with human review. TrustCart never approves a case it could not verify.
+- Every decision step is written to a SHA-256 hash-chained audit trace.
+
+## Build direction
+
+- **03 Deep Domain AI (primary).** Checks follow Thai supplement compliance practice: registration identity, licence holder, category, and prohibited claims. The test is whether a trust-and-safety reviewer would rely on the result.
+- **01 Autonomous & Adaptive AI (secondary).** The agent runs without supervision and escalates to a person only when it cannot verify a case.
+
+## Declarations (what was built during the hackathon)
+
+**Built on 21 November 2026, on site, in this repository.** The first commit, `1d8b004`, was made at 10:44 +07:00, after hacking started at 10:25. The repository history records the baseline and the final API integration.
+
+| Built today | Files |
+| --- | --- |
+| Verification, evidence, recheck, and review APIs with a synthetic registry, SQLite persistence, and a hash-chained trace | `backend/app/api/`, `backend/app/verification.py`, `backend/app/registry.py`, `backend/app/workflow.py` |
+| Password-protected web demo and interactive API docs | `app.py`, `demo.html`, `vercel.json` |
+| Tests | `tests/` |
+| Codex instructions | `AGENTS.md`, `BASELINE.md`, [Thomaz API guidance](ThomazAgents.md) |
+
+**Prepared before the event (existing personal project).**
+
+- Prior prototype repository: `zhunbeiboshi-del/TrustCart-BlueScreen`. Access and public availability require team confirmation before submission.
+- Seven planning documents were copied unchanged from that project as product specification and reference: `PRODUCT.md`, `REGISTRATION.md`, `DEMO.md`, `DEMO.en.md`, `DEPLOY.md`, `DEPLOY.en.md`, and `GAPS_AND_QA.md`. They describe the target product. Features they list are delivered only when this repository's code and tests contain them.
+- Research, the pitch deck, and diagrams were also prepared before the event.
+- The team must confirm the provenance statement about whether code from the earlier prototype was copied before submitting the declaration.
+- Commit `514f11e` has no message. It was part of the same day's work.
+
+**Open-source libraries:** FastAPI, Uvicorn, Pydantic, and pytest. `requirements.txt` lists them.
+
+## How we used Codex
+
+- **`AGENTS.md` first.** It gives Codex the stack, run and test commands, eight safety rules, and the status policy, so every task starts from the same constraints.
+- **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
+- **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
+- **Human review.** Team members review every diff that touches rules, safety, or data handling.
+- **Test results.** `pytest` passes 108 tests for the demo workflow, API compatibility, dataset invariants, agency aggregation, and database adapter behavior. Shared PostgreSQL connectivity still requires hosted verification.
+
 ## Run locally
 
 ```powershell
@@ -14,15 +62,13 @@ python -m venv .venv
 .venv/Scripts/python -m uvicorn backend.app.main:app --port 8000
 ```
 
-On macOS/Linux, use `.venv/bin/python` in place of `.venv/Scripts/python`.
-
-Open `http://127.0.0.1:8000/` for the storefront UI prototype, or `http://127.0.0.1:8000/docs` for the interactive API contract. In another PowerShell terminal, submit the sample marketplace listing and retrieve the stored result.
+Open `http://127.0.0.1:8000/docs` for the interactive API contract. In another PowerShell terminal, submit the sample marketplace listing and retrieve the stored result.
 
 ```powershell
 $listing = @{
     registration_reference = 'DEMO-001'
-    product_name = 'Vitamin C Supplement'
-    license_holder = 'LumaVale'
+    product_name = 'Demo Supplement'
+    license_holder = 'Demo Brand'
     category = 'supplement'
 } | ConvertTo-Json
 
@@ -33,77 +79,142 @@ $submission = Invoke-WebRequest -Method Post `
 Invoke-RestMethod -Uri ('http://127.0.0.1:8000' + $submission.Headers.Location)
 ```
 
-| Status | Meaning in the baseline |
+| Status | Meaning in the synthetic demo |
 | --- | --- |
-| `APPROVED` | The synthetic fixture is active and its product, licence holder, and category match. |
-| `DENIED` | An identity/category check failed, or R-03 detected an overclaim in the supplied title/description. |
+| `APPROVED` | The applicable synthetic checks pass, confidence is at least 0.75, and no conflict requires review. |
+| `PENDING` | Evidence or reviewer action is required, including unresolved identity or permit conflicts. |
+| `DENIED` | A conclusive check failed or a reviewer confirmed denial. |
 | `UNKNOWN` | The reference is missing, the category is unmapped, or the registry is unavailable. The response flags the case for human review. |
 
-The API covers R-01 registration identity, the registry category match from R-02, and a limited R-03 overclaim check when title/description text is supplied. Each decision step contributes to the SHA-256 trace. SQLite preserves results across app restarts. Confidence is `1.0` for a conclusive fixture check and `0.0` when the result is unknown.
+The API checks registration identity, registered category, advertising claims, submitted permits, and declared seller evidence when applicable. Each decision step contributes to the SHA-256 trace. Local SQLite preserves results across app restarts.
 
 ## Marketplace service roadmap
 
-An authorized registry connector, marketplace authentication, a complete regulatory claims rule pack, evidence checks, and an authorized reviewer workflow are future integration work. The public source repository and any future hosted API are separate deliverables.
-
-## Storefront UI prototype
-
-The homepage recreates the visual structure of [Shopee Thailand](https://shopee.co.th/): orange search header, promotional banners, seven service shortcuts, a two-row category grid, flash deals, product cards, and footer. FastAPI serves the HTML, CSS, vanilla JavaScript, and local images without a frontend build step.
-
-- Search in Thai or English, filter by category, sort by price, and load more demo products.
-- Switch Thai/English navigation and catalog text. Reference banner artwork retains its original Thai text.
-- Cycle banners, save a sample voucher, open product details, choose quantities, and add/remove items in a demo cart. The cart and voucher reset on page reload.
-- Utility links explain prototype limitations. Accounts, authenticated seller portals, payment, checkout, shipping, and social connections are not implemented. The local seller demo is available at `/seller`.
-
-The 27 catalog entries use reference photographs and illustrative prices, sales counts and offers. Real supplement reference names/photos (DHC, NeoCell and Deva C) do not inherit approval from the synthetic registry fixture. Saved seller products can receive a blue checkmark only when their backend result qualifies. Customers can click a blue “ตรวจทะเบียนแล้ว” / “Registration checked” badge only when the product passes verification. Non-passing listings remain normal product cards with no status badge. The popup shows only the short status and the synthetic-data label; detailed reasons and traces remain in the reviewer view. Unknown or failed requests never produce a verified badge. The separate `/reviewer` page loads a stored report by its ID and displays status, reason, confidence, human-review routing, registry source, timestamped trace entries, and expandable previous/current hashes plus the final chain hash. A selector lists reports from the current browser session. Clicking a customer status badge also points the Reviewer link at that product’s report; the lookup also accepts an ID from the API. The view displays recorded hashes without independently validating their integrity. This read-only local reviewer demo has no authentication or authorization; it must not be treated as a protected reviewer portal. The registration check does not establish authenticity or verify a seller account. Denied, unknown, pending, low-confidence and failed-request products have no status badge. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
-
-Three overclaim fixtures use the matching NeoCell, Deva C and DHC reference photos with deliberately unsupported test copy. Their descriptions identify the text as example copy requiring correction; it is not quoted from the photographed manufacturers or source sellers. A limited deterministic R-03 policy detects fixed-time appearance promises, instant-effect promises, and universal result guarantees in Thai and English. The three listings are submitted to the existing API and receive `DENIED` with `advertising_overclaim`; exact matched phrases, their title/description source, and bilingual reasons are persisted in `claim_findings` and the hash-chained trace. They use the existing synthetic reference as a borrowed-reference scenario; no new registration record is invented. R-03 rejection does not establish their identity. Samples are deterministic for repeatable demos and tests.
-
-### R-03 scope
-
-`POST /v1/verifications` accepts optional `title` (up to 1,000 characters) and `description` (up to 6,000 characters). Omitting them preserves baseline behavior. Matching phrases are detected by the demo patterns in `backend/app/claims.py`, not by the LLM or a frontend status flag. Registry outage, missing reference, or unmapped category still returns `UNKNOWN` and human review before a conclusive claim verdict. Corrected text is checked anew; it can pass only if identity and category also match. Existing stored reports remain readable.
-
-This is a narrow demo policy, not a comprehensive Thai FDA compliance engine. It does not assess arbitrary paraphrases, substantiation, legal exceptions, disease claims, or the required supplement label. Quoted examples are still scanned as listing text. A successful result is limited to the implemented checks.
+An authorized live registry connector, durable hosted storage, and marketplace OAuth authentication remain integration work. Claims, evidence, rechecks, review, reports, and audit verification are implemented in the synthetic demo. The public source repository and any future hosted API are separate deliverables.
 
 ## Tests
-
-`tests/test_claims_unit.py` adds offline R-03 scanner regression coverage for literal text/source preservation, case and whitespace variations, Thai numerals, repeated occurrences, and ordinary copy without findings. Run it directly with `.venv/bin/python -m pytest -q tests/test_claims_unit.py` on macOS/Linux.
 
 ```powershell
 .venv/Scripts/python -m pytest -q
 ```
 
-Frontend component tests require Node.js 18+ and npm (development only):
+## Web demo and API documentation
 
-```bash
-npm ci
-npm test
+The [hosted demo](https://trustcart-bluescreen-demo.vercel.app) includes 20 synthetic marketplace transactions, status filters, decision reports, and a sample verification request.
+
+Open the [interactive API documentation](https://trustcart-bluescreen-demo.vercel.app/docs) to authorize with HTTP Basic authentication, inspect request examples, and try the endpoints. Use username `demo` and the shared password supplied separately.
+
+To run the web app locally, set `TRUSTCART_DEMO_PASSWORD` in the process environment, then run:
+
+The 27 catalog entries use reference photographs and illustrative prices, sales counts and offers. Real supplement reference names/photos (DHC, NeoCell and Deva C) do not inherit approval from the synthetic registry fixture. Saved seller products can receive a blue checkmark only when their backend result qualifies. Customers can click a blue “ตรวจทะเบียนแล้ว” / “Registration checked” badge only when the product passes verification. Non-passing listings remain normal product cards with no status badge. The popup shows only the short status and the synthetic-data label; detailed reasons and traces remain in the reviewer view. Unknown or failed requests never produce a verified badge. The separate `/reviewer` page loads a stored report by its ID and displays status, reason, confidence, human-review routing, registry source, timestamped trace entries, and expandable previous/current hashes plus the final chain hash. A selector lists reports from the current browser session. Clicking a customer status badge also points the Reviewer link at that product’s report; the lookup also accepts an ID from the API. The view displays recorded hashes without independently validating their integrity. This read-only local reviewer demo has no authentication or authorization; it must not be treated as a protected reviewer portal. The registration check does not establish authenticity or verify a seller account. Denied, unknown, pending, low-confidence and failed-request products have no status badge. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
+
+Three overclaim fixtures use the matching NeoCell, Deva C and DHC reference photos with deliberately unsupported test copy. Their descriptions identify the text as example copy requiring correction; it is not quoted from the photographed manufacturers or source sellers. A limited deterministic R-03 policy detects fixed-time appearance promises, instant-effect promises, and universal result guarantees in Thai and English. The three listings are submitted to the existing API and receive `DENIED` with `advertising_overclaim`; exact matched phrases, their title/description source, and bilingual reasons are persisted in `claim_findings` and the hash-chained trace. They use the existing synthetic reference as a borrowed-reference scenario; no new registration record is invented. R-03 rejection does not establish their identity. Samples are deterministic for repeatable demos and tests.
+
+```powershell
+.venv/Scripts/python -m uvicorn app:app --port 8000
 ```
 
-The DOM tests cover search and empty states, combined filters, sorting, pagination, banners, coupons, countdown expiry, product details, cart validation/totals/removal, utility dialogs, and language switching. Python tests cover page/static serving alongside the baseline API. Desktop and mobile visual behavior should also be checked in a browser after UI changes.
+The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
 
-## Reviewer design
+Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. All demo roles share the password gate. Marketplace OAuth and separate reviewer identities remain roadmap work.
 
-The orange-and-white reviewer workspace shares the storefront design system documented in [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). A responsive four-stage stepper explains R-01 identity, R-02 category, R-03 advertising and final confirmation. It shows every recorded failure and concrete fixes; missing steps are never shown as passed. The backend may evaluate several rules even when an earlier rule fails. The stepper summarizes those results rather than creating a new workflow or publishing products.
+Databases from the earlier feature branch are upgraded at startup. Existing listing snapshots and evidence hashes are imported into the current schema, and previous audit entries remain readable. If a saved listing only has the previous permit-conflict flag, mutations return `409`. Submit a new verification with the permit number to run the current comparison.
+
+The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer workspaces support submission, evidence upload, recheck, risk ordering, reviewer decisions, reports, badges, and audit checks. Mutations use the current chain hash and reject stale or tampered cases. Demo reset clears the form while retaining saved history.
+
+## Complete L1 demo
+
+1. Open Seller and select L1. Submit the listing to receive PENDING.
+2. Use the synthetic sample files to upload label and certificate evidence. The conflicting fields keep the result PENDING at confidence 0.60.
+3. Recheck the case and open Reviewer. Refresh the queue, enter a reason, and deny the selected case.
+4. Verify the audit. Demonstrate tampering and verify the failed audit. Further changes are blocked on the altered case.
+5. Submit a new case to restart. Select simulated registry outage to see zero approvals across the 20 records.
+
+## API workflow
+
+FastAPI registers five routers from `backend/app/api/`. The API entry point is `backend.app.main:app`. The password-protected local demo uses `app:app`.
+
+| Router | API area |
+| --- | --- |
+| `verifications.py` | Listing submission and retrieval |
+| `seller.py` | Evidence, rechecks, and copy suggestions |
+| `reviewer.py` | Review queue and decisions |
+| `reports.py` | Reports, badges, comparison, and audit checks |
+| `agency.py` | Aggregate verification metrics |
+
+### Try the L1 workflow in Swagger
+
+1. Sign in and open `/docs`. Run `GET /v1/demo/scenarios` and copy the `L1` object into `POST /v1/verifications`. The API returns `201` with an ID, a `Location` header, and a `PENDING` result.
+2. Send `multipart/form-data` to the verification's evidence endpoint. Include `label` and `certificate` as synthetic files, the declared `registration_reference`, `product_name`, and `license_holder`, and the verification's current `chain_hash`.
+3. Recheck with JSON `{"chain_hash":"<hash returned by the evidence upload>"}`. To record the demo denial, call the review endpoint with `decision: "deny"`, a note, and the hash returned by recheck.
+4. Fetch the report and audit using the same verification ID. If a mutation returns `409` for a stale hash, reload the verification and use the latest hash. An invalid audit also returns `409` and blocks further mutations.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | /v1/verifications | Submit listing |
+| GET | /v1/verifications/{id} | Retrieve result |
+| POST | /v1/verifications/{id}/evidence | Multipart synthetic files and declared product fields |
+| POST | /v1/verifications/{id}/recheck | Append a rule recheck with current chain_hash |
+| GET | /v1/review-queue | Risk-ranked uncertain cases |
+| POST | /v1/verifications/{id}/review | Reviewer decision, note, current chain_hash |
+| GET | /v1/reports/{id} | Rules, evidence hashes, risk and audit |
+| GET | /v1/widgets/{id} | Bilingual badge data |
+| GET | /v1/audit/{id} | Hash-chain integrity |
+| GET | /v1/demo/scenarios | All 40 synthetic listing fixtures, including L1 |
+| GET | /v1/agency/summary | Aggregate saved synthetic verifications without seller identities |
+| POST | /v1/listings/suggest-copy | Screened deterministic copy template |
+| POST | /v1/products/compare | Compare up to 10 saved reports |
+| POST | /demo/tamper/{id} | Intentionally alter a synthetic trace |
+
+Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
+
+If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
+
+## Optional AI extraction
+
+The extraction client uses OpenAI structured output and drops every phrase absent from the listing. Deterministic rules evaluate the extracted phrases. Without configuration, keyword rules run locally.
+
+Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
+
+Validation: 105 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration.
+
+## Dataset and release update
+
+The deterministic generator at scripts/generate_demo_dataset.py produces 18 fictional DEMO registry references, 40 tagged listings, and 16 evidence-case definitions. The evidence definitions include unsupported COA cases explicitly marked as roadmap. Existing DEMO aliases remain compatible. No official registration numbers are generated. Submitted numeric references must match the expected grouped format; malformed or unsupported references return UNKNOWN.
+
+Expired or revoked fixtures are denied. Permit conflicts and required missing permits remain PENDING. Unsupported registries return UNKNOWN. Drug-category and prohibited supplement claims are screened by the synthetic rule pack. All 40 listings have explicit expected status and rule failures, and every outage variant remains UNKNOWN.
+
+GET /v1/agency/summary aggregates saved synthetic verifications by status, failing rule, category, day, claim phrase and audit validity. The Agency view exposes those totals without seller identity fields.
+
+The release retains the existing router split, SQLite evidence migration compatibility, evidence-backed rechecks, ThomazAgents.md, and competition declarations. Python 3.9 pytest CI runs on pull requests and pushes to main with read-only repository permissions and no live credentials. Live AI, official registry integration, document authenticity/COA validation and marketplace OAuth remain integration work.
 
 Two normal, unverified reference listings now use short title excerpts from Shopee (Neocell Super Collagen + C and Deva C Vitamin C). Their descriptions are explicitly labeled summaries of visible pack-size information, because full seller descriptions could not be retrieved. Source links are available in product details. They carry no verified badge. Three additional, explicitly labeled copy-correction examples reuse matching market photos with test overclaims; those phrases are not attributed to the source sellers.
 
-## Seller workspace
+## Frontend integration
 
-Open `/seller` from the view navigation or Seller Centre. The Shopee-style workspace provides product title, description, category, registration reference, registered product name and licence-holder fields. Save an unverified local draft, or submit to the existing verification API. The full submitted listing is saved with its verification in SQLite, so selecting a current-session report restores its original fields. Legacy reports without snapshots require the seller to enter missing fields again.
+The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /reviewer reads verification reports. /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
 
-The seller product list shares current-session report IDs with the reviewer page. Seller and reviewer use the same progress renderer; sellers see status, rule progress and corrective reasons, while raw audit entries and hashes appear only in the reviewer view. Editing a field clears the displayed result and requires a fresh check. Corrections create a new report and preserve previous results. Network failures never display approval. Drafts use browser local storage; the recent report list is session-local. This is a local prototype without seller authentication, marketplace publication, or uploads. The supplied Shopee URL is the public storefront; this is a styled recreation rather than a verified copy of the authenticated Seller Centre.
+Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. TrustCart styling uses a teal palette, a distinct hero and rounded product cards. Historical reference artwork remains in source provenance; copied promotional sections are hidden from the live interface.
 
-## Product-facing presentation
+Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
 
-Customer, seller and reviewer screens use normal product-facing wording without simulation or fictional-brand labels. The sample registry holder is now `LumaVale`; its reference remains `DEMO-001`. This copy cleanup does not add real-registry access, accounts, checkout, publication or official Shopee affiliation. Backend `registry_source` metadata remains truthful and existing audit records are preserved. Catalog fixtures and unsupported claim examples remain test data even though those remarks are no longer displayed in product copy.
+## Shared production storage
 
-## Seller products in the customer catalog
+Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
 
-Seller submissions now create persistent product records through `POST /v1/products`. Editing a selected product uses `PUT /v1/products/{id}` with `expected_version`; stale edits return 409 rather than overwriting newer data. Product content and its new verification are committed together in SQLite. Every revision keeps its immutable verification report and a traced product ID/version. `GET /v1/products` and `GET /v1/products/{id}` return the current product snapshot and latest verification, with caching disabled.
+PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
+
+Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
 
 Customers see saved seller products ahead of the example catalog. The catalog refreshes on load, focus, visibility restoration, cross-tab update notifications, and every five seconds while visible. Only APPROVED results with confidence at least 0.75, no human-review requirement and an audit hash receive a clickable badge. Denied/unconfirmed listings are normal cards. Refresh failures remove seller-product badges until a fresh result is available. Edits update the same product card; drafts remain private to the browser until submitted. Prices are required for all new and edited product API requests. Legacy records without prices remain editable by sellers but are excluded from the customer catalog until priced. Shop recommendation labels are omitted because no shop-level recommendation data exists.
 
-Seller product records survive restarts and are reloaded from the database, while prior verification reports remain accessible in Reviewer. This remains a local, unauthenticated workspace; tenant ownership and production access control have not been implemented.
+Seller product records survive restarts and are reloaded from the database, while prior verification reports remain accessible in Reviewer. The deployed workspace uses the shared demo password gate; per-seller tenant ownership remains unimplemented.
 
 
 The seller list displays each saved product’s image, price, stock and verification status with separate **Edit** and **View product** actions. It refreshes saved summaries on focus without replacing unsaved form edits. Missing images use a neutral placeholder; prices and stock are never invented for older records. Market image provenance is recorded in `frontend/assets/sources.json`; these photos are reference artwork, not product certification.
+
+Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
+
+Latest merged local validation: 111 Python tests, 107 Node component tests, and 22 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
+
+The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.

@@ -7,7 +7,7 @@ from PIL import Image
 
 from backend.app.main import create_app
 
-BASE=dict(registration_reference='DEMO-001',product_name='Vitamin C Supplement',license_holder='LumaVale',category='supplement',title='LumaVale Vitamin C',description='Vitamin C tablets.')
+BASE=dict(registration_reference='DEMO-001',product_name='Demo Supplement',license_holder='Demo Brand',category='supplement',title='Demo Brand Vitamin C',description='\u0e1c\u0e25\u0e34\u0e15\u0e20\u0e31\u0e13\u0e11\u0e4c\u0e40\u0e2a\u0e23\u0e34\u0e21\u0e2d\u0e32\u0e2b\u0e32\u0e23')
 
 buffer = BytesIO()
 Image.new('RGB', (2, 2), 'orange').save(buffer, format='PNG')

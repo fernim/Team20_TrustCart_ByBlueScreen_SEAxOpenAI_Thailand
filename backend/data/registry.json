@@ -1,0 +1,169 @@
+{
+  "DEMO-001": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "advertising_permit": "DEMO-AD-001"
+  },
+  "DEMO-REVOKED": {
+    "product_name": "Firming Serum",
+    "license_holder": "Demo Brand",
+    "category": "cosmetic",
+    "active": false
+  },
+  "DEMO-COLLAGEN": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "advertising_permit": "DEMO-AD-COLLAGEN"
+  },
+  "DEMO-FISH-OIL": {
+    "product_name": "Demo Fish Oil",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "advertising_permit": "DEMO-AD-FISH"
+  },
+  "DEMO-FIBRE": {
+    "product_name": "Demo Fibre",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": false,
+    "registration_status": "EXPIRED",
+    "advertising_permit": "DEMO-AD-FIBRE",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-SLIM": {
+    "product_name": "Demo Slim",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-SLIM",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-MELON": {
+    "product_name": "Demo Melon",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-MELON",
+    "permit_required": false,
+    "permit_active": false
+  },
+  "DEMO-LIVER": {
+    "product_name": "Demo Liver",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-LIVER",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-GINSENG": {
+    "product_name": "Demo Ginseng",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": false,
+    "registration_status": "REVOKED",
+    "advertising_permit": "DEMO-AD-GINSENG",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-VITC": {
+    "product_name": "Demo Vitc",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-VITC",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-JOINT": {
+    "product_name": "Demo Joint",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-JOINT",
+    "permit_required": true,
+    "permit_active": true
+  },
+  "DEMO-GLOW": {
+    "product_name": "Demo Glow",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-GLOW",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-KIDS": {
+    "product_name": "Demo Kids",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-KIDS",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-SLEEP": {
+    "product_name": "Demo Sleep",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": false,
+    "registration_status": "EXPIRED",
+    "advertising_permit": "DEMO-AD-SLEEP",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-TONIC": {
+    "product_name": "Demo Tonic",
+    "license_holder": "Demo Brand",
+    "category": "drug",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-TONIC",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-WHEY": {
+    "product_name": "Demo Whey",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-WHEY",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-OAT": {
+    "product_name": "Demo Oat",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-OAT",
+    "permit_required": false,
+    "permit_active": true
+  },
+  "DEMO-SUNSCREEN": {
+    "product_name": "Demo Sunscreen",
+    "license_holder": "Demo Brand",
+    "category": "cosmetic",
+    "active": true,
+    "registration_status": "ACTIVE",
+    "advertising_permit": "DEMO-AD-SUNSCREEN",
+    "permit_required": false,
+    "permit_active": true
+  }
+}

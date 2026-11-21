@@ -1,0 +1,662 @@
+{
+  "L1": {
+    "product_name": "Turmeric Blend",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-001",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "reverses diabetes",
+    "advertising_permit": "DEMO-AD-001",
+    "group": "G2",
+    "language": "en",
+    "expected_status": "PENDING",
+    "expected_failures": [
+      "R-01",
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 17
+  },
+  "L2": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-COLLAGEN",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 34
+  },
+  "L3": {
+    "product_name": "Firming Serum",
+    "license_holder": "Demo Brand",
+    "category": "cosmetic",
+    "registration_reference": "DEMO-REVOKED",
+    "description": "Synthetic cosmetic",
+    "title": "",
+    "advertising_permit": null,
+    "group": "G7",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-01"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 51
+  },
+  "L4": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "prevents obesity",
+    "advertising_permit": "DEMO-AD-COLLAGEN",
+    "group": "G1",
+    "language": "en",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 68
+  },
+  "L5": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "MISSING",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": null,
+    "group": "G12",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 85
+  },
+  "L6": {
+    "product_name": "Demo Fish Oil",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-FISH-OIL",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-FISH",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 102
+  },
+  "L7": {
+    "product_name": "Demo Fish Oil",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-FISH-OIL",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-CONFLICT",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "PENDING",
+    "expected_failures": [
+      "R-04"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 119
+  },
+  "L8": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "MALFORMED",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-001",
+    "group": "G12",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 136
+  },
+  "L9": {
+    "product_name": "Demo Fibre",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-FIBRE",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-FIBRE",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-01"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 153
+  },
+  "L10": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ยารักษาความดัน",
+    "advertising_permit": "DEMO-AD-COLLAGEN",
+    "group": "G10",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-02",
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 170
+  },
+  "L11": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "description": "Plain listing",
+    "title": "",
+    "advertising_permit": "DEMO-AD-COLLAGEN",
+    "group": "G13",
+    "language": "en",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 187
+  },
+  "L12": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "หายใจสะดวก ส่งไว สินค้าไม่หาย",
+    "advertising_permit": "DEMO-AD-COLLAGEN",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 204
+  },
+  "L13": {
+    "product_name": "Demo Slim",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-SLIM",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ลดน้ำหนักทันที เห็นผลใน 3 วัน",
+    "advertising_permit": "DEMO-AD-SLIM",
+    "group": "G1",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 221
+  },
+  "L14": {
+    "product_name": "Demo Collagen",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-COLLAGEN",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-COLLAGEN",
+    "simulate_registry_outage": true,
+    "group": "G13",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 238
+  },
+  "L15": {
+    "product_name": "Super Slim X",
+    "license_holder": "Other Demo Co",
+    "category": "supplement",
+    "registration_reference": "DEMO-SLIM",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ลดน้ำหนักทันที",
+    "advertising_permit": "DEMO-AD-SLIM",
+    "group": "G1",
+    "language": "th",
+    "expected_status": "PENDING",
+    "expected_failures": [
+      "R-01",
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 255
+  },
+  "L16": {
+    "product_name": "Demo Slim",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-SLIM",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ลด 10 กก. ใน 2 สัปดาห์",
+    "advertising_permit": "DEMO-AD-SLIM",
+    "group": "G1",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 272
+  },
+  "L17": {
+    "product_name": "Demo Slim",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-SLIM",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ใยอาหาร ควบคู่การออกกำลังกาย",
+    "advertising_permit": "DEMO-AD-SLIM",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 289
+  },
+  "L18": {
+    "product_name": "Demo Melon",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-MELON",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ย้อนกลับเบาหวาน ทานแทนยาได้",
+    "advertising_permit": "DEMO-AD-MELON",
+    "group": "G2",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03",
+      "R-04"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 306
+  },
+  "L19": {
+    "product_name": "Demo Melon",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-MELON",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "Bitter melon cures diabetes ลดน้ำตาล",
+    "advertising_permit": null,
+    "group": "G2",
+    "language": "mixed",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 323
+  },
+  "L20": {
+    "product_name": "Demo Liver",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-LIVER",
+    "description": "English description",
+    "title": "prevents liver cancer",
+    "advertising_permit": "DEMO-AD-LIVER",
+    "group": "G3",
+    "language": "en",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 340
+  },
+  "L21": {
+    "product_name": "Demo Ginseng",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-GINSENG",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "เพิ่มสมรรถภาพทันที",
+    "advertising_permit": "DEMO-AD-GINSENG",
+    "group": "G4",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-01",
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 357
+  },
+  "L22": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "MISSING",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-001",
+    "group": "G4",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 374
+  },
+  "L23": {
+    "product_name": "Demo Vitc",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-VITC",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ป้องกันไวรัส",
+    "advertising_permit": "DEMO-AD-VITC",
+    "group": "G5",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 391
+  },
+  "L24": {
+    "product_name": "Demo Vitc",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-VITC",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "วิตามินซีมีส่วนช่วยในการทำงานของระบบภูมิคุ้มกัน",
+    "advertising_permit": "DEMO-AD-VITC",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 408
+  },
+  "L25": {
+    "product_name": "Demo Joint",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-JOINT",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "รักษาข้อเสื่อม หายปวดเข่าถาวร",
+    "advertising_permit": "DEMO-AD-JOINT",
+    "group": "G6",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 425
+  },
+  "L26": {
+    "product_name": "Demo Glow",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-GLOW",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ขาวถาวรใน 7 วัน ย้อนวัย",
+    "advertising_permit": "DEMO-AD-GLOW",
+    "group": "G7",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-02",
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 442
+  },
+  "L27": {
+    "product_name": "Demo Sunscreen",
+    "license_holder": "Demo Brand",
+    "category": "cosmetic",
+    "registration_reference": "DEMO-SUNSCREEN",
+    "description": "Synthetic cosmetic",
+    "title": "ป้องกันแสงแดด SPF50",
+    "advertising_permit": "DEMO-AD-SUNSCREEN",
+    "group": "G7",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 459
+  },
+  "L28": {
+    "product_name": "Demo Kids",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-KIDS",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "เพิ่มความสูงแน่นอน",
+    "advertising_permit": "DEMO-AD-KIDS",
+    "group": "G8",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 476
+  },
+  "L29": {
+    "product_name": "Demo Sleep",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-SLEEP",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-SLEEP",
+    "group": "G9",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-01"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 493
+  },
+  "L30": {
+    "product_name": "Demo Tonic",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-TONIC",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-TONIC",
+    "group": "G10",
+    "language": "th",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-02"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 510
+  },
+  "L31": {
+    "product_name": "Demo Whey",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-WHEY",
+    "description": "English-only label",
+    "title": "",
+    "advertising_permit": "DEMO-AD-WHEY",
+    "group": "G11",
+    "language": "en",
+    "expected_status": "DENIED",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 527
+  },
+  "L32": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "FOREIGN-DEMO",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-001",
+    "registry_source": "foreign",
+    "group": "G12",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 544
+  },
+  "L33": {
+    "product_name": "Demo Oat",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-OAT",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-OAT",
+    "group": "G13",
+    "language": "th",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 561
+  },
+  "L34": {
+    "product_name": "Demo Oat",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-OAT",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "Legitimate reseller",
+    "advertising_permit": "DEMO-AD-OAT",
+    "group": "G13",
+    "language": "mixed",
+    "expected_status": "APPROVED",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 578
+  },
+  "L35": {
+    "product_name": "Demo Oat",
+    "license_holder": "Other Demo Trader",
+    "category": "supplement",
+    "registration_reference": "DEMO-OAT",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-CONFLICT",
+    "group": "G1",
+    "language": "th",
+    "expected_status": "PENDING",
+    "expected_failures": [
+      "R-01",
+      "R-04"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 595
+  },
+  "L36": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "SPACED-DEMO",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-001",
+    "group": "G12",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 612
+  },
+  "L37": {
+    "product_name": "Demo Supplement",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "TYPO-DEMO",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-001",
+    "group": "G12",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [],
+    "llm_dependent": false,
+    "shop_age_days": 629
+  },
+  "L38": {
+    "product_name": "Demo Melon",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-MELON",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": "DEMO-AD-MELON",
+    "group": "G2",
+    "language": "th",
+    "expected_status": "PENDING",
+    "expected_failures": [
+      "R-04"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 646
+  },
+  "L39": {
+    "product_name": "Demo Joint",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-JOINT",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "",
+    "advertising_permit": null,
+    "group": "G6",
+    "language": "th",
+    "expected_status": "PENDING",
+    "expected_failures": [
+      "R-04"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 663
+  },
+  "L40": {
+    "product_name": "Demo Melon",
+    "license_holder": "Demo Brand",
+    "category": "supplement",
+    "registration_reference": "DEMO-MELON",
+    "description": "ผลิตภัณฑ์เสริมอาหาร",
+    "title": "ย้อนกลับเบาหวาน",
+    "advertising_permit": "DEMO-AD-MELON",
+    "simulate_registry_outage": true,
+    "group": "G2",
+    "language": "th",
+    "expected_status": "UNKNOWN",
+    "expected_failures": [
+      "R-03"
+    ],
+    "llm_dependent": false,
+    "shop_age_days": 680
+  }
+}

@@ -8,21 +8,21 @@ from backend.app.main import create_app
 
 
 @pytest.mark.parametrize(
-    "reference,product,category,status",
+    "reference,product,category,status,category_result",
     [
-        ("DEMO-001", "Vitamin C Supplement", "supplement", "APPROVED"),
-        ("DEMO-001", "Different Product", "supplement", "DENIED"),
-        ("DEMO-001", "Vitamin C Supplement", "other", "UNKNOWN"),
-        ("DEMO-001", "Vitamin C Supplement", "cosmetic", "DENIED"),
-        ("MISSING", "Vitamin C Supplement", "supplement", "UNKNOWN"),
+        ("DEMO-001", "Demo Supplement", "supplement", "APPROVED", "pass"),
+        ("DEMO-001", "Different Product", "supplement", "PENDING", "skip"),
+        ("DEMO-001", "Demo Supplement", "other", "UNKNOWN", "skip"),
+        ("DEMO-001", "Demo Supplement", "cosmetic", "DENIED", "fail"),
+        ("MISSING", "Demo Supplement", "supplement", "UNKNOWN", "skip"),
     ],
 )
-def test_submit_and_retrieve(tmp_path, reference, product, category, status):
+def test_submit_and_retrieve(tmp_path, reference, product, category, status, category_result):
     database = tmp_path / "trustcart.sqlite3"
     payload = {
         "registration_reference": reference,
         "product_name": product,
-        "license_holder": "LumaVale",
+        "license_holder": "Demo Brand",
         "category": category,
     }
     with TestClient(create_app(database)) as client:
@@ -31,7 +31,11 @@ def test_submit_and_retrieve(tmp_path, reference, product, category, status):
         result = response.json()
         assert result["status"] == status
         assert result["registry_source"] == "synthetic"
-        assert result["human_review_required"] == (status == "UNKNOWN")
+        assert result["human_review_required"] == (status in {"UNKNOWN", "PENDING"})
+        rule = next(rule for rule in result["rule_results"] if rule["rule"] == "R-02")
+        category_trace = next(entry for entry in result["trace"] if entry["step"] == "R-02")
+        assert rule["result"] == category_result
+        assert json.loads(category_trace["outcome"]) == rule
         previous_hash = None
         for entry in result["trace"]:
             event = {key: value for key, value in entry.items() if key != "chain_hash"}
@@ -56,10 +60,19 @@ def test_registry_outage_routes_to_review(tmp_path, monkeypatch):
             "/v1/verifications",
             json={
                 "registration_reference": "DEMO-001",
-                "product_name": "Vitamin C Supplement",
-                "license_holder": "LumaVale",
+                "product_name": "Demo Supplement",
+                "license_holder": "Demo Brand",
                 "category": "supplement",
             },
         )
         assert response.json()["status"] == "UNKNOWN"
         assert response.json()["human_review_required"]
+
+
+def test_inactive_registration_is_denied(tmp_path, monkeypatch):
+    from backend.app import registry
+    monkeypatch.setattr(registry, "tool_registry_lookup", lambda _: registry.RegistryRecord("Demo Supplement", "Demo Brand", "supplement", False))
+    with TestClient(create_app(tmp_path / "db.sqlite3")) as client:
+        result = client.post("/v1/verifications", json={"registration_reference": "DEMO-001", "product_name": "Demo Supplement", "license_holder": "Demo Brand", "category": "supplement"}).json()
+        assert result["status"] == "DENIED"
+        assert next(rule for rule in result["rule_results"] if rule["rule"] == "R-02")["result"] == "skip"

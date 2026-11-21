@@ -11,6 +11,7 @@
     <script defer src="/static/seller.js"></script>
   </head>
   <body class="seller-page">
+<nav class="integration-nav" aria-label="Verification tools"><a href="/workspace">Evidence, review and agency workspace</a><span>TrustCart · Synthetic data</span><a href="/docs">API docs</a></nav>
     <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
     <nav class="demo-views" aria-label="Views">
       <a href="/">หน้าลูกค้า / Customer</a><span aria-current="page">หน้าผู้ขาย / Seller</span
@@ -56,7 +57,7 @@
               value="ลูมาเวล วิตามินซี"
             /><label for="listing-description">รายละเอียดสินค้า</label
             ><textarea id="listing-description" rows="6" maxlength="6000">
-วิตามินซี ชนิดเม็ด</textarea
+ผลิตภัณฑ์เสริมอาหาร วิตามินซี ชนิดเม็ด</textarea
             ><label for="listing-category">หมวดหมู่ <span>*</span></label
             ><select id="listing-category">
               <option value="supplement">ผลิตภัณฑ์เสริมอาหาร</option>
@@ -80,13 +81,13 @@
               >ชื่อสินค้าตามทะเบียน <span>*</span></label
             ><input
               id="registered-name"
-              value="Vitamin C Supplement"
+              value="Demo Supplement"
               required
               maxlength="200"
             /><label for="license-holder">ผู้ถือใบอนุญาต <span>*</span></label
             ><input
               id="license-holder"
-              value="LumaVale"
+              value="Demo Brand"
               required
               maxlength="200"
             />
@@ -118,5 +119,6 @@
         <article id="seller-result" aria-live="polite"></article>
       </main>
     </div>
-  </body>
+  <p class="dialog-note" style="text-align:center"><a href="/workspace">TrustCart evidence, review and agency workspace</a> · Synthetic data</p>
+</body>
 </html>

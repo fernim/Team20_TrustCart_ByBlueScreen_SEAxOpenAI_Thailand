@@ -800,7 +800,7 @@
     notificationsBody: "ไม่มีการแจ้งเตือนใหม่ในเว็บไซต์",
     aboutTitle: "เกี่ยวกับต้นแบบ TrustCart",
     aboutBody:
-      "สร้างโดย Team BlueScreen โดยอ้างอิงรูปแบบหน้าแรกของ Shopee Thailand เพื่อสาธิตหน้าร้านเท่านั้น ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ Shopee",
+      "TrustCart โดย Team BlueScreen สำหรับสำรวจสินค้าและตรวจสอบข้อมูลจำลองก่อนเลือกซื้อ",
   });
   Object.assign(text.en, {
     productLoading: "Loading product…",
@@ -849,7 +849,7 @@
     notificationsBody: "You have no new notifications in this demo.",
     aboutTitle: "About the TrustCart prototype",
     aboutBody:
-      "Built by Team BlueScreen using the Shopee Thailand homepage as a visual reference. This is an independent storefront prototype with no official Shopee affiliation.",
+      "TrustCart by Team BlueScreen combines synthetic product browsing with traceable listing verification.",
   });
   const cart = new Map();
   let selectedProduct = null;
@@ -1149,7 +1149,7 @@
     more: "See more",
     aboutTitle: "A new way to explore shopping with TrustCart",
     aboutBody:
-      "A TrustCart storefront prototype recreating the Shopee Thailand homepage layout. Products, prices and promotions are illustrative. No payment or real order is processed.",
+      "Explore synthetic products and inspect listing verification with TrustCart. Prices and cart actions are illustrative.",
     verificationNote:
       "This page does not display product certifications. The separate synthetic registry API covers baseline identity and category checks only.",
     helpCenter: "Customer service",
@@ -1396,15 +1396,16 @@
           registration_reference: "DEMO-001",
           product_name:
             product.id === checkedProduct.id
-              ? "Vitamin C Supplement"
+              ? "Demo Supplement"
               : product.th.split(" — ")[0],
           license_holder:
             product.id === checkedProduct.id
-              ? "LumaVale"
+              ? "Demo Brand"
               : product.en.split(" ")[0],
           category: "supplement",
           title: product.th,
-          description: product.descriptionTh || "วิตามินซี ชนิดเม็ด",
+          description: (product.id === checkedProduct.id ? "ผลิตภัณฑ์เสริมอาหาร " : "") +
+            (product.descriptionTh || "วิตามินซี ชนิดเม็ด"),
         }),
       });
       if (!response.ok) throw new Error("verification unavailable");

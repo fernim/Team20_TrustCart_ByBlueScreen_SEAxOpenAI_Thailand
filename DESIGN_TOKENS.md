@@ -53,3 +53,10 @@ Saved product images, prices, stock and descriptions remain the source of the re
 Direct seller URLs show a loading state until saved listings arrive. Missing/deleted products show a not-found state; connection failures without a loaded product show a retry action. These states never show a verified badge. Existing loaded product pages continue polling for saved changes and remove badges when current verification cannot be confirmed.
 
 Validation covers direct URLs and reloads, browser Back/Forward, header search, missing/deleted listings, failure/retry, bounded quantity controls, thumbnail switching, badge eligibility and popup, inventory edits, cart navigation, language switching, native popup dismissal/focus, and desktop/mobile overflow.
+
+Validation covers bounded plus/minus controls, thumbnail switching, badge eligibility and popup, stock edits, cart handoff, language switching, native dialog dismissal/focus, and desktop/mobile dialog overflow.
+
+
+## TrustCart integration update
+
+The integrated application uses TrustCart branding, a teal palette, shield/check logo, independent verification hero, and rounded panels. The copied promotion and brand showcase sections are hidden in the live storefront. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.

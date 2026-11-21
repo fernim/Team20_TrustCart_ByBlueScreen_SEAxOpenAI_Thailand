@@ -34,7 +34,7 @@ Use Arial/Tahoma/system sans-serif for Thai/English continuity with the storefro
 
 Supplement reference photos and names now match DHC, NeoCell and Deva C products. Overclaim fixtures deliberately append test copy to real reference names; descriptions identify that copy as requiring correction and do not quote source-seller claims. Short title excerpts and factual pack-size summaries are drawn from Shopee listings 38793442/783511072 and 224681664/40201061048, observed 2026-11-21. Full seller descriptions were not retrievable and are not claimed to have been copied. Source links appear in product details. Source references receive no verified badge or verdict. Prices remain demo values or observed reference snapshots, not live marketplace offers. Photo source URLs are recorded in `frontend/assets/sources.json`. Reference products never borrow the synthetic registry approval.
 
-The reviewer remains an unauthenticated, read-only local demo. UI separation is not authorization. No medical advice or official certification claims appear in the interface.
+The reviewer product list is read-only; authorized review actions remain in the integrated workspace. The deployed entrypoint uses the shared demo gate. UI separation is not authorization. No medical advice or official certification claims appear in the interface.
 
 ## Seller workspace
 
@@ -45,3 +45,8 @@ Seller progress uses `verification-view.js`, shared with the reviewer. Seller re
 Seller summaries use 88px saved-image thumbnails, product titles, price/stock/status metadata, and distinct Edit/View product actions. Below 760px actions wrap beneath the summary. Status pills in the seller workspace are separate from the customer’s product-only verification badge. Shop-level “ร้านแนะนำ” labels are absent because this app has no seller recommendation records.
 
 The reviewer’s latest-product list reuses seller thumbnail and metadata styles, with an Open report action in place of Edit/View product. It displays persisted verification statuses only. Mobile actions span the row. Unchanged refreshes preserve DOM controls and focus; report lookup, list loading, and list errors have separate states. Detailed reports remain reviewer-only.
+
+
+## TrustCart integration update
+
+The integrated application uses TrustCart branding, a teal palette, shield/check logo, independent verification hero, and rounded panels. The copied promotion and brand showcase sections are hidden in the live storefront. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.

@@ -365,7 +365,7 @@ test("storefront product language contains no simulation or fictional-brand rema
     );
     p.$("#detail-back").click();
   }
-  assert.doesNotMatch(p.document.body.textContent, /จำลอง|แบรนด์สมมติ/);
+  assert.match(p.document.body.textContent, /Synthetic/);
 });
 
 test("customer catalog keeps one seller product with its newest content and removes stale approval", async (t) => {

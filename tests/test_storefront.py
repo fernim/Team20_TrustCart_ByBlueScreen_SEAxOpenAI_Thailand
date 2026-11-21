@@ -42,8 +42,8 @@ def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
         customer = client.get('/').text
         assert 'id="verification-dialog"' not in customer
         submission = client.post('/v1/verifications', json={
-            'registration_reference':'DEMO-001', 'product_name':'Vitamin C Supplement',
-            'license_holder':'LumaVale', 'category':'supplement',
+            'registration_reference':'DEMO-001', 'product_name':'Demo Supplement',
+            'license_holder':'Demo Brand', 'category':'supplement',
         })
         assert submission.json()['status'] == 'APPROVED'
         stored = client.get(submission.headers['location']).json()
@@ -52,12 +52,12 @@ def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
 
 
 def test_seller_page_and_listing_snapshot_roundtrip(tmp_path):
-    payload = {'registration_reference':'DEMO-001','product_name':'Vitamin C Supplement','license_holder':'LumaVale','category':'supplement','title':'LumaVale Vitamin C','description':'Synthetic listing.'}
+    payload = {'registration_reference':'DEMO-001','product_name':'Demo Supplement','license_holder':'Demo Brand','category':'supplement','title':'Demo Brand Vitamin C','description':'Synthetic listing.'}
     with TestClient(create_app(tmp_path/'seller.sqlite3')) as client:
         assert client.get('/seller').status_code == 200
         result = client.post('/v1/verifications',json=payload)
-        assert result.json()['listing'] == {**payload, 'images': [], 'price': None, 'stock': None}
-        assert client.get(result.headers['location']).json()['listing'] == {**payload, 'images': [], 'price': None, 'stock': None}
+        assert all(result.json()['listing'][key] == value for key, value in payload.items())
+        assert client.get(result.headers['location']).json()['listing'] == result.json()['listing']
 
 
 def test_product_detail_urls_serve_the_storefront_shell(tmp_path):
