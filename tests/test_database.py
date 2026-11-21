@@ -44,3 +44,30 @@ def test_database_does_not_fall_back_for_invalid_shared_configuration(tmp_path, 
     with pytest.raises(ValueError, match="PostgreSQL"):
         database.connect(tmp_path / "db.sqlite3")
     assert not (tmp_path / "db.sqlite3").exists()
+
+
+def test_postgres_connector_uses_transaction_local_schema_for_supavisor(tmp_path, monkeypatch):
+    import psycopg
+
+    url = "postgresql://synthetic@aws-0-example.pooler.supabase.com:6543/postgres?sslmode=require"
+    monkeypatch.setenv("TRUSTCART_DATABASE_URL", url)
+    raw = RawConnection()
+
+    def pooler_connect(conninfo, *, connect_timeout, prepare_threshold):
+        assert conninfo == url
+        assert connect_timeout == 10
+        assert prepare_threshold is None
+        return raw
+
+    monkeypatch.setattr(psycopg, "connect", pooler_connect)
+    connection = database.connect(tmp_path / "unused.sqlite3")
+    try:
+        with connection:
+            connection.execute("SELECT result FROM verifications WHERE id=?", ("synthetic-id",))
+    finally:
+        connection.close()
+    assert raw.calls == [
+        ("SET LOCAL search_path TO trustcart", ()),
+        ("SELECT result FROM verifications WHERE id=%s", ("synthetic-id",)),
+    ]
+    assert raw.committed

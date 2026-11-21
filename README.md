@@ -89,7 +89,7 @@ POST /v1/verifications  ──>  Registry adapter (synthetic in demo)
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** Local validation passes 137 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests. Shared PostgreSQL connectivity still requires hosted verification.
+- **Test results.** Local validation passes 138 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests. Shared PostgreSQL connectivity still requires hosted verification.
 
 ## Run locally
 
@@ -231,7 +231,7 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 137 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests pass locally, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration. Reviewer access, completed-review protection, cross-origin write rejection, and audit simulation are covered; see [API judge Q&A](docs/JUDGE_QA.md).
+Validation: 138 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests pass locally, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration. Reviewer access, completed-review protection, cross-origin write rejection, and audit simulation are covered; see [API judge Q&A](docs/JUDGE_QA.md).
 
 ## Dataset and release update
 
@@ -291,6 +291,8 @@ MoPH 448 ingredient ceilings (B11) remain Roadmap; no ingredient-ceiling check i
 
 Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
 
+For Supabase on Vercel, open the Supabase project's **Connect** dialog and choose **Transaction pooler** (port `6543`). Use the PostgreSQL URI with `sslmode=require` as the secret value of `TRUSTCART_DATABASE_URL` in the appropriate Vercel environments. The Python adapter disables automatic prepared statements and selects the `trustcart` schema for each transaction. Deploy a new build after saving the secret, then check that a synthetic case saved in the workspace is visible through its marketplace product from a new request.
+
 PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
 
 Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
@@ -304,7 +306,7 @@ The seller list displays each saved product’s image, price, stock and verifica
 
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Latest local validation: 137 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests passed with `.venv/Scripts/python -m pytest -q`, `npm test`, and `npm run test:browser`. These checks use isolated SQLite data, synthetic fixtures, and a fake PostgreSQL client; no live services were used. The historical hosted desktop/mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. Hosted retesting remains the Vercel team member's task and was not rerun for this gap review. GitHub CI runs both the API and frontend suites.
+Latest local validation: 138 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests passed with `.venv/Scripts/python -m pytest -q`, `npm test`, and `npm run test:browser`. These checks use isolated SQLite, synthetic fixtures, and a fake database driver. A separate local PostgreSQL smoke test verified that two app instances share a product, evidence, rechecks, and reviewer decisions. Hosted Supabase connectivity still needs verification. The historical hosted desktop/mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. Hosted retesting remains the Vercel team member's task and was not rerun for this gap review. GitHub CI runs both the API and frontend suites.
 
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
 

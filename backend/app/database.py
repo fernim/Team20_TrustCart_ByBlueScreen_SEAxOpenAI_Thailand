@@ -40,7 +40,14 @@ def connect(path, timeout=10):
     if not url.startswith(("postgresql://", "postgres://")):
         raise ValueError("TRUSTCART_DATABASE_URL must be a PostgreSQL connection string")
     import psycopg
-    raw = psycopg.connect(url, connect_timeout=int(timeout), options="-c search_path=trustcart")
+    raw = psycopg.connect(url, connect_timeout=int(timeout), prepare_threshold=None)
+    try:
+        # Supavisor can assign a different backend for each transaction.
+        # Psycopg starts the transaction before executing this statement.
+        raw.execute("SET LOCAL search_path TO trustcart", ())
+    except psycopg.Error:
+        raw.close()
+        raise
     return PostgresConnection(raw)
 
 
