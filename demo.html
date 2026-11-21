@@ -102,14 +102,14 @@
     </div>
     <div id="reviewer-view" hidden>
       <div class="actions"><h2>Reviewer queue</h2><button id="refresh-queue">Refresh queue</button></div>
-      <p>Risk scores rank work using illustrative RISK-v1 weights. The shared demo sign-in grants reviewer access.</p>
+      <p>Risk scores rank work using illustrative RISK-v1 weights. Use the reviewer login if this deployment has one configured.</p>
       <div id="queue"></div>
       <div class="fields"><label>Review note<input id="review-note" maxlength="1000" placeholder="Record the reason for this decision"></label></div>
       <div class="actions"><button id="approve">Approve selected case</button><button id="deny">Deny selected case</button><button id="audit">Verify audit</button><button id="tamper">Demonstrate tampering</button></div>
     </div>
     <div id="agency-view" hidden>
       <h2>Agency overview</h2>
-      <p>Aggregate checks from saved synthetic verifications. Claim phrases are quoted test inputs. Counts include deliberate audit-tamper demonstrations.</p>
+      <p>Aggregate checks from saved synthetic verifications. Claim phrases are quoted test inputs.</p>
       <button id="refresh-agency">Refresh aggregate</button>
       <pre id="agency-summary">Run verifications, then refresh to view status, rule, category, day and audit totals.</pre>
     </div>
@@ -387,12 +387,12 @@
   });
   byId("tamper").onclick = () => action(async () => {
     requireCase();
-    await api("/demo/tamper/" + selectedCase.id, {
+    const simulation = await (await api("/demo/tamper/" + selectedCase.id, {
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({chain_hash:selectedCase.chain_hash})
-    });
-    await loadCase(selectedCase.id);
-    feedback("Synthetic trace altered. Audit detects the change and further decisions are blocked. Submit a new case to restart.");
+    })).json();
+    feedback(simulation.valid ? "The simulation did not detect a change." :
+      "Tampering detected in the simulated copy at step " + (simulation.broken_at + 1) + ". The saved audit is unchanged.");
   });
   (async () => {
     try {

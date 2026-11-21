@@ -2,19 +2,19 @@ import base64
 import binascii
 import os
 import tempfile
-import json
-from backend.app import database as store
 from contextlib import closing
 from hmac import compare_digest
 from pathlib import Path
+from uuid import UUID
 
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from backend.app.main import Listing, Trace, create_app, evaluate_rules, Status
+from backend.app import database as store
+from backend.app.demo_access import allows_browser_write
+from backend.app.main import Listing, Status, Trace, create_app, evaluate_rules
 from backend.app.registry import demo_listings
-from backend.app.workflow import Revision, audit
-from uuid import UUID
+from backend.app.workflow import Revision, audit, load
 
 
 DEMO_EXAMPLE = {
@@ -57,8 +57,9 @@ def create_demo_app(database: Path):
     service.title = "TrustCart Marketplace API"
     service.description = (
         "TrustCart evaluates synthetic marketplace listings and returns a status, confidence, "
-        "rule results, and a hash-chained audit trace. The shared HTTP Basic login grants "
-        "access to all demo roles. Sign in as `demo` with the separately shared password.\n\n"
+        "rule results, and a hash-chained audit trace. Sign in as `demo` with the separately shared "
+        "HTTP Basic password. On deployments with reviewer access configured separately, sign in as "
+        "`reviewer` for the queue, review decisions, and agency summary.\n\n"
         "### Try the L1 evidence workflow\n\n"
         "1. Get the L1 listing from `GET /v1/demo/scenarios` and submit it to "
         "`POST /v1/verifications`. L1 returns `PENDING`. Use the returned ID or "
@@ -104,6 +105,7 @@ def create_demo_app(database: Path):
         password = os.environ.get("TRUSTCART_DEMO_PASSWORD")
         if not password:
             return PlainTextResponse("Demo access is unavailable", 503, headers={"Cache-Control": "no-store"})
+        reviewer_password = os.environ.get("TRUSTCART_REVIEWER_PASSWORD")
         scheme, _, encoded = request.headers.get("authorization", "").partition(" ")
         supplied = b""
         if scheme.lower() == "basic":
@@ -111,11 +113,24 @@ def create_demo_app(database: Path):
                 supplied = base64.b64decode(encoded, validate=True)
             except (ValueError, binascii.Error):
                 pass
-        if not compare_digest(supplied, f"demo:{password}".encode()):
+        reviewer_authenticated = (
+            bool(reviewer_password)
+            and not compare_digest(reviewer_password.encode(), password.encode())
+            and compare_digest(supplied, f"reviewer:{reviewer_password}".encode())
+        )
+        if not (compare_digest(supplied, f"demo:{password}".encode()) or reviewer_authenticated):
             return PlainTextResponse("Authentication required", 401, headers={
                 "WWW-Authenticate": 'Basic realm="TrustCart Demo", charset="UTF-8"',
                 "Cache-Control": "no-store",
             })
+        if not allows_browser_write(request):
+            return PlainTextResponse(
+                "Cross-origin writes are unavailable in the demo", 403,
+                headers={"Cache-Control": "no-store"},
+            )
+        request.state.demo_reviewer_access = not reviewer_password or reviewer_authenticated
+        if reviewer_authenticated:
+            request.state.reviewer_actor = "reviewer"
         response = await call_next(request)
         response.headers["Cache-Control"] = "no-store"
         response.headers["Referrer-Policy"] = "no-referrer"
@@ -140,19 +155,14 @@ def create_demo_app(database: Path):
         """Return all 40 synthetic listing fixtures for scenarios L1–L40."""
         return demo_listings()
 
-    @service.post("/demo/tamper/{verification_id}", tags=["Demo"])
+    @service.post("/demo/tamper/{verification_id}", tags=["Demo"], summary="Simulate audit tampering")
     def tamper(verification_id: UUID, revision: Revision):
-        """Intentionally corrupt a synthetic trace to demonstrate audit detection."""
-        with closing(store.connect(database, timeout=20)) as connection, connection:
-            connection.execute("BEGIN IMMEDIATE")
-            row = connection.execute("SELECT result FROM verifications WHERE id=?", (str(verification_id),)).fetchone()
-            if row is None:
-                raise HTTPException(404, "Verification not found")
-            result = json.loads(row[0])
-            if revision.chain_hash != result["chain_hash"] or not audit(result)["valid"]:
-                raise HTTPException(409, "Reload a valid report before tampering")
-            result["trace"][0]["outcome"] = "Intentional synthetic tamper demonstration"
-            connection.execute("UPDATE verifications SET result=? WHERE id=?", (json.dumps(result), str(verification_id)))
+        """Simulate tampering on a copy of the saved trace and return its audit result."""
+        with closing(store.connect(database)) as connection:
+            result, _ = load(connection, verification_id)
+        if revision.chain_hash != result["chain_hash"] or not result["trace"] or not audit(result)["valid"]:
+            raise HTTPException(409, "Reload a valid report before simulating tampering")
+        result["trace"][0]["outcome"] = "Intentional synthetic tamper demonstration"
         return audit(result)
 
     return service

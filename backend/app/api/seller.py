@@ -20,7 +20,7 @@ router = APIRouter()
     summary="Upload synthetic seller evidence",
     responses={
         404: {"description": "Verification not found"},
-        409: {"description": "Stale audit hash, invalid audit chain, or saved listing cannot be rechecked"},
+        409: {"description": "Stale audit hash, invalid audit, completed review, or unusable saved listing"},
         413: {"description": "An evidence file exceeds 2 MiB"},
     },
 )
@@ -86,7 +86,7 @@ async def evidence(
     summary="Recheck a saved verification",
     responses={
         404: {"description": "Verification not found"},
-        409: {"description": "Stale audit hash, invalid audit chain, or saved listing cannot be rechecked"},
+        409: {"description": "Stale audit hash, invalid audit, completed review, or unusable saved listing"},
     },
 )
 def recheck(verification_id: UUID, revision: Revision, request: Request):
