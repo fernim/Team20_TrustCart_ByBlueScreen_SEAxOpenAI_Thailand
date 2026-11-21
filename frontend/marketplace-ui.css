@@ -205,3 +205,15 @@ textarea { font: inherit; }
   .product-description-section h2 { font-size: 16px; }
   .detail-specifications { grid-template-columns: 85px minmax(0,1fr); margin-left: 10px; margin-right: 10px; }
 }
+
+/* Links open the latest saved customer page without losing the seller's edits. */
+.seller-product-entry { display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--border-subtle); }
+.seller-product-entry .seller-product-row { flex:1; min-width:0; border-bottom:0; overflow-wrap:anywhere; }
+.seller-view-action { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border:1px solid var(--brand-primary); border-radius:var(--radius-control); color:var(--brand-primary); background:var(--surface); font-size:13px; white-space:nowrap; }
+.seller-view-action:hover { background:var(--brand-soft); }
+#view-product { margin-top:20px; }
+@media (max-width:760px) {
+ .seller-product-entry { flex-wrap:wrap; gap:0; padding-bottom:12px; }
+ .seller-product-entry .seller-product-row { flex-basis:100%; }
+ .seller-view-action { min-height:44px; }
+}

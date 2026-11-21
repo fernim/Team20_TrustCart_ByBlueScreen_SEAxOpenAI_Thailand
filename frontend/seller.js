@@ -120,6 +120,12 @@
   function feedback(text) {
     $("#seller-feedback").textContent = text;
   }
+  function updateProductLink() {
+    const link = $("#view-product");
+    link.hidden = !editingProduct;
+    if (editingProduct) link.href = `/products/${encodeURIComponent(editingProduct.id)}`;
+    else link.removeAttribute("href");
+  }
   function renderReports() {
     $("#seller-product-list").replaceChildren();
     if (!reports.length) {
@@ -141,6 +147,8 @@
         )
           return;
         const request = ++version;
+        $("#view-product").hidden = true;
+        $("#view-product").removeAttribute("href");
         $("#seller-result").replaceChildren();
         feedback("กำลังโหลดผลตรวจ…");
         try {
@@ -168,6 +176,7 @@
               license_holder: "",
             });
           dirty = false;
+          updateProductLink();
           window.TrustCartVerification.render($("#seller-result"), result, {
             audit: false,
           });
@@ -177,7 +186,21 @@
             feedback("ไม่สามารถโหลดผลตรวจได้ กรุณาลองใหม่");
         }
       });
-      $("#seller-product-list").append(button);
+      const row = document.createElement("div");
+      row.className = "seller-product-entry";
+      row.append(button);
+      if (entry.productId) {
+        const view = document.createElement("a");
+        view.className = "seller-view-product seller-view-action";
+        view.textContent = "ดูสินค้า / View product ↗";
+        view.href = `/products/${encodeURIComponent(entry.productId)}`;
+        view.target = "_blank";
+        view.rel = "noopener noreferrer";
+        view.setAttribute("aria-label", `ดูสินค้า / View product: ${entry.title || entry.productId}`);
+        view.title = "เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด";
+        row.append(view);
+      }
+      $("#seller-product-list").append(row);
     }
   }
   $("#seller-form").addEventListener("input", markDirty);
@@ -230,6 +253,7 @@
       if (request !== version) return;
       if (!result || typeof result.id !== "string") throw Error();
       editingProduct = { id: record.id, version: record.version };
+      updateProductLink();
       dirty = false;
       window.TrustCartVerification.render($("#seller-result"), result, {
         audit: false,
@@ -296,6 +320,7 @@
     )
       return;
     editingProduct = null;
+    updateProductLink();
     dirty = false;
     version++;
     $("#seller-form").reset();

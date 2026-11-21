@@ -293,3 +293,39 @@ test('seller restores media draft and rejects unsupported files without losing i
   p.$('#save-draft').click();
   assert.deepEqual(JSON.parse(p.dom.window.localStorage.getItem('trustcart-seller-draft')).images,[original]);
 });
+
+test('seller View product links use the saved product ID and remain tied to the published revision', async(t)=>{
+  const p=seller(t,async(url,options)=> {
+    if(!options?.body) return {ok:true,json:async()=>[]};
+    const listing=JSON.parse(options.body);
+    return {ok:true,json:async()=>({id:'saved-product',version:1,listing,verification:{...result,listing}})};
+  });
+  assert.equal(p.$('#view-product').hidden,true);
+  assert.equal(p.$('#view-product').hasAttribute('href'),false);
+  await p.submit();
+  const view=p.$('#view-product');
+  assert.equal(view.hidden,false);
+  assert.equal(view.getAttribute('href'),'/products/saved-product');
+  assert.equal(view.target,'_blank');
+  assert.match(view.rel,/noopener/);
+  assert.equal(p.$('.seller-view-product').getAttribute('href'),'/products/saved-product');
+  p.$('#listing-price').value='700';
+  p.$('#listing-price').dispatchEvent(new p.dom.window.Event('input',{bubbles:true}));
+  assert.equal(view.getAttribute('href'),'/products/saved-product');
+  p.dom.window.confirm=()=>true;
+  p.$('#new-product').click();
+  assert.equal(view.hidden,true);
+  assert.equal(view.hasAttribute('href'),false);
+});
+
+test('seller product list exposes customer links only for stable products, not historical verification reports',async(t)=>{
+  const p=seller(t,async(url)=>({ok:true,json:async()=>url==='/v1/products'?[productFixture]:productFixture}),w=>{
+    w.sessionStorage.setItem('trustcart-demo-reports',JSON.stringify([{id:'legacy-verification',title:'Historical report',status:'DENIED'}]));
+  });
+  await settle();
+  assert.equal(p.dom.window.document.querySelectorAll('.seller-view-product').length,1);
+  assert.equal(p.$('.seller-view-product').getAttribute('href'),'/products/seller-1');
+  p.$('.seller-product-row').click();
+  await settle();
+  assert.equal(p.$('#view-product').getAttribute('href'),'/products/seller-1');
+});
