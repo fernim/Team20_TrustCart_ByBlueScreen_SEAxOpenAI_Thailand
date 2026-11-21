@@ -44,10 +44,6 @@ window.TrustCartSession = (() => {
   ready.then((account) => {
     for (const bar of document.querySelectorAll(".integration-nav")) {
       bar.replaceChildren();
-      const brand = document.createElement("a");
-      brand.href = "/";
-      brand.textContent = "TrustCart · Synthetic registry demo";
-      bar.append(brand);
       for (const [role, path, label] of [
         ["seller", "/seller", "Seller Centre"],
         ["reviewer", "/agency", "Agency workspace"],

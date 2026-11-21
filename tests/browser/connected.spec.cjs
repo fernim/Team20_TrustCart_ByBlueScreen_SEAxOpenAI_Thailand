@@ -137,6 +137,7 @@ test("role screens retain Shopee theme and fit the viewport", async ({
   for (const role of ["seller1", "reviewer"]) {
     await login(page, role);
     await expect(page.locator(role === "reviewer" ? "#agency-account" : ".integration-nav")).toContainText(role);
+    await expect(page.getByRole("link", {name: "TrustCart · Synthetic registry demo", exact: true})).toHaveCount(0);
     expect(
       await page.evaluate(() =>
         getComputedStyle(document.documentElement)
