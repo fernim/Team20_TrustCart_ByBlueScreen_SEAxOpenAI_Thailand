@@ -282,8 +282,8 @@ test("customer badge opens a short status without exposing the reviewer report",
   assert.equal(p.$("#verification-dialog"), null);
   assert.equal(p.$("#verification-report"), null);
   assert.equal(p.$("#explain-verification"), null);
+  assert.equal(p.$("#marketplace-verification-status").dataset.status, "APPROVED");
   for (const technical of [
-    "APPROVED",
     "R-01",
     "identity-chain",
     "final-chain",

@@ -33,15 +33,17 @@ Playwright starts FastAPI on port 8768 against a disposable SQLite database. It 
 
 The browser suite checks shopper search/language/sorting/cart, native dialog opening and Escape/focus restoration, seller creation and correction, persistence after reload, reviewer audit expansion, customer badges, native draft-discard confirmations, cross-page navigation, stylesheet loading, and viewport overflow. These scenarios complement the larger mocked failure-path suite.
 
+The linked marketplace and workspace tests verify edits to a saved product, evidence upload, recheck, reviewer denial, storefront badge refresh, and safe handling of failed lookup and case switching.
+
 Failure traces are retained under `test-results/`; inspect one with `npx playwright show-trace <trace.zip>`. Generated results are ignored by Git.
 
 The reference brand showcase is hidden in the integrated interface. Browser checks verify the visible TrustCart hero and popular-product images, plus navigation and product behavior.
 
 ## Hosted desktop and mobile checks
 
-Set TRUSTCART_BASE_URL to the target Vercel origin and TRUSTCART_DEMO_PASSWORD in the process environment, then run npm run test:browser. Leave these variables unset to run the isolated local suite. Keep the password value out of command output and source files.
+Set `TRUSTCART_BASE_URL` to the target origin and run `npm run test:browser` with the login password in the process environment. Set `TRUSTCART_REVIEWER_PASSWORD` when the deployment uses the separate reviewer login. Otherwise, set `TRUSTCART_DEMO_PASSWORD` for the shared demo login. Leave `TRUSTCART_BASE_URL` unset to run the isolated local suite. Keep password values out of command output and source files.
 
-Hosted mode runs 20 checks across desktop and mobile Chromium contexts. It covers the existing storefront flows and adds password protection, evidence/recheck/reviewer actions, stale hashes, agency totals, outage simulation, copy correction and authenticated Swagger. Each created product title is unique so earlier hosted runs do not create ambiguous selectors.
+Hosted mode runs the storefront suite and additional hosted checks across desktop and mobile Chromium contexts. It covers password protection, evidence/recheck/reviewer actions, stale hashes, agency totals, outage simulation, copy correction and authenticated Swagger. Each created product title is unique so earlier hosted runs do not create ambiguous selectors.
 
 The unauthenticated request context explicitly overrides the configured credentials. Hosted traces are disabled to avoid writing authentication headers into trace artifacts. The suite creates synthetic products and reviews, and leaves the saved audit history available for inspection.
 
@@ -54,3 +56,13 @@ These tests cover the implemented UI workflows and, in hosted mode, the demo pas
 The Agency implementation was checked locally with `.venv/bin/python -m pytest -q` (143 passed), `npm test` (120 passed), and `npx playwright test --config playwright.connected.config.cjs` (28 passed across desktop/mobile). Test credentials are generated in the process environment. Browser tests cover report deep links through sign-in, stale-hash reloads, original document links/responses, native draft-discard confirmation, approval propagation, seller corrections and existing shopper flows. Headless Chromium does not render the PDF viewer reliably; tests verify the document link opens a new surface and its authenticated response contains a PDF instead of waiting for an HTML DOM event.
 
 Agency screenshots are retained in `artifacts/ui/agency-*.png`. These checks use an isolated SQLite database, synthetic registry and replay fixtures. Live marketplace feeds, real provider calls and hosted PostgreSQL were not exercised.
+
+## Main → fe integration validation
+
+The merged suite retains the connected role-session browser harness. Incoming legacy Seller/Reviewer page scenarios are covered by the connected seller/Agency flows rather than restoring the old unauthenticated pages. New workspace regression cases run in `workspace.spec.cjs` with real reviewer sessions and CSRF tokens, using the hosted entrypoint over disposable SQLite. Live database settings are explicitly cleared in the local browser server.
+
+A mixed-storage regression verifies that legacy diagnostic product listings ignore connected submission-backed records and cannot overwrite them. Current shop-owned products use `/v1/seller/products`, `/v1/catalog/products` and the Agency submission endpoints; the diagnostic `/v1/products` list contains legacy verification-backed products only.
+
+The existing Python 3.15 environment cannot install the pinned psycopg-binary 3.2 wheel. Full merge validation therefore uses an isolated Python 3.13 environment at `/tmp/trustcart-merge-venv`, installed from the unchanged requirements file.
+
+Merge validation passed: `/tmp/trustcart-merge-venv/bin/python -m pytest -q` — 172 tests; `npm test` — 120 tests; `npx playwright test` — 34 desktop/mobile tests. The public storefront remains public, the commit-version GET remains public, and private diagnostic/role endpoints retain their access checks.

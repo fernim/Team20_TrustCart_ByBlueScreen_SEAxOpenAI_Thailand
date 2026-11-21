@@ -2,7 +2,16 @@
 // Read-only presentation of stored backend decisions. No status or hash is invented.
 (() => {
   const $ = (selector) => document.querySelector(selector);
+  const tr = (th, en) => document.documentElement.lang === "en" ? en : th;
   const report = $("#reviewer-report");
+  const messages = {
+    invalid: ["กรุณาระบุรหัสรายงาน UUID ที่ถูกต้อง", "Enter a valid verification report UUID."],
+    missing: ["ไม่พบรายงานนี้", "Report not found."],
+    unavailable: ["ไม่สามารถโหลดรายงานได้ กรุณาลองใหม่", "Could not load the report. Try again."],
+    mismatch: ["ข้อมูลรายงานไม่ตรงกับรหัสที่ร้องขอ", "The report does not match the requested ID."],
+  };
+  let currentResult;
+  let currentError;
   let requestVersion = 0;
   function node(tag, text, className) {
     const result = document.createElement(tag);
@@ -10,10 +19,21 @@
     if (className) result.className = className;
     return result;
   }
+  function showError(key) {
+    currentError = key;
+    $("#reviewer-error").textContent = tr(...messages[key]);
+    $("#reviewer-error").hidden = false;
+  }
+  function showResult(result) {
+    currentResult = result;
+    report.replaceChildren();
+    if (result) window.TrustCartVerification.render(report, result);
+  }
   async function load(event) {
     event?.preventDefault();
     const version = ++requestVersion;
-    report.replaceChildren();
+    showResult(null);
+    currentError = null;
     $("#reviewer-error").hidden = true;
     const id = $("#report-id").value.trim();
     if (
@@ -21,8 +41,7 @@
         id,
       )
     ) {
-      $("#reviewer-error").textContent = "กรุณาระบุรหัสรายงาน UUID ที่ถูกต้อง";
-      $("#reviewer-error").hidden = false;
+      showError("invalid");
       $("#reviewer-loading").hidden = true;
       return;
     }
@@ -32,22 +51,16 @@
         `/v1/verifications/${encodeURIComponent(id)}`,
       );
       if (!response.ok)
-        throw new Error(
-          response.status === 404
-            ? "ไม่พบรายงานนี้"
-            : "ไม่สามารถโหลดรายงานได้ กรุณาลองใหม่",
-        );
+        throw new Error(response.status === 404 ? "missing" : "unavailable");
       const result = await response.json();
       if (version !== requestVersion) return;
       if (!result || typeof result !== "object" || result.id !== id)
-        throw new Error("ข้อมูลรายงานไม่ตรงกับรหัสที่ร้องขอ");
-      window.TrustCartVerification.render(report, result);
+        throw new Error("mismatch");
+      showResult(result);
     } catch (error) {
       if (version !== requestVersion) return;
-      report.replaceChildren();
-      $("#reviewer-error").textContent =
-        error.message || "ไม่สามารถโหลดรายงานได้";
-      $("#reviewer-error").hidden = false;
+      showResult(null);
+      showError(Object.hasOwn(messages, error.message) ? error.message : "unavailable");
     } finally {
       if (version === requestVersion) $("#reviewer-loading").hidden = true;
     }
@@ -105,17 +118,17 @@
         photo.loading = "lazy";
         const summary = node("div", undefined, "seller-item-summary");
         const metadata = node("div", undefined, "seller-item-metadata");
-        const price = listing.price == null ? "ต้องระบุราคา" : `฿${Number(listing.price).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        const stock = listing.stock == null ? "ยังไม่ระบุสต็อก" : `สต็อก ${listing.stock} ชิ้น`;
+        const price = listing.price == null ? tr("ต้องระบุราคา", "Price required") : `฿${Number(listing.price).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const stock = listing.stock == null ? tr("ยังไม่ระบุสต็อก", "Stock unspecified") : tr(`สต็อก ${listing.stock} ชิ้น`, `Stock: ${listing.stock}`);
         const states = ["APPROVED", "PENDING", "DENIED", "UNKNOWN"];
         const state = states.includes(product.verification.status) ? product.verification.status : "UNKNOWN";
-        const status = node("span", `ผลตรวจ ${state}`, "seller-item-status");
+        const status = node("span", tr(`ผลตรวจ ${state}`, `Verification: ${state}`), "seller-item-status");
         status.dataset.status = state;
         metadata.append(node("span", price, "seller-item-price"), node("span", stock, "seller-item-stock"), status);
         summary.append(node("h3", title), metadata);
-        const open = node("button", "เปิดรายงาน / Open report", "reviewer-open-report seller-view-action");
+        const open = node("button", tr("เปิดรายงาน / Open report", "Open report"), "reviewer-open-report seller-view-action");
         open.type = "button";
-        open.setAttribute("aria-label", `เปิดรายงาน / Open report: ${title}`);
+        open.setAttribute("aria-label", `${open.textContent}: ${title}`);
         open.addEventListener("click", async () => {
           $("#report-id").value = product.verification.id;
           await load();
@@ -125,7 +138,7 @@
         return row;
       });
       productsSnapshot = snapshot;
-      list.replaceChildren(...(rows.length ? rows : [node("p", "ยังไม่มีสินค้าที่บันทึกไว้")]));
+      list.replaceChildren(...(rows.length ? rows : [node("p", tr("ยังไม่มีสินค้าที่บันทึกไว้", "There are no saved products yet."))]));
     } catch (_) {
       if (version !== productsVersion) return;
       productsSnapshot = null;
@@ -139,6 +152,12 @@
     }
   }
   $("#retry-reviewer-products").addEventListener("click", loadProducts);
+  window.addEventListener("trustcart-languagechange", () => {
+    showResult(currentResult);
+    if (currentError) showError(currentError);
+    productsSnapshot = null;
+    loadProducts();
+  });
   window.addEventListener("focus", loadProducts);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) loadProducts();

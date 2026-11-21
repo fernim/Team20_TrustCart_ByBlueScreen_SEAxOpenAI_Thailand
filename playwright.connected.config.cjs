@@ -7,9 +7,10 @@ for (const role of ["BUYER", "SELLER1", "SELLER2", "REVIEWER"]) {
     throw Error(key + " is required for hosted role tests");
   if (!hosted) process.env[key] ||= randomBytes(24).toString("hex");
 }
+if (!hosted) process.env.TRUSTCART_DEMO_PASSWORD = randomBytes(24).toString("hex");
 module.exports = defineConfig({
   testDir: "./tests/browser",
-  testMatch: ["connected.spec.cjs", "ui.spec.cjs", "hosted.spec.cjs", "agency.spec.cjs"],
+  testMatch: ["connected.spec.cjs", "ui.spec.cjs", "hosted.spec.cjs", "agency.spec.cjs", "workspace.spec.cjs"],
   workers: 1,
   reporter: "list",
   use: {
@@ -39,5 +40,6 @@ module.exports = defineConfig({
             : ".venv/bin/python") + " tests/browser/serve_connected.py",
         url: "http://127.0.0.1:8768/",
         reuseExistingServer: false,
+        env: { TRUSTCART_DATABASE_URL: "", SUPABASE_URL: "", TRUSTCART_AI_TRANSFER_APPROVED: "" },
       },
 });

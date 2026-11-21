@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="stylesheet" href="/static/tokens.css" />
     <link rel="stylesheet" href="/static/marketplace-ui.css" />
+    <script defer src="/static/locale.js"></script>
     <script defer src="/static/verification-view.js"></script>
     <link rel="stylesheet" href="/static/workflow.css" /><script defer src="/static/session.js"></script><script defer src="/static/workflow.js"></script><script defer src="/static/seller-connected.js"></script>
   </head>
@@ -16,11 +17,12 @@
     <nav class="demo-views" aria-label="Views">
       <a href="/">หน้าลูกค้า / Customer</a><span aria-current="page">หน้าผู้ขาย / Seller</span
       ><a href="/agency">พื้นที่งานเจ้าหน้าที่ / Agency</a>
+      <label class="workspace-language"><span data-en="Language">ภาษา</span><select id="workspace-language"><option value="th">ไทย</option><option value="en">English</option></select></label>
     </nav>
     <header class="reviewer-brandbar">
       <div class="container">
         <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
-        ><span class="workspace-title">Seller Centre <small>ศูนย์ผู้ขาย</small></span>
+        ><span class="workspace-title">Seller Centre <small><span data-en="Product management">ศูนย์ผู้ขาย</span></small></span>
       </div>
     </header>
     <div class="seller-layout">
@@ -30,13 +32,13 @@
         ><a href="#seller-products">สินค้าของฉัน</a
         ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a><a href="#verification-plan">TrustCart · ฿299 / เดือน</a>
         <p class="dialog-note">
-          TrustCart Seller Centre<br />จัดการข้อมูลสินค้า<br />ดูสถานะการตรวจสอบ
+          TrustCart Seller Centre<br /><span data-en="Manage product data">จัดการข้อมูลสินค้า</span><br /><span data-en="See verification status">ดูสถานะการตรวจสอบ</span>
         </p>
       </aside>
       <main id="main" class="seller-main">
-        <p class="seller-breadcrumb">สินค้าของฉัน / เพิ่มสินค้าใหม่</p>
-        <h1>เพิ่มสินค้าใหม่</h1>
-        <button type="button" id="new-product" class="text-button">
+        <p class="seller-breadcrumb"><span data-en="My products / Add a new product">สินค้าของฉัน / เพิ่มสินค้าใหม่</span></p>
+        <h1><span data-en="Add a new product">เพิ่มสินค้าใหม่</span></h1>
+        <button type="button" id="new-product" class="text-button" data-en="＋ Start a new listing">
           ＋ เริ่มรายการใหม่
         </button>
         <p class="dialog-note">
@@ -44,48 +46,48 @@
         </p>
         <div class="workspace-notice"><strong>ตรวจสอบสินค้าเป็นรายชิ้น</strong><span>ใช้ทะเบียนจำลองสำหรับการสาธิต · ไม่ใช่การรับรองอย่างเป็นทางการ</span></div><form id="seller-form">
           <section class="seller-section">
-            <h2><span class="section-number">01</span> ข้อมูลทั่วไป</h2>
-            <label for="listing-images">รูปสินค้า</label>
+            <h2><span class="section-number">01</span> <span data-en="General information">ข้อมูลทั่วไป</span></h2>
+            <label for="listing-images" data-en="Product images">รูปสินค้า</label>
             <input id="listing-images" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-describedby="image-help" />
-            <p id="image-help" class="dialog-note">สูงสุด 5 รูป · PNG, JPEG, WebP · ไม่เกิน 2 MB ต่อรูป · รูปแรกเป็นรูปหลัก</p>
+            <p id="image-help" class="dialog-note" data-en="Up to 5 PNG, JPEG, or WebP images, at most 2 MB each. The first image is the cover.">สูงสุด 5 รูป · PNG, JPEG, WebP · ไม่เกิน 2 MB ต่อรูป · รูปแรกเป็นรูปหลัก</p>
             <div id="image-previews" class="image-previews" aria-live="polite"></div>
-            <label for="listing-title">ชื่อสินค้า <span>*</span></label
+            <label for="listing-title"><span data-en="Product title">ชื่อสินค้า</span> <span>*</span></label
             ><input
               id="listing-title"
               required
               maxlength="1000"
               value="Demo Supplement — Demo Brand"
-            /><label for="listing-description">รายละเอียดสินค้า</label
+            /><label for="listing-description" data-en="Product description">รายละเอียดสินค้า</label
             ><textarea id="listing-description" rows="6" maxlength="6000">
 Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริมอาหาร</textarea
-            ><label for="listing-category">หมวดหมู่ <span>*</span></label
+            ><label for="listing-category"><span data-en="Category">หมวดหมู่</span> <span>*</span></label
             ><select id="listing-category">
-              <option value="supplement">ผลิตภัณฑ์เสริมอาหาร</option>
-              <option value="cosmetic">เครื่องสำอาง</option>
-              <option value="drug">ยา</option>
-              <option value="other">หมวดหมู่อื่น / ยังไม่รองรับ</option>
+              <option value="supplement" data-en="Food supplement">ผลิตภัณฑ์เสริมอาหาร</option>
+              <option value="cosmetic" data-en="Cosmetic">เครื่องสำอาง</option>
+              <option value="drug" data-en="Medicine">ยา</option>
+              <option value="other" data-en="Other / unsupported">หมวดหมู่อื่น / ยังไม่รองรับ</option>
             </select>
           </section>
           <section class="seller-section">
-            <h2><span class="section-number">02</span> ข้อมูลสำหรับตรวจสอบทะเบียน</h2>
+            <h2><span class="section-number">02</span> <span data-en="Registry details">ข้อมูลสำหรับตรวจสอบทะเบียน</span></h2>
             <p class="dialog-note">
-              กรอกเลขอ้างอิง ชื่อสินค้า และผู้ถือใบอนุญาตให้ตรงกับเอกสาร
+              <span data-en="Enter the reference, product name, and licence holder exactly as shown in your documents.">กรอกเลขอ้างอิง ชื่อสินค้า และผู้ถือใบอนุญาตให้ตรงกับเอกสาร</span>
             </p>
             <label for="registration-reference"
-              >เลขอ้างอิงทะเบียน (สำหรับขอตรวจ)</label
+              ><span data-en="Registration reference (for verification)">เลขอ้างอิงทะเบียน (สำหรับขอตรวจ)</span></label
             ><input
               id="registration-reference"
               value="DEMO-001"
 
               maxlength="200"
             /><label for="registered-name"
-              >ชื่อสินค้าตามทะเบียน (สำหรับขอตรวจ)</label
+              ><span data-en="Registered product name (for verification)">ชื่อสินค้าตามทะเบียน (สำหรับขอตรวจ)</span></label
             ><input
               id="registered-name"
               value="Demo Supplement"
 
               maxlength="200"
-            /><label for="license-holder">ผู้ถือใบอนุญาต (สำหรับขอตรวจ)</label
+            /><label for="license-holder"><span data-en="Licence holder (for verification)">ผู้ถือใบอนุญาต (สำหรับขอตรวจ)</span></label
             ><input
               id="license-holder"
               value="Demo Brand"
@@ -97,7 +99,7 @@ Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริม�
             <h2><span class="section-number">03</span> ข้อมูลการขาย</h2>
             <label for="advertising-permit">เลขใบอนุญาตโฆษณา (ถ้ามี)</label><input id="advertising-permit" maxlength="200" /><label for="listing-price">ราคา (บาท) <span>*</span></label>
             <input id="listing-price" type="number" min="0" max="99999999.99" step="0.01" value="199" required />
-            <label for="listing-stock">จำนวนสินค้าคงเหลือ <span>*</span></label>
+            <label for="listing-stock"><span data-en="Stock quantity">จำนวนสินค้าคงเหลือ</span> <span>*</span></label>
             <input id="listing-stock" type="number" min="0" max="10000000" step="1" value="0" required />
           </section>
           <label><input id="verify-on-save" type="checkbox" /> ขอตรวจหลังบันทึก / Request verification after saving</label><div class="seller-actions">
@@ -108,12 +110,12 @@ Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริม�
             </button>
           </div>
         </form>
-        <a id="view-product" class="seller-view-action" target="_blank" rel="noopener noreferrer" hidden title="เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด">ดูสินค้า / View product ↗</a>
+        <a id="view-product" class="seller-view-action" target="_blank" rel="noopener noreferrer" hidden title="เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด" data-en-title="Open the customer page with the latest saved product" data-en="View product ↗">ดูสินค้า / View product ↗</a>
         <p id="seller-feedback" role="status" aria-live="polite"></p>
         <section id="seller-products" class="seller-section">
-          <h2>สินค้าของฉัน</h2>
+          <h2><span data-en="My products">สินค้าของฉัน</span></h2>
           <p class="dialog-note">
-            สินค้าที่บันทึกแล้ว · แก้ไขข้อมูล หรือเปิดหน้าลูกค้าเพื่อดูผลล่าสุด
+            <span data-en="Edit a saved listing or open its customer page to see the latest result.">สินค้าที่บันทึกแล้ว · แก้ไขข้อมูล หรือเปิดหน้าลูกค้าเพื่อดูผลล่าสุด</span>
           </p>
           <div id="seller-product-list"></div>
         </section>

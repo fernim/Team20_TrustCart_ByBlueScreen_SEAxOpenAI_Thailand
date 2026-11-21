@@ -1,6 +1,27 @@
 "use strict";
 (() => {
   const $ = (s) => document.querySelector(s);
+  const tr = (th, en) => document.documentElement.lang === "en" ? en : th;
+  const messages = {
+    changed: ["ข้อมูลมีการแก้ไข ต้องส่งตรวจใหม่ก่อนยืนยันสถานะ", "Listing changed. Run verification again before confirming the status."],
+    invalidImage: ["เลือกรูป PNG, JPEG หรือ WebP ไม่เกิน 5 รูป และ 2 MB ต่อรูป", "Choose up to 5 PNG, JPEG, or WebP images, at most 2 MB each."],
+    unreadableImage: ["ไม่สามารถอ่านรูปได้ กรุณาเลือกรูปอีกครั้ง", "Could not read the image. Choose it again."],
+    loading: ["กำลังโหลดผลตรวจ…", "Loading verification…"],
+    loaded: ["แสดงผลตรวจที่บันทึกไว้", "Showing the saved verification."],
+    loadFailed: ["ไม่สามารถโหลดผลตรวจได้ กรุณาลองใหม่", "Could not load the verification. Try again."],
+    reading: ["กำลังอ่านรูป กรุณารอสักครู่", "Reading images. Please wait."],
+    draftSaved: ["บันทึกแบบร่างในเครื่องแล้ว ยังไม่ได้ตรวจสอบ", "Draft saved on this device. Verification is still required."],
+    draftFailed: ["ไม่สามารถบันทึกแบบร่างในเครื่องได้", "Could not save the draft on this device."],
+    checking: ["กำลังตรวจสอบสินค้า…", "Verifying product…"],
+    saved: ["บันทึกผลตรวจแล้ว ดูสถานะและขั้นตอนที่ต้องแก้ไขด้านล่าง", "Verification saved. See the status and next steps below."],
+    conflict: ["สินค้านี้ถูกแก้ไขแล้ว โหลดรายการล่าสุดก่อนบันทึกอีกครั้ง", "This product changed. Load the latest version before saving again."],
+    invalid: ["ข้อมูลไม่ถูกต้อง ตรวจสอบรูปสินค้า ราคา และจำนวนคงเหลือ แล้วลองใหม่", "Check the product images, price, and stock, then try again."],
+    failed: ["ไม่สามารถตรวจสอบได้ ไม่ได้ยืนยันสถานะผ่าน กรุณาลองใหม่", "Verification could not run. Try again to get a result."],
+    draftLoaded: ["โหลดแบบร่างในเครื่องแล้ว ต้องส่งตรวจใหม่", "Local draft loaded. Submit it for verification."],
+    newListing: ["เพิ่มสินค้าใหม่", "Started a new listing."],
+  };
+  let currentMessage;
+  let currentResult;
   const ids = [
     "listing-title",
     "listing-description",
@@ -17,8 +38,8 @@
   function markDirty() {
     dirty = true;
     version++;
-    $("#seller-result").replaceChildren();
-    feedback("ข้อมูลมีการแก้ไข ต้องส่งตรวจใหม่ก่อนยืนยันสถานะ");
+    showResult(null);
+    feedback("changed");
   }
   function renderImages() {
     $("#image-previews").replaceChildren();
@@ -26,10 +47,10 @@
       const frame = document.createElement("div");
       const image = document.createElement("img");
       image.src = src;
-      image.alt = `รูปสินค้า ${index + 1}`;
+      image.alt = tr(`รูปสินค้า ${index + 1}`, `Product image ${index + 1}`);
       const remove = document.createElement("button");
       remove.type = "button";
-      remove.textContent = `ลบรูป ${index + 1}`;
+      remove.textContent = tr(`ลบรูป ${index + 1}`, `Remove image ${index + 1}`);
       remove.disabled = saving || readingImages;
       remove.addEventListener("click", () => {
         if (saving || readingImages) return;
@@ -50,7 +71,7 @@
     markDirty();
     if (files.length + images.length > 5 || files.some(file =>
       !["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024)) {
-      feedback("เลือกรูป PNG, JPEG หรือ WebP ไม่เกิน 5 รูป และ 2 MB ต่อรูป");
+      feedback("invalidImage");
       event.target.value = "";
       return;
     }
@@ -66,7 +87,7 @@
       })));
       if (request === imageRequest) images.push(...added);
     } catch (_) {
-      if (request === imageRequest) feedback("ไม่สามารถอ่านรูปได้ กรุณาเลือกรูปอีกครั้ง");
+      if (request === imageRequest) feedback("unreadableImage");
     } finally {
       if (request === imageRequest) {
         readingImages = false;
@@ -118,8 +139,15 @@
       if (typeof values[i] === "string") $("#" + id).value = values[i];
     });
   }
-  function feedback(text) {
-    $("#seller-feedback").textContent = text;
+  function feedback(key) {
+    currentMessage = key;
+    $("#seller-feedback").textContent = tr(...messages[key]);
+  }
+  function showResult(result) {
+    currentResult = result;
+    const container = $("#seller-result");
+    container.replaceChildren();
+    if (result) window.TrustCartVerification.render(container, result, {audit: false});
   }
   function updateProductLink() {
     const link = $("#view-product");
@@ -130,7 +158,7 @@
   function renderReports() {
     $("#seller-product-list").replaceChildren();
     if (!reports.length) {
-      $("#seller-product-list").textContent = "ยังไม่มีรายการที่ตรวจสอบ";
+      $("#seller-product-list").textContent = tr("ยังไม่มีรายการที่ตรวจสอบ", "There are no verified listings yet.");
       return;
     }
     for (const entry of reports) {
@@ -138,22 +166,22 @@
       button.type = "button";
       button.className = "seller-product-row";
       const title = entry.title || entry.id;
-      button.textContent = entry.productId ? "แก้ไข / Edit" : "ดูรายงาน / View report";
+      button.textContent = entry.productId ? tr("แก้ไข / Edit", "Edit") : tr("ดูรายงาน / View report", "View report");
       button.setAttribute("aria-label", `${button.textContent}: ${title}`);
       button.addEventListener("click", async () => {
         if (saving) return;
         if (
           dirty &&
           !window.confirm(
-            "มีข้อมูลที่ยังไม่ได้ตรวจสอบ ต้องการเปลี่ยนรายการหรือไม่?",
+            tr("มีข้อมูลที่ยังไม่ได้ตรวจสอบ ต้องการเปลี่ยนรายการหรือไม่?", "Switch listings and discard your unsaved changes?"),
           )
         )
           return;
         const request = ++version;
         $("#view-product").hidden = true;
         $("#view-product").removeAttribute("href");
-        $("#seller-result").replaceChildren();
-        feedback("กำลังโหลดผลตรวจ…");
+        showResult(null);
+        feedback("loading");
         try {
           const response = await fetch(
             entry.productId
@@ -188,13 +216,11 @@
           }
           dirty = false;
           updateProductLink();
-          window.TrustCartVerification.render($("#seller-result"), result, {
-            audit: false,
-          });
-          feedback("แสดงผลตรวจที่บันทึกไว้");
+          showResult(result);
+          feedback("loaded");
         } catch (_) {
           if (request === version)
-            feedback("ไม่สามารถโหลดผลตรวจได้ กรุณาลองใหม่");
+            feedback("loadFailed");
         }
       });
       const row = document.createElement("div");
@@ -214,16 +240,16 @@
       metadata.className = "seller-item-metadata";
       const price = document.createElement("span");
       price.className = "seller-item-price";
-      price.textContent = listing.price == null ? "ต้องระบุราคา" : `฿${Number(listing.price).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      price.textContent = listing.price == null ? tr("ต้องระบุราคา", "Price required") : `฿${Number(listing.price).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       const stock = document.createElement("span");
       stock.className = "seller-item-stock";
-      stock.textContent = listing.stock == null ? "ยังไม่ระบุสต็อก" : `สต็อก ${listing.stock} ชิ้น`;
+      stock.textContent = listing.stock == null ? tr("ยังไม่ระบุสต็อก", "Stock unspecified") : tr(`สต็อก ${listing.stock} ชิ้น`, `Stock: ${listing.stock}`);
       const status = document.createElement("span");
       status.className = "seller-item-status";
       const statuses = ["APPROVED", "PENDING", "DENIED", "UNKNOWN"];
       const state = statuses.includes(entry.status) ? entry.status : "UNKNOWN";
       status.dataset.status = state;
-      status.textContent = `ผลตรวจ ${state}`;
+      status.textContent = tr(`ผลตรวจ ${state}`, `Verification: ${state}`);
       metadata.append(price, stock, status);
       summary.append(heading, metadata);
       const actions = document.createElement("div");
@@ -233,12 +259,12 @@
       if (entry.productId && listing.price != null) {
         const view = document.createElement("a");
         view.className = "seller-view-product seller-view-action";
-        view.textContent = "ดูสินค้า / View product ↗";
+        view.textContent = tr("ดูสินค้า / View product ↗", "View product ↗");
         view.href = `/products/${encodeURIComponent(entry.productId)}`;
         view.target = "_blank";
         view.rel = "noopener noreferrer";
-        view.setAttribute("aria-label", `ดูสินค้า / View product: ${entry.title || entry.productId}`);
-        view.title = "เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด";
+        view.setAttribute("aria-label", `${tr("ดูสินค้า / View product", "View product")}: ${entry.title || entry.productId}`);
+        view.title = tr("เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด", "Open the customer page with the latest saved product");
         actions.append(view);
       }
       $("#seller-product-list").append(row);
@@ -246,12 +272,12 @@
   }
   $("#seller-form").addEventListener("input", markDirty);
   $("#save-draft").addEventListener("click", () => {
-    if (readingImages) { feedback("กำลังอ่านรูป กรุณารอสักครู่"); return; }
+    if (readingImages) { feedback("reading"); return; }
     try {
       localStorage.setItem("trustcart-seller-draft", JSON.stringify(payload()));
-      feedback("บันทึกแบบร่างในเครื่องแล้ว ยังไม่ได้ตรวจสอบ");
+      feedback("draftSaved");
     } catch (_) {
-      feedback("ไม่สามารถบันทึกแบบร่างในเครื่องได้");
+      feedback("draftFailed");
     }
   });
   $("#seller-form").addEventListener("submit", async (event) => {
@@ -262,7 +288,7 @@
     renderImages();
     const listing = payload();
     const request = ++version;
-    $("#seller-result").replaceChildren();
+    showResult(null);
     $("#submit-listing").disabled = true;
     document
       .querySelectorAll(
@@ -271,7 +297,7 @@
       .forEach((control) => {
         control.disabled = true;
       });
-    feedback("กำลังตรวจสอบสินค้า…");
+    feedback("checking");
     try {
       const response = await fetch(
         editingProduct ? `/v1/products/${editingProduct.id}` : "/v1/products",
@@ -297,9 +323,7 @@
       editingProduct = { id: record.id, version: record.version, hasPrice: record.listing.price != null };
       updateProductLink();
       dirty = false;
-      window.TrustCartVerification.render($("#seller-result"), result, {
-        audit: false,
-      });
+      showResult(result);
       reports = [
         {
           id: result.id,
@@ -321,17 +345,11 @@
         localStorage.setItem("trustcart-products-updated", String(Date.now()));
       } catch (_) {}
       renderReports();
-      feedback("บันทึกผลตรวจแล้ว ดูสถานะและขั้นตอนที่ต้องแก้ไขด้านล่าง");
+      feedback("saved");
     } catch (error) {
       if (request === version) {
-        $("#seller-result").replaceChildren();
-        feedback(
-          error.message === "conflict"
-            ? "สินค้านี้ถูกแก้ไขแล้ว โหลดรายการล่าสุดก่อนบันทึกอีกครั้ง"
-            : error.message === "invalid"
-              ? "ข้อมูลไม่ถูกต้อง ตรวจสอบรูปสินค้า ราคา และจำนวนคงเหลือ แล้วลองใหม่"
-              : "ไม่สามารถตรวจสอบได้ ไม่ได้ยืนยันสถานะผ่าน กรุณาลองใหม่",
-        );
+        showResult(null);
+        feedback(error.message === "conflict" || error.message === "invalid" ? error.message : "failed");
       }
     } finally {
       saving = false;
@@ -353,13 +371,13 @@
     if (draft && typeof draft === "object") {
       fill(draft);
       dirty = true;
-      feedback("โหลดแบบร่างในเครื่องแล้ว ต้องส่งตรวจใหม่");
+      feedback("draftLoaded");
     }
   } catch (_) {}
   $("#new-product").addEventListener("click", () => {
     if (
       dirty &&
-      !window.confirm("เริ่มรายการใหม่โดยไม่บันทึกข้อมูลปัจจุบันหรือไม่?")
+      !window.confirm(tr("เริ่มรายการใหม่โดยไม่บันทึกข้อมูลปัจจุบันหรือไม่?", "Start a new listing and discard your unsaved changes?"))
     )
       return;
     editingProduct = null;
@@ -372,8 +390,8 @@
     images = [];
     $("#submit-listing").disabled = false;
     renderImages();
-    $("#seller-result").replaceChildren();
-    feedback("เพิ่มสินค้าใหม่");
+    showResult(null);
+    feedback("newListing");
   });
   async function loadProducts() {
     if (saving) return;
@@ -402,6 +420,12 @@
     } catch (_) {}
   }
   window.addEventListener("focus", loadProducts);
+  window.addEventListener("trustcart-languagechange", () => {
+    renderImages();
+    renderReports();
+    showResult(currentResult);
+    if (currentMessage) feedback(currentMessage);
+  });
   renderReports();
   loadProducts();
 })();

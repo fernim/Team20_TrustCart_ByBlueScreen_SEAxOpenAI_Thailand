@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="stylesheet" href="/static/tokens.css" />
     <link rel="stylesheet" href="/static/marketplace-ui.css" />
+    <script defer src="/static/locale.js"></script>
     <script defer src="/static/verification-view.js"></script>
     <link rel="stylesheet" href="/static/workflow.css" /><script defer src="/static/session.js"></script><script defer src="/static/workflow.js"></script><script defer src="/static/reviewer-connected.js"></script>
   </head>
@@ -14,36 +15,39 @@
 <nav class="integration-nav" aria-label="Account"><a href="/">TrustCart · Synthetic registry demo</a><a href="/login">Sign in</a></nav>
     <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
     <nav class="demo-views" aria-label="Views">
-      <a href="/">หน้าลูกค้า / Customer</a
-      ><span aria-current="page">หน้าผู้ตรวจสอบ / Reviewer</span>
-      <a href="/seller">หน้าผู้ขาย / Seller</a>
+      <a href="/"><span data-en="Customer">หน้าลูกค้า / Customer</span></a
+      ><span aria-current="page"><span data-en="Reviewer">หน้าผู้ตรวจสอบ / Reviewer</span></span>
+      <a href="/seller"><span data-en="Seller">หน้าผู้ขาย / Seller</span></a>
+      <label class="workspace-language"><span data-en="Language">ภาษา</span>
+        <select id="workspace-language"><option value="th">ไทย</option><option value="en">English</option></select>
+      </label>
     </nav>
     <header class="reviewer-brandbar">
       <div class="container">
         <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
-        ><span class="workspace-title">Reviewer Centre <small>ศูนย์ตรวจสอบสินค้า</small></span>
+        ><span class="workspace-title">Reviewer Centre <small><span data-en="Product review">ศูนย์ตรวจสอบสินค้า</span></small></span>
       </div>
     </header>
     <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#reviewer-products" aria-current="location">สินค้าล่าสุด</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">DOCUMENT REVIEW<br />ทะเบียนจำลอง<br />Decisions require inspected evidence</div></aside><main id="main" class="reviewer-shell">
       <header>
         <p class="reviewer-eyebrow">TRUSTCART · REVIEWER</p>
-        <h1>รายงานการตรวจสอบสินค้า</h1>
-        <p>ตรวจสอบสถานะสินค้าและดูรายการที่ต้องแก้ไข</p>
+        <h1><span data-en="Product verification reports">รายงานการตรวจสอบสินค้า</span></h1>
+        <p><span data-en="Check product status and see what needs correction.">ตรวจสอบสถานะสินค้าและดูรายการที่ต้องแก้ไข</span></p>
       </header>
       <section class="seller-section"><h2>คิวตรวจสอบ / Verification queue</h2><div id="queue-filters" class="reviewer-filters"><label>Shop<select id="filter-shop_id"><option value="">All shops</option></select></label><label>Status<select id="filter-status"><option value="">All statuses</option><option>APPROVED</option><option>PENDING</option><option>DENIED</option><option>UNKNOWN</option></select></label><label>Stage<select id="filter-stage"><option value="">All stages</option></select></label><label><input id="filter-action" type="checkbox" /> Requires my action</label></div><button id="refresh-queue" type="button">Refresh queue and report</button><p id="queue-summary" role="status"></p></section><section id="reviewer-products" class="seller-section" aria-labelledby="reviewer-products-title">
         <h2 id="reviewer-products-title">สินค้าล่าสุด</h2>
         <p class="dialog-note">ข้อมูลสินค้าที่บันทึกและผลตรวจล่าสุด · เปิดรายงานเพื่อดูเหตุผลและประวัติการตรวจสอบ</p>
         <p id="reviewer-products-loading" role="status" hidden>กำลังโหลดสินค้า…</p>
         <div id="reviewer-products-error" role="alert" hidden>
-          <p>ไม่สามารถโหลดรายการสินค้าล่าสุดได้</p>
-          <button id="retry-reviewer-products" class="text-button" type="button">ลองอีกครั้ง</button>
+          <p><span data-en="Could not load the latest products.">ไม่สามารถโหลดรายการสินค้าล่าสุดได้</span></p>
+          <button id="retry-reviewer-products" class="text-button" type="button"><span data-en="Try again">ลองอีกครั้ง</span></button>
         </div>
         <div id="reviewer-product-list" aria-live="polite"></div>
       </section>
       <section id="demo-reports" hidden>
-        <label for="demo-report-select">รายงานสินค้าในรอบนี้</label>
+        <label for="demo-report-select"><span data-en="Reports from this session">รายงานสินค้าในรอบนี้</span></label>
         <select id="demo-report-select">
-          <option value="">เลือกสินค้าเพื่อดูผล</option>
+          <option value="" data-en="Select a product report">เลือกสินค้าเพื่อดูผล</option>
         </select>
       </section>
       <div class="workspace-notice"><strong>ตรวจเอกสารและตัดสินใจ</strong><span>Review the original documents and grounded AI findings. Registry data is synthetic.</span></div><form id="report-lookup" hidden>
@@ -54,11 +58,11 @@
             name="id"
             required
             autocomplete="off"
-            placeholder="วางรหัสรายงานจาก API"
+            placeholder="วางรหัสรายงานจาก API" data-en-placeholder="Paste a report ID from the API"
             aria-describedby="lookup-help"
-          /><button class="primary" type="submit">เปิดรายงาน</button>
+          /><button class="primary" type="submit"><span data-en="Open report">เปิดรายงาน</span></button>
         </div>
-        <p id="lookup-help" class="dialog-note">
+        <p id="lookup-help" class="dialog-note" data-en="Open Reviewer from the customer page, or use the ID returned by POST /v1/verifications.">
           เปิดลิงก์ Reviewer จากหน้าลูกค้าเพื่อดูผลล่าสุด หรือใช้รหัสจาก POST
           /v1/verifications
         </p>

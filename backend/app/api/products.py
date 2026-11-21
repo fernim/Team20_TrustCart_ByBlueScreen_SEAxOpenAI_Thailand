@@ -33,10 +33,12 @@ class Product(BaseModel):
 def save_product(listing, product_id, request, expected_version=None):
     with closing(store.connect(request.app.state.database, timeout=20)) as connection, connection:
         connection.execute("BEGIN IMMEDIATE")
-        row = connection.execute("SELECT version FROM products WHERE id=?", (str(product_id),)).fetchone()
+        row = connection.execute("SELECT version,result FROM products WHERE id=?", (str(product_id),)).fetchone()
         if expected_version is not None:
             if row is None:
                 raise HTTPException(404, "Product not found")
+            if json.loads(row[1]).get("verification") is None:
+                raise HTTPException(409, "Use the shop-owned seller workflow for this product")
             if row[0] != expected_version:
                 raise HTTPException(409, "Product changed. Reload before editing.")
         version = row[0] + 1 if row else 1
@@ -61,6 +63,8 @@ def save_product(listing, product_id, request, expected_version=None):
 
 
 def current_product(connection, raw):
+    if json.loads(raw).get("verification") is None:
+        raise HTTPException(409, "Use the connected product and submission endpoints for this product")
     product = Product.model_validate_json(raw)
     row = connection.execute("SELECT result FROM verifications WHERE id=?", (str(product.verification.id),)).fetchone()
     if row:
@@ -89,7 +93,8 @@ def update_product(product_id: UUID, update: ProductUpdate, request: Request):
 def list_products(request: Request, response: Response):
     response.headers["Cache-Control"] = "no-store"
     with closing(store.connect(request.app.state.database)) as connection:
-        return [current_product(connection, row[0]) for row in connection.execute("SELECT result FROM products ORDER BY rowid DESC").fetchall()]
+        return [current_product(connection, row[0]) for row in connection.execute("SELECT result FROM products ORDER BY rowid DESC").fetchall()
+                if json.loads(row[0]).get("verification") is not None]
 
 
 @router.get("/v1/products/{product_id}", response_model=Product)

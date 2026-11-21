@@ -51,7 +51,7 @@ async def access_guard(request, call_next):
                     )
     path = request.url.path
     public_read = request.method in ("GET", "HEAD") and (
-        path in ("/", "/login", "/v1/auth/me")
+        path in ("/", "/login", "/v1/auth/me", "/version")
         or path.startswith(("/static/", "/products/", "/v1/catalog/"))
     )
     login = path == "/v1/auth/login" and request.method == "POST"

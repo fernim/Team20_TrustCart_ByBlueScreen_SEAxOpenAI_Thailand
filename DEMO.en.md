@@ -36,3 +36,5 @@ The core story is **seller evidence → AI readiness → deterministic checks �
 Private evidence supports PDF, PNG, JPEG and WebP up to 2 MiB each, five active files, and ten unencrypted PDF pages. Text-PDF quotations are checked against document text. Image-only/scanned documents require visual reviewer confirmation. Supplements are the first automatic path; other categories require manual review. Checkout, real billing, OAuth, live government registries and live marketplace feeds are not part of this demo. The Agency workspace is local and shares persisted submissions and decisions with the storefront; Lazada has an empty state. Agency is a workspace name, using the existing reviewer account.
 
 Run `.venv/bin/python -m pytest -q`, `npm test`, and `npm run test:browser` before presenting. On Windows use `.venv/Scripts/python`. This change does not deploy or validate a hosted environment.
+
+The legacy judge run sheet remains at [docs/JUDGE_QA.md](docs/JUDGE_QA.md); its workspace scenarios are diagnostic references, while the role-session walkthrough above describes the connected product flow.

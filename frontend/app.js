@@ -179,7 +179,7 @@
     sold,
   }));
   const state = {
-    language: "th",
+    language: window.TrustCartLocale?.read() || "th",
     query: "",
     category: null,
     limit: 12,
@@ -1011,6 +1011,20 @@
     const actions = element("div", "detail-actions");
     actions.append(add, viewCart);
     details.append(heading, metadata, pricePanel, quantity, actions);
+    if (product.sellerProduct) {
+      const result = productVerifications.get(product.id);
+      const status = result?.status || "UNKNOWN";
+      const label = state.language === "th" ? "ผลตรวจสอบจำลอง" : "Demo verification";
+      const confidence = result ? ` · ${Math.round(result.confidence * 100)}%` : "";
+      const verification = element("p", "detail-note", `${label} · ${status}${confidence}`);
+      verification.id = "marketplace-verification-status";
+      verification.dataset.status = status;
+      if (result) verification.dataset.verificationId = result.id;
+      const workspaceLink = element("a", "text-button", state.language === "th" ? "หลักฐานและการตรวจสอบ" : "Evidence and review");
+      workspaceLink.id = "workspace-case-link";
+      workspaceLink.href = `/workspace?product=${encodeURIComponent(product.id)}`;
+      details.append(verification, workspaceLink);
+    }
 
     const gallery = element("div", "product-gallery");
     const mainImage = productImage(product);
@@ -1257,6 +1271,7 @@
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";
+    window.TrustCartLocale?.save(state.language);
     renderLanguage();
   });
   Object.assign(text.th, {
@@ -1322,6 +1337,7 @@
     if (typeof window.fetch !== "function") return;
     const request = ++catalogRequest;
     const previousVerified = selectedProduct && hasProductVerification(selectedProduct);
+    const previousResult = selectedProduct && productVerifications.get(selectedProduct.id);
     try {
       const response = await window.fetch("/v1/catalog/products", {
         cache: "no-store",
@@ -1378,7 +1394,11 @@
     }
     renderProducts();
     renderCart();
-    resolveProductRoute(Boolean(selectedProduct) && previousVerified !== hasProductVerification(selectedProduct));
+    const currentResult = selectedProduct && productVerifications.get(selectedProduct.id);
+    resolveProductRoute(Boolean(selectedProduct) && (
+      previousVerified !== hasProductVerification(selectedProduct) || previousResult?.status !== currentResult?.status ||
+      previousResult?.confidence !== currentResult?.confidence || previousResult?.id !== currentResult?.id
+    ));
   }
   window.addEventListener("focus", refreshSellerProducts);
   window.addEventListener("storage", (event) => {
@@ -1390,6 +1410,10 @@
   window.setInterval(() => {
     if (!document.hidden) refreshSellerProducts();
   }, 5000);
+  if (state.language === "en") {
+    $("#language").value = "en";
+    renderLanguage();
+  }
   resolveProductRoute();
   refreshSellerProducts();
   function saveReviewerReports() {

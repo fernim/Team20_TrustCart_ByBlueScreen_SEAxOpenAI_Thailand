@@ -20,7 +20,7 @@ router = APIRouter()
     summary="Upload synthetic seller evidence",
     responses={
         404: {"description": "Verification not found"},
-        409: {"description": "Stale audit hash, invalid audit chain, or saved listing cannot be rechecked"},
+        409: {"description": "Stale audit hash, invalid audit, completed review, or unusable saved listing"},
         413: {"description": "An evidence file exceeds 2 MiB"},
     },
 )
@@ -33,6 +33,7 @@ async def evidence(
     registration_reference: Annotated[ListingText, Form(description="Registration reference declared in the evidence.")],
     label: UploadFile = File(description="Nonempty synthetic label file, up to 2 MiB."),
     certificate: UploadFile = File(description="Nonempty synthetic certificate file, up to 2 MiB."),
+    standards: Annotated[str, Form(max_length=200, description="Optional comma-separated declared standards, such as ISO 22000 or GMP. ISO 9001 alone is insufficient. This is not certificate authentication.")] = "",
 ):
     """Save the declared identity and SHA-256 file digests, then return the updated verification.
 
@@ -56,9 +57,22 @@ async def evidence(
             raise HTTPException(422, "Evidence files must contain data")
         hashes.append((kind, digest.hexdigest()))
     declarations = dict(product_name=product_name, license_holder=license_holder, registration_reference=registration_reference)
+    if standards.strip():
+        declarations["standards"] = standards.strip()
     with edit(request.app.state.database, verification_id, chain_hash) as (connection, result, payload):
         trace = continue_trace(result)
+        if getattr(connection, "dialect", "sqlite") == "postgresql":
+            # Serialize equal hashes across distinct verification row locks.
+            # Sorted acquisition also avoids deadlocks for overlapping uploads.
+            for digest in sorted({digest for _, digest in hashes}):
+                connection.execute("SELECT pg_advisory_xact_lock(?)", (int(digest[:15], 16),))
         for kind, digest in hashes:
+            duplicate = connection.execute(
+                "SELECT 1 FROM evidence WHERE sha256=? AND verification_id<>? LIMIT 1",
+                (digest, str(verification_id)),
+            ).fetchone()
+            if duplicate:
+                trace.add("duplicate_evidence", json.dumps({"kind": kind, "sha256": digest}))
             connection.execute("INSERT INTO evidence VALUES (?, ?, ?, ?, ?, ?)", (
                 str(uuid4()), str(verification_id), kind, digest, json.dumps(declarations), datetime.now(timezone.utc).isoformat()))
             trace.add("evidence", json.dumps({"kind": kind, "sha256": digest, "chain_hash": chain_hash}))
@@ -72,7 +86,7 @@ async def evidence(
     summary="Recheck a saved verification",
     responses={
         404: {"description": "Verification not found"},
-        409: {"description": "Stale audit hash, invalid audit chain, or saved listing cannot be rechecked"},
+        409: {"description": "Stale audit hash, invalid audit, completed review, or unusable saved listing"},
     },
 )
 def recheck(verification_id: UUID, revision: Revision, request: Request):

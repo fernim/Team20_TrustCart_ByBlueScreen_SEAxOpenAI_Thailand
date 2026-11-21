@@ -1,10 +1,12 @@
-# TrustCart Baseline Lead
+# TrustCart
+
+**Verify the listing. Trace the evidence. Escalate uncertainty.**
 
 **Repository** `Team20_TrustCart_ByBlueScreen_SEAxOpenAI_Thailand`
 
 Built by Team BlueScreen for the Sea × OpenAI Regional Codex Hackathon Thailand. The `[codex]` stamp credits OpenAI Codex with initiating this baseline implementation.
 
-TrustCart adds optional, document-backed product verification to a Shopee-style marketplace. Sellers publish listings, submit private evidence, and track blockers; reviewers resolve uncertain cases; buyers see a clickable tick only on the current passing product revision. The registry remains synthetic: the badge is not official certification or proof of physical authenticity.
+TrustCart is an API-first, human-governed verification workflow. It adds optional, document-backed product verification to a Shopee-style marketplace. Sellers publish listings, submit private evidence, and track blockers; reviewers resolve uncertain cases; buyers see a clickable tick only on the current passing product revision. The registry remains synthetic: the badge is not official certification or proof of physical authenticity.
 
 > **All data is synthetic.** TrustCart does not connect to the Thai FDA registry or any marketplace. It is not affiliated with Shopee or Thai FDA, and its results are decision support. They are not certification, legal advice, or medical advice.
 
@@ -19,6 +21,41 @@ TrustCart checks a listing **before granting its product badge** through an API.
 - Rules R-01 to R-05 decide the status. A language model is never allowed to set one.
 - A registry outage, missing reference, or unmapped category returns `UNKNOWN` with human review. TrustCart never approves a case it could not verify.
 - Every decision step is written to a SHA-256 hash-chained audit trace.
+
+## Product: one verification engine, two delivery surfaces
+
+```
+Seller / marketplace listing
+        |
+        v
+POST /v1/verifications  ──>  Registry adapter (synthetic in demo)
+        |                      + rule-based identity, category,
+        |                        advertising and evidence checks
+        v
+  APPROVED / PENDING / DENIED / UNKNOWN
+        |
+        +--> Evidence upload --> Recheck --> Human review when required
+        |
+        +--> Evidence-linked report + hash-chained audit trace
+        |
+        +--> API response / reviewer dashboard / shopper-facing demo widget
+```
+
+**The API is the product; the dashboard is the demonstration and review interface.** They share the same backend decision model rather than implementing separate verification systems.
+
+**Design principle:** *AI extracts and suggests. Deterministic rules decide. Humans govern.* Optional language-model extraction must remain grounded in the listing text and cannot set or override a verification status. With no approved external AI configuration, the demo uses local rule-based screening.
+
+### Intended users and commercial buyers
+
+| Role                                                          | Job to be done                                                        | TrustCart interface                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------- |
+| Marketplace trust-and-safety or listing-operations team       | Screen listings consistently and route unresolved cases               | **Verification API + reviewer queue + audit report** |
+| Supplement brand, seller-operations team, or marketing agency | Find listing problems and provide missing evidence before publication | **Seller dashboard + evidence/recheck flow**         |
+| Shopper                                                       | Understand which checks ran and what remains unverified               | **Demo trust status + explanation**                  |
+| Regulatory reviewer or other authorized human reviewer        | Inspect evidence, resolve escalations, and retain decision history    | **Reviewer dashboard + tamper-evident trace**        |
+
+**Who might pay?** The commercial hypotheses are (1) marketplaces or seller platforms paying for API usage / enterprise integration, and (2) brands or agencies paying for a hosted review workflow. **Neither willingness to pay nor customer ROI has been validated.** We are not asserting that a large marketplace would outsource functionality it can build internally.
+
 
 ## Build direction
 
@@ -117,7 +154,7 @@ For explicitly authorized hosted testing, set `TRUSTCART_BASE_URL` and all four 
 1. Open Seller and select L1. Submit the listing to receive PENDING.
 2. Use the synthetic sample files to upload label and certificate evidence. The conflicting fields keep the result PENDING at confidence 0.60.
 3. Recheck the case and open Reviewer. Refresh the queue, enter a reason, and deny the selected case.
-4. Verify the audit. Demonstrate tampering and verify the failed audit. Further changes are blocked on the altered case.
+4. Verify the saved audit. Run the tamper simulation to show a broken chain on a copy, then verify the saved audit again.
 5. Submit a new case to restart. Select simulated registry outage to see zero approvals across the 20 records.
 
 ## API workflow
@@ -127,6 +164,7 @@ FastAPI registers the connected workflow routers alongside the legacy diagnostic
 | Router | API area |
 | --- | --- |
 | `verifications.py` | Listing submission and retrieval |
+| `products.py` | Versioned product creation, updates, and retrieval |
 | `seller.py` | Evidence, rechecks, and copy suggestions |
 | `reviewer.py` | Review queue and decisions |
 | `reports.py` | Reports, badges, comparison, and audit checks |
@@ -141,6 +179,7 @@ FastAPI registers the connected workflow routers alongside the legacy diagnostic
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| GET | /version | Public commit SHA from VERCEL_GIT_COMMIT_SHA, or local |
 | POST | /v1/verifications | Submit listing |
 | GET | /v1/verifications/{id} | Retrieve result |
 | POST | /v1/verifications/{id}/evidence | Multipart synthetic files and declared product fields |
@@ -154,11 +193,25 @@ FastAPI registers the connected workflow routers alongside the legacy diagnostic
 | GET | /v1/agency/summary | Aggregate saved synthetic verifications without seller identities |
 | POST | /v1/listings/suggest-copy | Screened deterministic copy template |
 | POST | /v1/products/compare | Compare up to 10 saved reports |
-| POST | /demo/tamper/{id} | Intentionally alter a synthetic trace |
+| POST | /demo/tamper/{id} | Simulate a change to a copy of a trace and return the audit result |
 
 Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
 
+Once a reviewer has recorded a decision, seller evidence uploads and rechecks on that verification return `409`. Submit a fresh verification for updated evidence or an edited listing. A reviewer may record a new decision using the latest audit hash.
+
+Evidence uploads accept an optional comma-separated `standards` declaration. ISO 9001 alone cannot satisfy R-05; ISO 22000 or GMP can satisfy the standards comparison when identity checks also pass. This compares declarations, not certificate authenticity. A file digest already stored for another verification adds a `duplicate_evidence` trace event and requires human review at confidence 0.60; rechecks retain unresolved duplicate warnings.
+
 If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
+
+## Run locally on macOS or Linux
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn backend.app.main:app --port 8000
+```
+
+The local entry point uses role sessions for private workflows. Shopping is public. The hosted `app:app` entry point also retains a Basic gate for legacy diagnostics; it does not replace role authorization. `/version` is a public GET endpoint returning only the commit identifier. Use the generated `/docs` for current request schemas.
 
 ## Optional AI extraction
 
@@ -166,7 +219,7 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 105 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration.
+Validation: 141 Python tests, 114 Node component tests, and 36 desktop/mobile browser tests pass locally, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration. Reviewer access, completed-review protection, cross-origin write rejection, and audit simulation are covered; see [API judge Q&A](docs/JUDGE_QA.md).
 
 ## Dataset and release update
 
@@ -184,17 +237,57 @@ Two normal, unverified reference listings now use short title excerpts from Shop
 
 The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /agency manages the current product verification queue and reports (/reviewer redirects). /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
 
+Open **Evidence and review** on a saved product to load its current verification in `/workspace`. The workspace can also open a product from its saved-product list. Listing edits retain the product's price, stock, and images and create a new verification revision. Evidence, rechecks, and reviewer decisions update that verification, so the marketplace displays the current badge when it refreshes. Each workspace case links back to its marketplace product.
+
+The Agency tab shows the same saved, priced listings as Marketplace. Each row shows product details and the latest verification status and confidence, with links to the marketplace product and its current verification. The separate verification history includes earlier revisions and standalone checks. Static reference listings have no verification record.
+
+Marketplace, Seller, and Reviewer share a Thai/English language preference. Switching language keeps form edits and the active report. Seller-entered product copy and recorded audit entries stay in their original language.
+
 Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. The storefront, seller and reviewer retain the Shopee-style orange theme, compact controls and reference campaign imagery. Backend integration does not replace the visual theme.
 
 Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
+
+## Business model and validation plan
+
+**B2B APIaaS (proposed):** A marketplace or seller platform could pay per verification or under an enterprise contract. **B2B workflow SaaS (proposed):** Brands/agencies with frequent reviews could pay by user seat or review volume. Shoppers benefit from transparency but are **not** the assumed subscription payer.
+
+A credible commercial case needs a pilot with an authorized data source and real operations teams:
+
+| Hypothesis to test                            | Measure                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| Current verification is fragmented or costly  | Baseline time per review; number of systems consulted; evidence follow-ups |
+| TrustCart reduces repetitive work             | Change in time-to-decision and reviewer workload versus current process    |
+| TrustCart does not sacrifice safety for speed | Critical-issue recall, false approvals, false positives, escalation rate   |
+| Evidence history is operationally useful      | Share of decisions with complete source/rule/reviewer trace                |
+| Organizations will pay                        | Signed pilot, actual budget owner, paid conversion, retention              |
+
+**Market sizing discipline:** the total value of Thailand's supplement sales is **not** TrustCart's addressable software market. A bottom-up estimate should use `eligible paying organizations × validated annual contract value`, with an explicit market-access assumption. No TAM, revenue, ROI, or customer conversion figure is claimed as validated here.
+
+### Why not just use the Thai FDA search, generic AI, or marketplace filters?
+
+- **Official lookup:** authoritative product information is vital, but product identity, listing claims, missing evidence, and a reviewer decision still need to be connected in a workflow.
+- **Generic AI:** useful for interpreting text, but TrustCart keeps the decision behind explicit rules, exposes uncertainty, and records the actions taken.
+- **Marketplace tooling:** large platforms already invest in screening and can build internally. TrustCart's *hypothesized* value is a reusable, auditable service that can fit smaller platforms, seller operations, or cross-channel workflows. Integration and ROI must be proven.
+
+## Roadmap
+
+MoPH 448 ingredient ceilings (B11) remain Roadmap; no ingredient-ceiling check is implemented.
+
+1. **Evidence and quality:** expert-reviewed Thai rule pack; current regulatory sources and rule versioning; representative evaluation sets; calibrated risk ranking.
+2. **Trusted data:** authorized Thai FDA registry/permit adapter with field provenance, freshness, source availability, and error handling.
+3. **Pilot integration:** one real marketplace or seller-operations workflow with consent, proper API authentication, human-review permissions, durable storage, and privacy/security controls.
+4. **Expansion:** additional health-product categories and jurisdictions only after local rules, data access, and product-market fit are validated.
+
 
 ## Shared production storage
 
 Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
 
+On Vercel, a Supabase Marketplace resource supplies `SUPABASE_URL` and `POSTGRES_URL` for each connected environment. TrustCart reads the managed `POSTGRES_URL` when `SUPABASE_URL` is present and no explicit `TRUSTCART_DATABASE_URL` is set. Connect the same resource to Preview and Production for this synthetic demo. For manual configuration, use the Supabase **Transaction pooler** URI (port `6543`) with `sslmode=require` as the secret value of `TRUSTCART_DATABASE_URL`. The adapter disables automatic prepared statements and selects the `trustcart` schema for each transaction. Verify on a new deployment that a synthetic case saved in the workspace is visible on its marketplace product.
+
 PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
 
-Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
+Without either database configuration, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
 
 Customers see saved seller products ahead of the example catalog. The catalog refreshes on load, focus, visibility restoration, cross-tab update notifications, and every five seconds while visible. Only APPROVED results with confidence at least 0.75, no human-review requirement and an audit hash receive a clickable badge. Denied/unconfirmed listings are normal cards. Refresh failures remove seller-product badges until a fresh result is available. Edits update the same product card; drafts remain private to the browser until submitted. Prices are required for all new and edited product API requests. Legacy records without prices remain editable by sellers but are excluded from the customer catalog until priced. Shop recommendation labels are omitted because no shop-level recommendation data exists.
 
@@ -205,8 +298,16 @@ The seller list displays each saved product’s image, price, stock and verifica
 
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Latest merged local validation: 111 Python tests, 107 Node component tests, and 22 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
+Latest local validation: 141 Python tests, 114 Node component tests, and 36 desktop/mobile browser tests passed with `.venv/Scripts/python -m pytest -q`, `npm test`, and `npm run test:browser`. These checks use isolated SQLite, synthetic fixtures, and a fake database driver. A separate local PostgreSQL smoke test verified that two app instances share a product, evidence, rechecks, and reviewer decisions. Hosted Supabase connectivity still needs verification. The historical hosted desktop/mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. Hosted retesting remains the Vercel team member's task and was not rerun for this gap review. GitHub CI runs both the API and frontend suites.
 
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
 
 The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.
+
+## Background references
+
+- [Thai FDA — misleading health-product advertising and complaints (27 January 2026)](https://dis.fda.moph.go.th/detail-newsUpdate?id=3428)
+- [Thai FDA Journal — survey of unlawful online health-product advertisements (2024)](https://he01.tci-thaijo.org/index.php/fdajournal/article/view/273126)
+- [Thai FDA — platform screening and enforcement update (2026)](https://dis.fda.moph.go.th/detail-newsUpdate?id=3498)
+- [Thai FDA Food Division — advertising criteria (2026)](https://food.fda.moph.go.th/food-law/announ-fda-ads69)
+- [Product brief](PRODUCT.md) · [Implementation details](IMPLEMENTATION.md) · [Demo guide](DEMO.md) · [Developer/agent instructions](AGENTS.md)
