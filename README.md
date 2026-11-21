@@ -183,17 +183,17 @@ npm run test:browser
 
 Playwright uses the connected application on port 8768, a temporary SQLite database, real demo role sessions and desktop/mobile Chromium viewports. It disables external database and live AI configuration. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an installed Chromium executable. Tests do not establish live Supabase connectivity, live OpenAI correctness, official registry accuracy, or performance on physical phones.
 
-**Audit run, 21 November 2026:**
+**Latest local validation, 21 November 2026:**
 
 | Check | Result |
 | --- | --- |
-| `/tmp/trustcart-readme-audit-venv/bin/python -m pytest -q` — isolated Python 3.13 environment installed from `requirements.txt` | 173 passed; one Starlette/httpx deprecation warning |
-| `npm ci` then `npm test` | 125 passed |
-| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=… npm run test:browser` — existing local Chromium | 42 passed, 2 failed (44 total) |
+| `/tmp/trustcart-readme-audit-venv/bin/python -m pytest -q` — isolated Python 3.13 environment installed from `requirements.txt` | 174 passed; one Starlette/httpx deprecation warning |
+| `npm ci` then `npm test` | 131 passed |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=… npm run test:browser` — existing local Chromium | 44 passed (desktop/mobile Chromium) |
 
 The pre-existing Python 3.15 `.venv` run had 171 passes and two import failures because `psycopg` was absent; installing the pinned binary extra on that interpreter failed dependency resolution. The successful Python 3.13 run uses the declared dependencies without modifying `.venv` or loosening requirements.
 
-The browser failures are the desktop/mobile variants of `tests/browser/ui.spec.cjs` → **missing and failed product images display the supplement placeholder**. The mocked product image retained `/missing-product-photo.png` when the test expected `/static/assets/demo-supplement.png`. The expected fallback was not observed within the assertion timeout. This remains an open browser verification issue; the audit did not change application code or weaken the test. Failure traces are retained under ignored `test-results/` directories. The other browser scenarios, including publication, replay approval/denial, Agency decisions, private access, product navigation and seller refresh, passed.
+The initial audit's two browser failures were the desktop/mobile variants of **missing and failed product images display the supplement placeholder**. The test waited for an error fallback before bringing a lazy-loaded catalog image into view. The corrected test scrolls the image into view, observes a controlled HTTP 404, and verifies that the fallback image actually loads on cards and in the gallery. Both targeted variants pass without changing application image behavior. Generated browser results and failure traces are kept under ignored `test-results/` directories.
 
 API tests isolate external configuration; most legacy policy tests replace the auth guard to test rules independently, while `test_connected_*` tests exercise real sessions/ownership/CSRF. PostgreSQL adapter tests use a fake driver; no live PostgreSQL/Supabase or OpenAI request was made for this audit. `.github/workflows/pytest.yml` defines Python 3.9 backend, Node component, and Chromium browser CI; this README does not assert the latest remote CI/deployment result.
 

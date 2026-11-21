@@ -127,8 +127,13 @@ test('full product page reviews filters photos and related navigation work', asy
 
 test('missing and failed product images display the supplement placeholder', async ({page})=>{
  await page.route('**/v1/catalog/products',route=>route.fulfill({json:[{id:'placeholder-demo',listing:{title:'Placeholder example',category:'supplement',price:'99',stock:2,images:['/missing-product-photo.png','']},verification:null,badge_eligible:false}]}));
+ await page.route('**/missing-product-photo.png', route => route.fulfill({status:404,contentType:'text/plain',body:'Image not found'}));
+ const failedImage = page.waitForResponse(response => new URL(response.url()).pathname === '/missing-product-photo.png');
  await page.goto('/');
  const photo=page.locator('[data-product="placeholder-demo"] img');
+ // Catalog images are lazy-loaded: trigger a real load/error before checking fallback.
+ await photo.scrollIntoViewIfNeeded();
+ expect((await failedImage).status()).toBe(404);
  await expect(photo).toHaveAttribute('src','/static/assets/demo-supplement.png');
  await expect.poll(()=>photo.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
  await page.locator('[data-product="placeholder-demo"] .product-open').click();
