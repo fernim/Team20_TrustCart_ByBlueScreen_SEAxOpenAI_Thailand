@@ -93,8 +93,14 @@ def create_demo_app(database: Path):
     service.openapi = demo_openapi
     dashboard = Path(__file__).with_name("demo.html").read_text(encoding="utf-8")
 
+    @service.get("/version", openapi_extra={"security": []})
+    def version():
+        return {"commit": os.environ.get("VERCEL_GIT_COMMIT_SHA") or "local"}
+
     @service.middleware("http")
     async def password_gate(request: Request, call_next):
+        if request.method == "GET" and request.url.path == "/version":
+            return await call_next(request)
         password = os.environ.get("TRUSTCART_DEMO_PASSWORD")
         if not password:
             return PlainTextResponse("Demo access is unavailable", 503, headers={"Cache-Control": "no-store"})

@@ -9,6 +9,15 @@ Found while reviewing commit `31ef16b`. Each item says how it was confirmed.
 | B3 | Low | Fixed |
 | B4 | Low | Fixed |
 | B5 | Low | Fixed |
+| B6 | High | Open |
+| B7 | Medium | Open |
+| B8 | Medium | Open |
+| B9 | Medium | Open |
+| B10 | Low | Open |
+| B11 | Low | Open (Roadmap) |
+| B12 | High | Fixed |
+
+B6 to B11 were found while reviewing `224c22a`.
 
 ---
 
@@ -79,3 +88,59 @@ git log --oneline | grep -c "\[codex\]"
 ## Resolution evidence
 
 B1 uses configurable Thai claim phrases with positive and negative regression tests. B2 compares advertising_permit against registry fixtures and labels request-scoped outage simulation as demo-only. B3 uses registry_identity and registry_category for lookup checks, followed by one result entry per rule. B4 uses a cosmetic description for L3. B5 updates current-state and test-count documentation. The prior-code provenance declaration remains a team confirmation item.
+
+---
+
+## B6. Hosted saved-product continuity fails (High)
+
+**Source:** README line 205. The latest hosted desktop and mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. The PostgreSQL deployment and the hosted retest are still pending.
+
+**Impact:** saved products can disappear between requests during the live demo.
+
+**Fix:** deploy the PostgreSQL storage from `224c22a`, rerun the hosted browser checks, and record the result in the README.
+
+## B7. README test counts contradict each other (Medium; affects the submission)
+
+**Source:** README line 175 says "105 tests pass", but line 205 says "108 Python tests".
+
+**Fix:** at code freeze, run `pytest -q` and the Node and browser suites, then write one set of figures.
+
+## B8. ISO 9001 alone is accepted as evidence (Medium)
+
+**Source:** `evidence_fixtures.json` has ISO 9001 and ISO 22000 fixtures, but `backend/app` and `tests` contain no logic or test that uses them. A search for `ISO` found nothing.
+
+**Expected:** ISO 9001 is a quality-management standard, not a product-safety certificate, so it cannot satisfy R-05 by itself.
+
+**Fix:** add a failing test that expects ISO 9001 evidence alone to fail R-05 (or go to review) and ISO 22000 evidence to pass, then implement the check.
+
+## B9. Duplicate evidence hashes are not flagged (Medium)
+
+**Source:** the `duplicate_hash` fixture exists, but no code checks whether the same `sha256` was already stored for another verification. A search for `duplicate` in `backend/app` found nothing.
+
+**Impact:** one certificate can be reused across unrelated listings.
+
+**Fix:** on upload, look up the hash in the `evidence` table. If it belongs to another verification, record it in the trace and send the case to human review.
+
+## B10. R-02 category claims are hardcoded (Low)
+
+**File:** `backend/app/verification.py:106`, which holds 4 phrases inline: `ยารักษา`, `ขาวถาวร`, `treats hypertension`, `cures adhd`.
+
+**Issue:** this repeats the pattern that B1 fixed for R-03. The check also applies only to supplements and does not compare claims with the registered category.
+
+**Fix:** move the phrases to `claim_rules.json` (for example `category_claims` by category) and add positive and negative tests.
+
+## B11. No MoPH 448 ingredient-ceiling check (Low; Roadmap)
+
+**Issue:** the code does not compare declared ingredient amounts with the limits.
+
+**Fix:** label it "Roadmap" in the slides. If time remains, add a small `ingredient_limits.json` with synthetic limits and one test.
+
+## B12. The production commit cannot be verified (High; affects the demo)
+
+**Source:** on 21 Nov 2026 at 14:04 +07:00, every path on `trustcart-bluescreen-demo.vercel.app` returned `401`, including `/`, `/health`, `/version`, and `/openapi.json`. The code has no version endpoint, and the repository has no `.vercel` link. Nobody outside the Vercel project can tell whether Production runs `224c22a` (13:51). The README still reports the hosted deployment on SQLite with PostgreSQL pending.
+
+**Impact:** the team may demo an older build or temporary storage (see B6) without noticing.
+
+**Fix:** follow the deploy steps under P0 in [TODO.md](TODO.md). Add an unauthenticated `GET /version` that returns only the commit SHA, and confirm it on stage before the demo.
+
+**Resolution evidence (B12):** `tests/test_version.py` first failed all four cases, then passed for public GET, exact response fields, local fallback, and the unchanged gate on other routes. The endpoint fix is local; production deployment and on-stage confirmation remain the Vercel team member's task.

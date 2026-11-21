@@ -24,6 +24,33 @@ Updated after completing the core workflow. There are 32 passing tests. The comm
 - [x] T11 `GET /v1/reports/{id}` and `GET /v1/widgets/{id}` (badge)
 - [x] T6 LLM claim extraction with a grounding guard. Without an API key, fall back to the T4 rules. Tests use a fake client.
 
+## Gap review at `224c22a`
+
+Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหนักทันที / เห็นผลใน 3 วัน phrases, EXPIRED fixtures, foreign registries treated as `unsupported`, permit policy (`permit_required`, `permit_active`), and the L1–L40 / E1–E16 datasets. Open items are below. Bug details are in [BUGS.md](BUGS.md) B6–B11.
+
+### P0 (before the demo)
+
+- [ ] **Deploy the latest `main` to production (B12).** A Vercel project member does this; the repository has no `.vercel` link or CLI setup.
+  1. In Vercel → Settings → Environment Variables (Production), set the PostgreSQL connection variable that `backend/app/database.py` reads, plus `TRUSTCART_DEMO_PASSWORD`. Never put either value in the repository.
+  2. In Deployments, confirm that Production shows commit `224c22a` or later. If it does not, redeploy from `main`.
+  3. Rerun the hosted desktop and mobile browser checks. Target 20/20, which closes B6.
+  4. Update the hosted result in the README (line 205) and in this file.
+- [x] **Add `GET /version` without authentication (B12).** Returns only `{"commit": VERCEL_GIT_COMMIT_SHA or "local"}`. Four regression cases cover configured/unset SHA and password, the exact public route, and continued protection of other routes. Deployment remains assigned to the Vercel team member.
+
+- [ ] **Hosted continuity (B6).** The last hosted run failed 4 of 20 saved-product continuity checks. Deploy PostgreSQL storage, then rerun the hosted desktop and mobile checks.
+- [ ] **README counts (B7).** Line 175 says 105 tests and line 205 says 108. Run `pytest -q` and the Node and browser suites, then use one set of figures throughout.
+
+### P1 (rule gaps that judges may probe)
+
+- [ ] **Standards certificate (B8).** Reject E-series evidence that contains ISO 9001 alone. Write the failing test first.
+- [ ] **Duplicate evidence hash (B9).** Flag a `sha256` that is already stored for a different verification, and send that case to review.
+- [ ] **R-02 category claims (B10).** Move the 4 hardcoded phrases in `verification.py:106` to `claim_rules.json`, then compare claims with the registered category.
+
+### Roadmap (label it in the slides if it is not built)
+
+- [ ] **MoPH 448 ingredient ceiling (B11).** Check declared ingredient amounts against the limits.
+- [ ] Direction 01 adaptive behaviour.
+
 ## P3 (only if time remains)
 
 - [ ] T13 `suggest-copy`; OAuth client credentials (Roadmap is enough for the pitch); `compare`
@@ -46,7 +73,8 @@ Updated after completing the core workflow. There are 32 passing tests. The comm
 - [x] Registry offline → zero approvals
 - [x] Tamper → audit invalid
 - [x] The synthetic-data disclaimer appears on every screen
-- [ ] No secrets in the repository
+- [x] No secrets in the repository (a scan at `224c22a` found no `sk-` keys and no PostgreSQL URLs with credentials)
+- [ ] Hosted checks pass on PostgreSQL (B6)
 
 ## Completion update
 
