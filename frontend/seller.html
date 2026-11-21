@@ -7,85 +7,89 @@
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="stylesheet" href="/static/tokens.css" />
     <link rel="stylesheet" href="/static/marketplace-ui.css" />
+    <script defer src="/static/locale.js"></script>
     <script defer src="/static/verification-view.js"></script>
     <script defer src="/static/seller.js"></script>
   </head>
   <body class="seller-page">
 <nav class="integration-nav" aria-label="Verification tools"><a href="/workspace">Evidence, review and agency workspace</a><span>TrustCart · Synthetic data</span><a href="/docs">API docs</a></nav>
-    <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
+    <a class="skip-link" href="#main"><span data-en="Skip to main content">ข้ามไปที่เนื้อหาหลัก</span></a>
     <nav class="demo-views" aria-label="Views">
-      <a href="/">หน้าลูกค้า / Customer</a><span aria-current="page">หน้าผู้ขาย / Seller</span
-      ><a href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
+      <a href="/"><span data-en="Customer">หน้าลูกค้า / Customer</span></a><span aria-current="page"><span data-en="Seller">หน้าผู้ขาย / Seller</span></span
+      ><a href="/reviewer"><span data-en="Reviewer">หน้าผู้ตรวจสอบ / Reviewer</span></a>
+      <label class="workspace-language"><span data-en="Language">ภาษา</span>
+        <select id="workspace-language"><option value="th">ไทย</option><option value="en">English</option></select>
+      </label>
     </nav>
     <header class="reviewer-brandbar">
       <div class="container">
         <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
-        ><span class="workspace-title">Seller Centre <small>ศูนย์ผู้ขาย</small></span>
+        ><span class="workspace-title">Seller Centre <small><span data-en="Product management">ศูนย์ผู้ขาย</span></small></span>
       </div>
     </header>
     <div class="seller-layout">
       <aside class="seller-sidebar">
-        <div class="workspace-profile"><span class="shop-avatar">L</span><div><strong>LumaVale</strong><small>ร้านค้าสาธิต · Demo shop</small></div></div><h3>จัดการสินค้า</h3>
-        <a aria-current="location" href="#seller-form">＋ เพิ่มสินค้าใหม่</a
-        ><a href="#seller-products">สินค้าของฉัน</a
-        ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a>
+        <div class="workspace-profile"><span class="shop-avatar">L</span><div><strong>LumaVale</strong><small><span data-en="Demo shop">ร้านค้าสาธิต · Demo shop</span></small></div></div><h3><span data-en="Manage products">จัดการสินค้า</span></h3>
+        <a aria-current="location" href="#seller-form"><span data-en="＋ Add a new product">＋ เพิ่มสินค้าใหม่</span></a
+        ><a href="#seller-products"><span data-en="My products">สินค้าของฉัน</span></a
+        ><a href="#seller-result"><span data-en="Verification progress">ความคืบหน้าการตรวจสอบ</span></a>
         <p class="dialog-note">
-          TrustCart Seller Centre<br />จัดการข้อมูลสินค้า<br />ดูสถานะการตรวจสอบ
+          TrustCart Seller Centre<br /><span data-en="Manage product data">จัดการข้อมูลสินค้า</span><br /><span data-en="See verification status">ดูสถานะการตรวจสอบ</span>
         </p>
       </aside>
       <main id="main" class="seller-main">
-        <p class="seller-breadcrumb">สินค้าของฉัน / เพิ่มสินค้าใหม่</p>
-        <h1>เพิ่มสินค้าใหม่</h1>
-        <button type="button" id="new-product" class="text-button">
+        <p class="seller-breadcrumb"><span data-en="My products / Add a new product">สินค้าของฉัน / เพิ่มสินค้าใหม่</span></p>
+        <h1><span data-en="Add a new product">เพิ่มสินค้าใหม่</span></h1>
+        <button type="button" id="new-product" class="text-button" data-en="＋ Start a new listing">
           ＋ เริ่มรายการใหม่
         </button>
         <p class="dialog-note">
-          บันทึกสินค้าและตรวจสอบก่อนเผยแพร่ · ผลจาก API เดียวกับหน้าผู้ตรวจสอบ
+          <span data-en="Save a product and check it before publishing. Seller and Reviewer use the same verification API.">บันทึกสินค้าและตรวจสอบก่อนเผยแพร่ · ผลจาก API เดียวกับหน้าผู้ตรวจสอบ</span>
         </p>
-        <div class="workspace-notice"><strong>ตรวจสอบข้อมูลก่อนเผยแพร่</strong><span>ใช้ทะเบียนจำลองสำหรับการสาธิต · ไม่ใช่การรับรองอย่างเป็นทางการ</span></div><form id="seller-form">
+        <div class="workspace-notice"><strong><span data-en="Check listing details before publishing">ตรวจสอบข้อมูลก่อนเผยแพร่</span></strong><span><span data-en="Synthetic registry results apply to the demo only.">ใช้ทะเบียนจำลองสำหรับการสาธิต · ไม่ใช่การรับรองอย่างเป็นทางการ</span></span></div><form id="seller-form">
           <section class="seller-section">
-            <h2><span class="section-number">01</span> ข้อมูลทั่วไป</h2>
-            <label for="listing-images">รูปสินค้า</label>
+            <h2><span class="section-number">01</span> <span data-en="General information">ข้อมูลทั่วไป</span></h2>
+            <label for="listing-images" data-en="Product images">รูปสินค้า</label>
             <input id="listing-images" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-describedby="image-help" />
-            <p id="image-help" class="dialog-note">สูงสุด 5 รูป · PNG, JPEG, WebP · ไม่เกิน 2 MB ต่อรูป · รูปแรกเป็นรูปหลัก</p>
+            <p id="image-help" class="dialog-note" data-en="Up to 5 PNG, JPEG, or WebP images, at most 2 MB each. The first image is the cover.">สูงสุด 5 รูป · PNG, JPEG, WebP · ไม่เกิน 2 MB ต่อรูป · รูปแรกเป็นรูปหลัก</p>
             <div id="image-previews" class="image-previews" aria-live="polite"></div>
-            <label for="listing-title">ชื่อสินค้า <span>*</span></label
+            <label for="listing-title"><span data-en="Product title">ชื่อสินค้า</span> <span>*</span></label
             ><input
               id="listing-title"
               required
               maxlength="1000"
               value="Demo Supplement — Demo Brand"
-            /><label for="listing-description">รายละเอียดสินค้า</label
+            /><label for="listing-description" data-en="Product description">รายละเอียดสินค้า</label
             ><textarea id="listing-description" rows="6" maxlength="6000">
 Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริมอาหาร</textarea
-            ><label for="listing-category">หมวดหมู่ <span>*</span></label
+            ><label for="listing-category"><span data-en="Category">หมวดหมู่</span> <span>*</span></label
             ><select id="listing-category">
-              <option value="supplement">ผลิตภัณฑ์เสริมอาหาร</option>
-              <option value="cosmetic">เครื่องสำอาง</option>
-              <option value="drug">ยา</option>
-              <option value="other">หมวดหมู่อื่น / ยังไม่รองรับ</option>
+              <option value="supplement" data-en="Food supplement">ผลิตภัณฑ์เสริมอาหาร</option>
+              <option value="cosmetic" data-en="Cosmetic">เครื่องสำอาง</option>
+              <option value="drug" data-en="Medicine">ยา</option>
+              <option value="other" data-en="Other / unsupported">หมวดหมู่อื่น / ยังไม่รองรับ</option>
             </select>
           </section>
           <section class="seller-section">
-            <h2><span class="section-number">02</span> ข้อมูลสำหรับตรวจสอบทะเบียน</h2>
+            <h2><span class="section-number">02</span> <span data-en="Registry details">ข้อมูลสำหรับตรวจสอบทะเบียน</span></h2>
             <p class="dialog-note">
-              กรอกเลขอ้างอิง ชื่อสินค้า และผู้ถือใบอนุญาตให้ตรงกับเอกสาร
+              <span data-en="Enter the reference, product name, and licence holder exactly as shown in your documents.">กรอกเลขอ้างอิง ชื่อสินค้า และผู้ถือใบอนุญาตให้ตรงกับเอกสาร</span>
             </p>
             <label for="registration-reference"
-              >เลขอ้างอิงทะเบียน <span>*</span></label
+              ><span data-en="Registration reference">เลขอ้างอิงทะเบียน</span> <span>*</span></label
             ><input
               id="registration-reference"
               value="DEMO-001"
               required
               maxlength="200"
             /><label for="registered-name"
-              >ชื่อสินค้าตามทะเบียน <span>*</span></label
+              ><span data-en="Registered product name">ชื่อสินค้าตามทะเบียน</span> <span>*</span></label
             ><input
               id="registered-name"
               value="Demo Supplement"
               required
               maxlength="200"
-            /><label for="license-holder">ผู้ถือใบอนุญาต <span>*</span></label
+            /><label for="license-holder"><span data-en="Licence holder">ผู้ถือใบอนุญาต</span> <span>*</span></label
             ><input
               id="license-holder"
               value="Demo Brand"
@@ -94,26 +98,26 @@ Demo Supplement โดย Demo Brand ผลิตภัณฑ์เสริม�
             />
           </section>
           <section class="seller-section">
-            <h2><span class="section-number">03</span> ข้อมูลการขาย</h2>
-            <label for="listing-price">ราคา (บาท) <span>*</span></label>
+            <h2><span class="section-number">03</span> <span data-en="Sales information">ข้อมูลการขาย</span></h2>
+            <label for="listing-price"><span data-en="Price (THB)">ราคา (บาท)</span> <span>*</span></label>
             <input id="listing-price" type="number" min="0" max="99999999.99" step="0.01" value="199" required />
-            <label for="listing-stock">จำนวนสินค้าคงเหลือ <span>*</span></label>
+            <label for="listing-stock"><span data-en="Stock quantity">จำนวนสินค้าคงเหลือ</span> <span>*</span></label>
             <input id="listing-stock" type="number" min="0" max="10000000" step="1" value="0" required />
           </section>
           <div class="seller-actions">
-            <button id="save-draft" type="button" class="load-more">
+            <button id="save-draft" type="button" class="load-more" data-en="Save local draft">
               บันทึกแบบร่างในเครื่อง</button
-            ><button id="submit-listing" class="primary" type="submit">
+            ><button id="submit-listing" class="primary" type="submit" data-en="Save and verify product">
               บันทึกและตรวจสอบสินค้า
             </button>
           </div>
         </form>
-        <a id="view-product" class="seller-view-action" target="_blank" rel="noopener noreferrer" hidden title="เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด">ดูสินค้า / View product ↗</a>
+        <a id="view-product" class="seller-view-action" target="_blank" rel="noopener noreferrer" hidden title="เปิดหน้าลูกค้าด้วยข้อมูลที่บันทึกล่าสุด" data-en-title="Open the customer page with the latest saved product" data-en="View product ↗">ดูสินค้า / View product ↗</a>
         <p id="seller-feedback" role="status" aria-live="polite"></p>
         <section id="seller-products" class="seller-section">
-          <h2>สินค้าของฉัน</h2>
+          <h2><span data-en="My products">สินค้าของฉัน</span></h2>
           <p class="dialog-note">
-            สินค้าที่บันทึกแล้ว · แก้ไขข้อมูล หรือเปิดหน้าลูกค้าเพื่อดูผลล่าสุด
+            <span data-en="Edit a saved listing or open its customer page to see the latest result.">สินค้าที่บันทึกแล้ว · แก้ไขข้อมูล หรือเปิดหน้าลูกค้าเพื่อดูผลล่าสุด</span>
           </p>
           <div id="seller-product-list"></div>
         </section>

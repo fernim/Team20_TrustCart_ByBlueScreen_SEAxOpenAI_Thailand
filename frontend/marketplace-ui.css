@@ -7,6 +7,10 @@ textarea { font: inherit; }
 .demo-views a { text-decoration: none; color: var(--text-secondary); }
 .demo-views a:hover, .demo-views [aria-current] { color: var(--brand-primary); }
 .demo-views [aria-current] { font-weight: 500; }
+.demo-views [data-en], .seller-section label span[data-en] { color: inherit; }
+.seller-page .demo-views, .reviewer-page .demo-views { flex-wrap: wrap; }
+.workspace-language { display: inline-flex; align-items: center; gap: 6px; }
+.workspace-language select { font: inherit; color: inherit; min-height: 28px; }
 .header { background: linear-gradient(0deg, var(--brand-end), var(--brand-primary)); }
 .product-card { border-radius: var(--radius-control); }
 .product-name { line-height: 1.5; }

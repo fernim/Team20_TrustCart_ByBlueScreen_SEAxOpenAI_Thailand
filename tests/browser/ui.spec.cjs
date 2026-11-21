@@ -1,5 +1,42 @@
 const { test, expect } = require('@playwright/test');
 
+test('Seller and Reviewer share a persistent English interface without changing saved data', async ({page}) => {
+  const title = `Synthetic English listing ${test.info().project.name}-${Date.now()}`;
+  await page.goto('/');
+  await page.locator('#language').selectOption('en');
+  await page.goto('/seller');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', {name:'Add a new product'})).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width + 1);
+  await expect(page.locator('label[for="registered-name"]')).toContainText('Registered product name');
+  await page.locator('#listing-title').fill(title);
+  await page.locator('#workspace-language').selectOption('th');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'th');
+  await expect(page.locator('#listing-title')).toHaveValue(title);
+  await page.locator('#workspace-language').selectOption('en');
+  await page.getByRole('button', {name:'Save and verify product',exact:true}).click();
+  await expect(page.locator('#seller-feedback')).toContainText('Verification saved');
+  await expect(page.locator('#seller-result')).toContainText('Product identity');
+  await page.goto('/reviewer');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', {name:'Product verification reports'})).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width + 1);
+  const row = page.locator('.reviewer-product-entry').filter({hasText:title});
+  await row.getByRole('button', {name:`Open report: ${title}`}).click();
+  await expect(page.locator('#reviewer-report')).toContainText('Audit trail');
+  await expect(page.locator('#reviewer-report')).toContainText('Confidence');
+  await expect(page.locator('#reviewer-report')).toContainText('APPROVED');
+  await page.locator('#workspace-language').selectOption('th');
+  await expect(page.locator('#reviewer-report')).toContainText('บันทึกลำดับการตรวจสอบ');
+  await expect(page.locator('#reviewer-report')).toContainText(title);
+  await page.locator('#workspace-language').selectOption('en');
+  await page.locator('#report-id').fill('invalid');
+  await page.getByRole('button', {name:'Open report',exact:true}).click();
+  await expect(page.locator('#reviewer-error')).toHaveText('Enter a valid verification report UUID.');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+});
+
 test('marketplace and workspace share product edits evidence and reviewer decisions', async ({page, context, request}) => {
   const listing = {title:`Linked product ${test.info().project.name}-${Date.now()}`,description:'Product details ผลิตภัณฑ์เสริมอาหาร',
     category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'199.00',stock:4};

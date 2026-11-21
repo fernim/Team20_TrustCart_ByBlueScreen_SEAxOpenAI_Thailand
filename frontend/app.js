@@ -179,7 +179,7 @@
     sold,
   }));
   const state = {
-    language: "th",
+    language: window.TrustCartLocale?.read() || "th",
     query: "",
     category: null,
     limit: 12,
@@ -1270,6 +1270,7 @@
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";
+    window.TrustCartLocale?.save(state.language);
     renderLanguage();
   });
   Object.assign(text.th, {
@@ -1408,6 +1409,10 @@
   window.setInterval(() => {
     if (!document.hidden) refreshSellerProducts();
   }, 5000);
+  if (state.language === "en") {
+    $("#language").value = "en";
+    renderLanguage();
+  }
   resolveProductRoute();
   refreshSellerProducts();
   function saveReviewerReports() {
