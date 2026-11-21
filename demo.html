@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrustCart · Marketplace verification</title>
+<style>
+  :root { color-scheme:light; font:16px system-ui,sans-serif; --ink:#132c38; --muted:#526773; --edge:#dbe5e9; --green:#076853; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#f3f7f8; color:var(--ink); }
+  header { background:#102d39; color:white; }
+  main, nav { max-width:1180px; margin:auto; padding:0 24px; }
+  nav { display:flex; align-items:center; justify-content:space-between; min-height:72px; gap:16px; }
+  nav strong { font-size:1.3rem; letter-spacing:-.03em; }
+  nav a { color:#fff; border:1px solid #81939b; border-radius:8px; padding:9px 14px; text-decoration:none; }
+  .intro { padding:42px 0 24px; }
+  h1 { font-size:clamp(2rem,5vw,3.1rem); line-height:1.04; margin:0; letter-spacing:-.05em; }
+  p { line-height:1.55; color:var(--muted); }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:12px; margin-bottom:24px; }
+  .metric,.panel { background:white; border:1px solid var(--edge); border-radius:14px; }
+  .metric { padding:16px; color:var(--muted); }
+  .metric b { display:block; font-size:1.65rem; margin-top:5px; color:var(--ink); }
+  .panel { margin-bottom:20px; overflow:hidden; }
+  .bar { padding:18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  h2 { margin:0; font-size:1.2rem; }
+  label { display:inline-flex; gap:8px; align-items:center; color:var(--muted); }
+  select,button { font:inherit; padding:8px 12px; border:1px solid #9cabb2; border-radius:8px; background:#fff; color:var(--ink); }
+  button { cursor:pointer; }
+  .primary { background:var(--green); color:white; border-color:var(--green); }
+  .table-wrap { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; text-align:left; min-width:680px; }
+  th,td { border-top:1px solid var(--edge); padding:12px 16px; }
+  th { background:#f6fafb; color:var(--muted); }
+  td:nth-child(4) { white-space:nowrap; }
+  .badge { display:inline-block; border-radius:20px; padding:3px 9px; font-weight:600; font-size:.88rem; }
+  .APPROVED { background:#e2f5eb; color:#075a45; }
+  .PENDING { background:#fff0d2; color:#754704; }
+  .DENIED { background:#fae8e9; color:#9a2334; }
+  .UNKNOWN { background:#e8eef4; color:#3d536b; }
+  dialog { padding:24px; width:min(775px,calc(100% - 24px)); border:1px solid var(--edge); border-radius:14px; color:inherit; }
+  dialog::backdrop { background:#102d39aa; }
+  pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#eef4f6; padding:16px; border-radius:10px; font-size:.875rem; }
+  footer { padding:0 0 35px; color:var(--muted); }
+</style>
+<header><nav><strong>TrustCart</strong><a href="/docs">API docs</a></nav></header>
+<main>
+  <section class="intro">
+    <h1>Marketplace verification</h1>
+    <p>Check health-product listings before publication. Explore synthetic orders and the decision trail behind each listing.</p>
+  </section>
+  <section id="metrics" class="metrics" aria-label="Transaction counts"></section>
+  <section class="panel">
+    <div class="bar"><h2>Demo transactions</h2><label>Status <select id="filter">
+      <option value="">All statuses</option><option>APPROVED</option><option>PENDING</option><option>DENIED</option><option>UNKNOWN</option>
+    </select></label></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Transaction</th><th>Listing</th><th>Seller</th><th>Mock total</th><th>Status</th><th>Report</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="6">Loading transactions…</td></tr></tbody>
+    </table></div>
+  </section>
+  <section class="panel bar">
+    <div><h2>Try the verification API</h2><p>Submit the sample listing and retrieve the stored decision.</p></div>
+    <button class="primary" id="run">Run sample verification</button>
+  </section>
+  <section class="panel bar">
+    <div><h2>One verification API for the listing flow</h2>
+    <p>Marketplaces submit listings before publication. Sellers receive reasons and evidence requests. Shoppers see a decision report, and reviewers investigate uncertain cases.</p>
+    <p>The live sample checks registration identity and category against a synthetic registry. The transaction scenarios also illustrate advertising claims, advertising permits, and seller evidence checks.</p>
+    <p>Confidence below 0.75 routes a case to human review. Registry outages and unmapped categories produce Unknown. Every decision step contributes to the audit trace.</p>
+    </div>
+  </section>
+  <section class="panel bar">
+    <div><h2>API as a service</h2>
+    <p>Planned marketplace integration includes authorized registry adapters, scoped marketplace credentials, evidence rechecks, and a risk-ranked reviewer queue. AI extraction is planned for phrases present in the listing, while deterministic rules determine the result.</p>
+    <p>Illustrative business model from the product brief includes a free seller allowance, a brand subscription, and marketplace pricing per API call. Live registry integration and production persistence require further development.</p>
+    </div>
+  </section>
+  <footer>Team BlueScreen · Sea × OpenAI Codex Hackathon Thailand · Synthetic registry and transactions</footer>
+</main>
+<dialog id="report">
+  <div class="bar"><h2 id="report-title">Verification report</h2><form method="dialog"><button>Close</button></form></div>
+  <p id="reason"></p><pre id="trace"></pre>
+</dialog>
+<script>
+  const byId = id => document.getElementById(id);
+  const statuses = ["APPROVED","PENDING","DENIED","UNKNOWN"];
+  const currency = new Intl.NumberFormat("en-TH", { style:"currency", currency:"THB" });
+  let records = [];
+  async function api(path, options) {
+    const response = await fetch(path, options);
+    if (!response.ok) throw new Error("Request failed (" + response.status + ")");
+    return response;
+  }
+  function report(title, reason, result) {
+    byId("report-title").textContent = title;
+    byId("reason").textContent = reason;
+    byId("trace").textContent = JSON.stringify(result, null, 2);
+    byId("report").showModal();
+  }
+  function render() {
+    const selected = byId("filter").value;
+    const rows = records.filter(row => !selected || row.status === selected).map(row => {
+      const tr = document.createElement("tr");
+      for (const value of [row.id,row.listing,row.seller,currency.format(row.amount_thb)]) {
+        tr.insertCell().textContent = value;
+      }
+      const badge = document.createElement("span");
+      badge.className = "badge " + row.status;
+      badge.textContent = row.status;
+      tr.insertCell().append(badge);
+      const open = document.createElement("button");
+      open.textContent = "View report";
+      open.setAttribute("aria-label", "View report for " + row.id);
+      open.onclick = () => report(row.id + " · " + row.listing, row.reason, row);
+      tr.insertCell().append(open);
+      return tr;
+    });
+    byId("rows").replaceChildren(...rows);
+  }
+  byId("filter").onchange = render;
+  byId("run").onclick = async () => {
+    const run = byId("run");
+    run.disabled = true;
+    try {
+      const example = await (await api("/v1/demo/example")).json();
+      const created = await api("/v1/verifications", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(example)
+      });
+      const retrieved = await (await api(created.headers.get("Location"))).json();
+      report("API verification result", "Submitted and retrieved " + retrieved.id, retrieved);
+    } catch (error) {
+      report("API verification failed", error.message, {});
+    } finally {
+      run.disabled = false;
+    }
+  };
+  (async () => {
+    try {
+      records = await (await api("/v1/demo/transactions")).json();
+      const counts = [["Transactions", records.length], ...statuses.map(status => [
+        status[0] + status.slice(1).toLowerCase(), records.filter(row => row.status === status).length
+      ])];
+      for (const [label,count] of counts) {
+        const card = document.createElement("div");
+        const number = document.createElement("b");
+        card.className = "metric";
+        card.textContent = label;
+        number.textContent = count;
+        card.append(number);
+        byId("metrics").append(card);
+      }
+      render();
+    } catch (error) {
+      byId("rows").querySelector("td").textContent = error.message;
+    }
+  })();
+</script>
+</html>

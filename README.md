@@ -48,3 +48,19 @@ An authorized registry connector, marketplace authentication, claims and evidenc
 ```powershell
 .venv/Scripts/python -m pytest -q
 ```
+
+## Web demo and API documentation
+
+The [hosted demo](https://trustcart-bluescreen-demo.vercel.app) includes 20 synthetic marketplace transactions, status filters, decision reports, and a sample verification request.
+
+Open the [interactive API documentation](https://trustcart-bluescreen-demo.vercel.app/docs) to authorize with HTTP Basic authentication, inspect request examples, and try the endpoints. Use username `demo` and the shared password supplied separately.
+
+To run the web app locally, set `TRUSTCART_DEMO_PASSWORD` in the process environment, then run:
+
+```powershell
+.venv/Scripts/python -m uvicorn app:app --port 8000
+```
+
+The password gate covers the dashboard, API, and documentation. Access fails closed if the environment variable is missing. Vercel uses the root `app.py` entrypoint and the configuration in `vercel.json`.
+
+Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. R-03 through R-05 transaction scenarios illustrate planned product behavior.
