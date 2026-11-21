@@ -12,7 +12,7 @@ The core synthetic demo is implemented. The app includes PENDING mismatch handli
 
 Optional OpenAI extraction is implemented behind explicit data-transfer approval and environment credentials. It remains disabled on the hosted demo. Marketplace OAuth is roadmap work. Hosted SQLite is temporary. Product evidence checks compare declared fields and file hashes; document authenticity and OCR require further integration.
 
-Local validation passed 115 Python tests, 107 Node component tests, and 22 desktop and mobile browser tests. A local PostgreSQL 15 run verified evidence, reviewer access, final decisions, and audit simulation across two app instances. Hosted PostgreSQL verification depends on the deployed configuration.
+Local validation passed 137 Python tests, 108 Node component tests, and 22 desktop and mobile browser tests. A local PostgreSQL 15 run verified evidence, reviewer access, final decisions, and audit simulation across two app instances. Hosted PostgreSQL verification depends on the deployed configuration.
 
 ---
 
