@@ -573,7 +573,10 @@
     dialog.showModal();
   }
   $$("dialog").forEach((dialog) => {
-    dialog.addEventListener("close", () => returnFocus.get(dialog)?.focus());
+    dialog.addEventListener("close", () => {
+      // Restore focus only when the browser left it on the page body.
+      if (document.activeElement === document.body) returnFocus.get(dialog)?.focus();
+    });
     dialog.addEventListener("click", (event) => {
       if (event.target.closest("[data-close]")) dialog.close();
       if (event.target === dialog) {

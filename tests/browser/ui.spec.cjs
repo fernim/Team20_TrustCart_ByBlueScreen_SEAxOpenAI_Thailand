@@ -12,7 +12,7 @@ test('shopper search, language, sort, cart, and native keyboard dialog', async (
   await page.locator('#quantity').fill('2');
   await page.locator('#add-to-cart').click();
   await expect(page.locator('#cart-count')).toHaveText('2');
-  // Native dialog close restores focus asynchronously before the next action.
+  // Wait for focus to return to the product opener before moving to the cart.
   await expect(page.locator('.product-card .product-open')).toBeFocused();
   await page.locator('#open-cart').focus();
   await page.keyboard.press('Enter');
@@ -28,6 +28,25 @@ test('shopper search, language, sort, cart, and native keyboard dialog', async (
   await page.locator('#sort').selectOption('price-low');
   // Seller listings from the end-to-end scenario have no price yet.
   await expect(page.locator('.product-card .price').filter({ hasText: /^฿/ }).first()).toHaveText('฿49');
+});
+
+test('closing the product dialog preserves focus moved to the cart', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#search').fill('headphones');
+  await page.locator('#search').press('Enter');
+  await page.locator('.product-card .product-open').click();
+  await expect(page.locator('#product-dialog')).toBeVisible();
+
+  const keptFocus = await page.locator('#add-to-cart').evaluate((button) => new Promise((resolve) => {
+    const dialog = document.querySelector('#product-dialog');
+    const cart = document.querySelector('#open-cart');
+    dialog.addEventListener('close', () => resolve(document.activeElement === cart), { once: true });
+    button.click();
+    cart.focus();
+  }));
+  expect(keptFocus).toBe(true);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#cart-dialog')).toBeVisible();
 });
 
 test('seller creates, corrects, and reloads a listing; reviewer reads its audit', async ({ page }) => {
