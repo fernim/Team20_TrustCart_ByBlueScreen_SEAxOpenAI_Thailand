@@ -364,3 +364,10 @@ test('returning to seller refreshes saved summaries without overwriting unsaved 
   assert.match(p.$('.seller-item-stock').textContent,/1/);
   assert.equal(p.$('#listing-title').value,'Unsaved form title');
 });
+
+test('initial demo copy agrees with its registered supplement identity', t => {
+  const p = seller(t, async () => ({ok:true,json:async()=>[]}));
+  assert.ok(p.$('#listing-title').value.includes(p.$('#registered-name').value));
+  assert.ok(p.$('#listing-title').value.includes(p.$('#license-holder').value));
+  assert.ok(p.$('#listing-description').value.includes(p.$('#registered-name').value));
+});
