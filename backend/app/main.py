@@ -120,6 +120,10 @@ def create_app(database: Path) -> FastAPI:
     def storefront() -> FileResponse:
         return FileResponse(FRONTEND / "index.html")
 
+    @service.get("/reviewer", include_in_schema=False)
+    def reviewer() -> FileResponse:
+        return FileResponse(FRONTEND / "reviewer.html")
+
     @service.post("/v1/verifications", status_code=201, response_model=Verification)
     def submit(listing: Listing, response: Response) -> Verification:
         trace = Trace()

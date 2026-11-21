@@ -15,7 +15,7 @@ class RegistryRecord:
 
 
 _FIXTURES = {
-    "DEMO-001": RegistryRecord("Demo Supplement", "Demo Brand", "supplement", True),
+    "DEMO-001": RegistryRecord("Vitamin C Supplement", "LumaVale Demo", "supplement", True),
 }
 
 

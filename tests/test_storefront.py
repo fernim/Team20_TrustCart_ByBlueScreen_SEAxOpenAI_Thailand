@@ -30,3 +30,21 @@ def test_reference_images_are_available_locally(tmp_path):
             assert response.status_code == 200
             assert response.headers["content-type"] == "image/webp"
             assert len(response.content) == asset["bytes"]
+
+
+def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
+    with TestClient(create_app(tmp_path / 'review.sqlite3')) as client:
+        reviewer = client.get('/reviewer')
+        assert reviewer.status_code == 200
+        assert 'id="report-lookup"' in reviewer.text
+        assert 'reviewer.js' in reviewer.text
+        customer = client.get('/').text
+        assert 'id="verification-dialog"' not in customer
+        submission = client.post('/v1/verifications', json={
+            'registration_reference':'DEMO-001', 'product_name':'Vitamin C Supplement',
+            'license_holder':'LumaVale Demo', 'category':'supplement',
+        })
+        assert submission.json()['status'] == 'APPROVED'
+        stored = client.get(submission.headers['location']).json()
+        assert stored['trace']
+        assert stored['chain_hash'] == submission.json()['chain_hash']

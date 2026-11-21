@@ -10,11 +10,11 @@ from backend.app.main import create_app
 @pytest.mark.parametrize(
     "reference,product,category,status",
     [
-        ("DEMO-001", "Demo Supplement", "supplement", "APPROVED"),
+        ("DEMO-001", "Vitamin C Supplement", "supplement", "APPROVED"),
         ("DEMO-001", "Different Product", "supplement", "DENIED"),
-        ("DEMO-001", "Demo Supplement", "other", "UNKNOWN"),
-        ("DEMO-001", "Demo Supplement", "cosmetic", "DENIED"),
-        ("MISSING", "Demo Supplement", "supplement", "UNKNOWN"),
+        ("DEMO-001", "Vitamin C Supplement", "other", "UNKNOWN"),
+        ("DEMO-001", "Vitamin C Supplement", "cosmetic", "DENIED"),
+        ("MISSING", "Vitamin C Supplement", "supplement", "UNKNOWN"),
     ],
 )
 def test_submit_and_retrieve(tmp_path, reference, product, category, status):
@@ -22,7 +22,7 @@ def test_submit_and_retrieve(tmp_path, reference, product, category, status):
     payload = {
         "registration_reference": reference,
         "product_name": product,
-        "license_holder": "Demo Brand",
+        "license_holder": "LumaVale Demo",
         "category": category,
     }
     with TestClient(create_app(database)) as client:
@@ -56,8 +56,8 @@ def test_registry_outage_routes_to_review(tmp_path, monkeypatch):
             "/v1/verifications",
             json={
                 "registration_reference": "DEMO-001",
-                "product_name": "Demo Supplement",
-                "license_holder": "Demo Brand",
+                "product_name": "Vitamin C Supplement",
+                "license_holder": "LumaVale Demo",
                 "category": "supplement",
             },
         )

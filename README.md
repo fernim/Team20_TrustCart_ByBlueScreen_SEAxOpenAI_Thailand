@@ -21,8 +21,8 @@ Open `http://127.0.0.1:8000/` for the storefront UI prototype, or `http://127.0.
 ```powershell
 $listing = @{
     registration_reference = 'DEMO-001'
-    product_name = 'Demo Supplement'
-    license_holder = 'Demo Brand'
+    product_name = 'Vitamin C Supplement'
+    license_holder = 'LumaVale Demo'
     category = 'supplement'
 } | ConvertTo-Json
 
@@ -54,7 +54,9 @@ The homepage recreates the visual structure of [Shopee Thailand](https://shopee.
 - Cycle banners, save a sample voucher, open product details, choose quantities, and add/remove items in a demo cart. The cart and voucher reset on page reload.
 - Utility links explain prototype limitations. Accounts, seller portals, payment, checkout, shipping, and social connections are not implemented.
 
-All 24 catalog entries, prices, sales counts, and offers are illustrative. The Demo Supplement listing requests a check from the existing verification API. A blue checkmark appears beside that product name only when the backend approves the synthetic identity/category check with confidence at least 0.75 and no human review required. The customer sees a simple “ตรวจทะเบียนแล้ว” / “Registration checked” confirmation and a demo-data label. Reasons, report IDs, technical statuses, and audit traces are not shown in the customer view. The backend retains the verification result and hash-chained trace. This registration check does not establish authenticity or verify a seller account. Other statuses and failed requests show no checkmark. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
+All 27 catalog entries, prices, sales counts, and offers are illustrative. The LumaVale Vitamin C listing requests a check from the existing verification API. A blue checkmark appears beside that product name only when the backend approves the synthetic identity/category check with confidence at least 0.75 and no human review required. Customers see only a non-interactive “ตรวจทะเบียนแล้ว” / “Registration checked” badge. The separate `/reviewer` page loads a stored report by its ID and displays status, reason, confidence, human-review routing, registry source, timestamped trace entries, and expandable previous/current hashes plus the final chain hash. The Reviewer link carries the latest demo report ID; the lookup also accepts an ID from the API. The view displays recorded hashes without independently validating their integrity. This read-only local reviewer demo has no authentication or authorization; it must not be treated as a protected reviewer portal. The registration check does not establish authenticity or verify a seller account. Other statuses and failed requests show no checkmark. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
+
+Three additional fictional-brand examples use generic supplement names: AuraFern Collagen, NovaLeaf Vitamin C, and SunPeak Fish Oil. Each has a title and description with an explicitly labeled unsupported overclaim, for testing only. These listings carry no verified badge; the baseline does not yet evaluate advertising claims. Samples are deterministic for repeatable demos and tests.
 
 ## Tests
 

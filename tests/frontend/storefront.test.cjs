@@ -76,6 +76,9 @@ test("catalog sorting and load-more show prices in the chosen order", (t) => {
   const p = page(t);
   p.$("#load-more").click();
   assert.equal(p.$$(".product-card").length, 24);
+  assert.equal(p.$("#load-more").hidden, false);
+  p.$("#load-more").click();
+  assert.equal(p.$$(".product-card").length, 27);
   assert.equal(p.$("#load-more").hidden, true);
   p.$("#sort").value = "price-low";
   p.$("#sort").dispatchEvent(new p.window.Event("change"));
@@ -117,7 +120,7 @@ test("flash deals open the full catalog and countdown never becomes negative", (
   assert.equal(p.$$(".flash-card").length, 6);
   assert.match(p.$("#countdown").textContent, /^\d{2} : \d{2} : \d{2}$/);
   p.$("#all-deals").click();
-  assert.equal(p.$$(".product-card").length, 24);
+  assert.equal(p.$$(".product-card").length, 27);
   now += 3600000;
   tick();
   assert.equal(p.$("#countdown").textContent, "00 : 00 : 00");
@@ -210,9 +213,8 @@ test("product checkmark uses the backend result and never marks an account", asy
   assert.equal(p.$$(".product-card .product-verified").length, 1);
   assert.equal(p.$(".utility .product-verified"), null);
   p.$(".product-card").click();
-  p.$("#explain-verification").click();
-  assert.equal(p.$("#verification-dialog").open, true);
-  assert.equal(p.$("#verification-title").textContent, "ตรวจทะเบียนแล้ว");
+  assert.equal(p.$("#explain-verification"), null);
+  assert.equal(p.$("#product-title .product-verified").tagName, "SPAN");
 });
 
 for (const result of [
@@ -279,54 +281,43 @@ const reportFixture = {
   ],
 };
 
-test("customer badge shows a simple status without exposing the verification report", async (t) => {
+test("customer sees only a product badge, never a report or status popup", async (t) => {
   const p = page(t, (window) => {
     window.fetch = async () => ({ ok: true, json: async () => reportFixture });
   });
   await new Promise((resolve) => setImmediate(resolve));
   const badge = p.$(".product-card .product-verified");
-  assert.equal(badge.tagName, "BUTTON");
-  assert.equal(badge.closest(".product-open"), null);
-  badge.click();
-  assert.equal(p.$("#verification-dialog").open, true);
-  assert.equal(p.$("#product-dialog").open, false);
-  assert.equal(p.$("#verification-title").textContent, "ตรวจทะเบียนแล้ว");
-  const customerText = p.$("#verification-dialog").textContent;
+  assert.equal(badge.tagName, "SPAN");
+  assert.equal(badge.getAttribute("aria-haspopup"), null);
+  p.$('[data-product="14"]').click();
+  assert.equal(p.$("#verification-dialog"), null);
+  assert.equal(p.$("#verification-report"), null);
+  assert.equal(p.$("#explain-verification"), null);
   for (const technical of [
     "APPROVED",
     "R-01",
-    "R-02",
     "identity-chain",
     "final-chain",
-    "รายงานการตรวจสอบสินค้า",
     reportFixture.id,
   ]) {
-    assert.equal(customerText.includes(technical), false);
+    assert.equal(p.$("#product-detail").textContent.includes(technical), false);
   }
-  assert.equal(p.$(".report-trace"), null);
 });
 
-test("detail badge shows the same simple status and hides backend text", async (t) => {
-  const p = page(t, (window) => {
-    window.fetch = async () => ({
-      ok: true,
-      json: async () => ({
-        ...reportFixture,
-        reason: "<img src=x onerror=alert(1)>",
-        trace: [],
-      }),
-    });
-  });
-  await new Promise((resolve) => setImmediate(resolve));
-  p.$('[data-product="14"]').click();
-  p.$("#product-title .product-verified").click();
-  assert.equal(p.$("#verification-dialog").open, true);
-  assert.equal(
-    p.$("#verification-dialog").textContent.includes("<img src=x"),
-    false,
-  );
-  assert.equal(p.$("#verification-dialog img"), null);
-  p.$("#verification-dialog [data-close]").click();
-  assert.equal(p.$("#verification-dialog").open, false);
-  assert.equal(p.$("#product-dialog").open, true);
+test("three fictional-brand supplement examples have overclaim titles and descriptions but no badge", (t) => {
+  const p = page(t);
+  p.$('[data-category="1"]').click();
+  assert.equal(p.$$(".product-card").length, 4);
+  assert.equal(p.$$(".overclaim-example").length, 3);
+  for (const card of p.$$(".overclaim-example")) {
+    assert.equal(card.querySelector(".product-verified"), null);
+    card.click();
+    assert.match(
+      p.$("#product-detail").textContent,
+      /ตัวอย่างคำกล่าวอ้างเกินจริง/,
+    );
+    assert.match(p.$("#product-detail").textContent, /แบรนด์สมมติ/);
+    assert.ok(p.$(".product-description").textContent.length > 40);
+    p.$("#product-dialog [data-close]").click();
+  }
 });

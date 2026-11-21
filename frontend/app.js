@@ -199,8 +199,47 @@
   };
   // This listing uses the existing synthetic fixture; no registry record is invented here.
   const checkedProduct = catalog[14];
-  checkedProduct.th = "Demo Supplement · ผลิตภัณฑ์จำลอง";
-  checkedProduct.en = "Demo Supplement · sample product";
+  checkedProduct.th = "ลูมาเวล วิตามินซี · แบรนด์สมมติ";
+  checkedProduct.en = "LumaVale Vitamin C · fictional brand";
+  const overclaimExamples = [
+    {
+      th: "ออราเฟิร์น คอลลาเจน — ผิวดูอ่อนวัยใน 3 วัน",
+      en: "AuraFern Collagen — younger-looking skin in 3 days",
+      descriptionTh:
+        "แบรนด์สมมติ AuraFern · ตัวอย่างคำกล่าวอ้างเกินจริงสำหรับทดสอบ: ‘ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน’ ข้อความนี้ไม่ได้รับการยืนยันและไม่ใช่คำแนะนำ",
+      descriptionEn:
+        "Fictional brand AuraFern. Overclaim test example: ‘Younger-looking skin in 3 days, guaranteed for everyone.’ Unsupported sample advertising, not advice.",
+      price: 329,
+    },
+    {
+      th: "โนวาลีฟ วิตามินซี — ผิวกระจ่างใสทันที 100%",
+      en: "NovaLeaf Vitamin C — instantly brighter skin, 100% guaranteed",
+      descriptionTh:
+        "แบรนด์สมมติ NovaLeaf · ตัวอย่างคำกล่าวอ้างเกินจริงสำหรับทดสอบ: ‘ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก’ เป็นข้อความโฆษณาจำลองที่อ้างผลทันทีและรับประกันเกินจริง ไม่ใช่ข้อเท็จจริง",
+      descriptionEn:
+        "Fictional brand NovaLeaf. Overclaim test example: ‘Instantly brighter skin, 100% guaranteed from the first use.’ Unsupported instant-result guarantee, not a factual benefit.",
+      price: 189,
+    },
+    {
+      th: "ซันพีค น้ำมันปลา — ความจำดีขึ้นทันทีทุกคน",
+      en: "SunPeak Fish Oil — instantly better memory for everyone",
+      descriptionTh:
+        "แบรนด์สมมติ SunPeak · ตัวอย่างคำกล่าวอ้างเกินจริงสำหรับทดสอบ: ‘ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น’ ข้อความนี้ไม่ได้รับการยืนยัน ใช้เป็นกรณีทดสอบเท่านั้น ไม่ใช่คำแนะนำ",
+      descriptionEn:
+        "Fictional brand SunPeak. Overclaim test example: ‘Instantly better memory for everyone, without exception.’ Unsupported sample claim for testing only, not advice.",
+      price: 259,
+    },
+  ];
+  overclaimExamples.forEach((example) =>
+    catalog.push({
+      ...example,
+      id: catalog.length,
+      category: 1,
+      original: example.price + 100,
+      sold: 0,
+      overclaim: true,
+    }),
+  );
   let productVerification = null;
   function hasProductVerification(product) {
     return (
@@ -218,18 +257,10 @@
     return state.language === "th" ? "ตรวจทะเบียนแล้ว" : "Registration checked";
   }
   function productCheckmark() {
-    const badge = element("button", "product-verified");
-    badge.type = "button";
-    const label =
-      state.language === "th" ? "ดูสถานะสินค้า" : "View product status";
-    badge.setAttribute("aria-label", `${verificationLabel()} — ${label}`);
-    badge.setAttribute("aria-haspopup", "dialog");
-    badge.title = `${verificationLabel()} — ${label}`;
-    badge.addEventListener("click", (event) => {
-      event.stopPropagation();
-      renderVerificationStatus();
-      openDialog($("#verification-dialog"));
-    });
+    const badge = element("span", "product-verified");
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", verificationLabel());
+    badge.title = verificationLabel();
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.setAttribute("aria-hidden", "true");
@@ -296,7 +327,7 @@
   function productImage(product) {
     const img = element("img");
     img.src =
-      product.id === checkedProduct.id
+      product.id === checkedProduct.id || product.overclaim
         ? "/static/assets/demo-supplement.svg"
         : image(product.category);
     img.alt = name(product);
@@ -306,7 +337,10 @@
     return img;
   }
   function productCard(product) {
-    const card = element("article", "product-card");
+    const card = element(
+      "article",
+      product.overclaim ? "product-card overclaim-example" : "product-card",
+    );
     card.dataset.product = product.id;
     const open = element("button", "product-open");
     open.type = "button";
@@ -327,6 +361,16 @@
       productName.prepend(productCheckmark(), document.createTextNode(" "));
     }
     copy.append(productName, element("span", "shipping-tag", t("shipping")));
+    if (product.overclaim)
+      copy.append(
+        element(
+          "span",
+          "overclaim-warning",
+          state.language === "th"
+            ? "ตัวอย่างคำกล่าวอ้างเกินจริง"
+            : "Overclaim test example",
+        ),
+      );
     const bottom = element("div", "product-bottom");
     bottom.append(
       element("span", "price", price(product.price)),
@@ -341,22 +385,6 @@
     card.append(open, copy);
     return card;
   }
-  function renderVerificationStatus() {
-    const verified = hasProductVerification(checkedProduct);
-    $("#verification-title").textContent = verified
-      ? verificationLabel()
-      : state.language === "th"
-        ? "ยังไม่ยืนยัน"
-        : "Not confirmed";
-    $("#verification-report").replaceChildren(
-      element("span", "customer-check", verified ? "✓" : "—"),
-      element(
-        "p",
-        "customer-demo-note",
-        state.language === "th" ? "ข้อมูลจำลอง" : "Demo data",
-      ),
-    );
-  }
   function matches() {
     const query = state.query.toLocaleLowerCase().trim();
     const products = catalog.filter(
@@ -368,6 +396,12 @@
             .includes(query)),
     );
     if (state.sort === "recommended") {
+      for (let offset = 0; offset < overclaimExamples.length; offset++) {
+        const sample = catalog[24 + offset];
+        const index = products.indexOf(sample);
+        if (index > offset + 2)
+          products.splice(offset + 2, 0, products.splice(index, 1)[0]);
+      }
       const demoIndex = products.indexOf(checkedProduct);
       if (demoIndex > 1)
         products.splice(1, 0, products.splice(demoIndex, 1)[0]);
@@ -750,19 +784,21 @@
       quantity,
       add,
     );
-    if (hasProductVerification(product)) {
-      const explain = element(
-        "button",
-        "verification-label",
-        verificationLabel(),
+    if (product.overclaim) {
+      const warning = element(
+        "p",
+        "overclaim-warning",
+        state.language === "th"
+          ? "ตัวอย่างคำกล่าวอ้างเกินจริง · แบรนด์สมมติ · ไม่ได้รับการยืนยัน"
+          : "Overclaim test example · fictional brand · unverified",
       );
-      explain.id = "explain-verification";
-      explain.setAttribute("aria-haspopup", "dialog");
-      explain.addEventListener("click", () => {
-        renderVerificationStatus();
-        openDialog($("#verification-dialog"));
-      });
-      details.insertBefore(explain, amount);
+      const description = element(
+        "p",
+        "product-description",
+        state.language === "th" ? product.descriptionTh : product.descriptionEn,
+      );
+      details.insertBefore(warning, amount);
+      details.insertBefore(description, amount);
     }
     layout.append(productImage(product), details);
     $("#product-detail").replaceChildren(layout);
@@ -935,7 +971,6 @@
     renderSlide();
     renderCart();
     if (selectedProduct) renderDetail();
-    if ($("#verification-dialog").open) renderVerificationStatus();
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";
@@ -957,13 +992,17 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           registration_reference: "DEMO-001",
-          product_name: "Demo Supplement",
-          license_holder: "Demo Brand",
+          product_name: "Vitamin C Supplement",
+          license_holder: "LumaVale Demo",
           category: "supplement",
         }),
       });
       if (!response.ok) return;
       productVerification = await response.json();
+      if (typeof productVerification?.id === "string") {
+        const url = `/reviewer?id=${encodeURIComponent(productVerification.id)}`;
+        $("#reviewer-link").href = url;
+      }
       renderProducts();
       if (selectedProduct?.id === checkedProduct.id) renderDetail();
     } catch (_) {
