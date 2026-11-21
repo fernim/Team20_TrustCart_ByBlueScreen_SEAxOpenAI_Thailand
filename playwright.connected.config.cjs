@@ -4,7 +4,7 @@ const hosted = Boolean(process.env.TRUSTCART_BASE_URL);
 if (!hosted) process.env.TRUSTCART_DEMO_PASSWORD = randomBytes(24).toString("hex");
 module.exports = defineConfig({
   testDir: "./tests/browser",
-  testMatch: ["connected.spec.cjs", "ui.spec.cjs", "hosted.spec.cjs", "agency.spec.cjs", "workspace.spec.cjs"],
+  testMatch: ["connected.spec.cjs", "ui.spec.cjs", "hosted.spec.cjs", "agency.spec.cjs", "workspace.spec.cjs", "seller-refresh.spec.cjs"],
   workers: 1,
   reporter: "list",
   use: {

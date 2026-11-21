@@ -77,7 +77,7 @@
     busy = true;
     const controls = [
       ...document.querySelectorAll(
-        "#seller-form input,#seller-form textarea,#seller-form select,#seller-form button,#new-product,#load-demo",
+        "#seller-form input,#seller-form textarea,#seller-form select,#seller-form button,#new-product,#load-demo,#refresh-seller-products",
       ),
     ].map((el) => [el, el.disabled]);
     controls.forEach(([el]) => (el.disabled = true));
@@ -402,25 +402,24 @@
     await loadProducts();
     showSelected();
   });
-  async function poll() {
+  async function refreshProducts() {
     await loadProducts();
     if (selected && !dirty) {
       const latest = records.find((r) => r.id === selected.id);
       if (
         latest &&
-        (latest.verification?.chain_hash !== submission?.chain_hash ||
+        (latest.version !== selected.version ||
+          latest.verification?.chain_hash !== submission?.chain_hash ||
           submission?.stage === "AI_CHECKING")
       ) {
+        if (latest.version !== selected.version) fill(latest.listing);
         selected = latest;
         submission = latest.verification;
         showSelected();
       }
     }
   }
-  window.addEventListener("focus", () => {
-    if (!busy) action(poll);
-  });
-  window.setInterval(() => {
-    if (!document.hidden && !busy) action(poll);
-  }, 5000);
+  // Product reads are initiated by loading, mutations, or this explicit refresh.
+  // Idle polling used to disable the form and replace focused list controls.
+  $("#refresh-seller-products").onclick = () => action(refreshProducts);
 })();
