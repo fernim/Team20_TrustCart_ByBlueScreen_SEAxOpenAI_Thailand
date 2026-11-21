@@ -88,3 +88,42 @@ test("Historical or invalid audit reports have no enabled decision actions", asy
     assert.equal(p.$("#start-review").hidden, true);
   }
 });
+
+test("Decision replay shows recorded milestones in order and keeps its selection when translated", async (t) => {
+  const trace = [
+    { step: "submission_snapshot", at: "2026-11-21T00:00:00Z" },
+    { step: "document_uploaded", at: "2026-11-21T00:01:00Z" },
+    { step: "rule_internal", at: "2026-11-21T00:02:00Z" },
+    { step: "document_assessment", at: "2026-11-21T00:02:00Z" },
+    { step: "review_started", at: "2026-11-21T00:03:00Z" },
+    { step: "human_review", outcome: '{"decision":"deny","note":"<img>"}', at: "2026-11-21T00:04:00Z" },
+  ];
+  const p = await mount(t, { result: { trace, status: "DENIED", stage: "COMPLETED" } });
+  const language = p.$("#agency-language");
+  const change = () => language.dispatchEvent(new p.dom.window.Event("change"));
+  language.value = "en";
+  change();
+  const steps = () => [...p.$("#decision-replay-steps").querySelectorAll("button")];
+  assert.deepEqual(steps().map((step) => step.textContent), [
+    "Listing submitted", "Evidence uploaded", "Evidence assessed", "Review started", "Reviewer denied",
+  ]);
+  assert.equal(steps()[4].getAttribute("aria-pressed"), "true");
+  assert.match(p.$("#decision-replay-detail").textContent, /Reviewer denied/);
+  steps()[1].click();
+  assert.match(p.$("#decision-replay-detail").textContent, /Evidence uploaded/);
+  language.value = "th";
+  change();
+  assert.equal(steps()[1].getAttribute("aria-pressed"), "true");
+  assert.match(p.$("#decision-replay-detail").textContent, /อัปโหลดหลักฐาน/);
+  assert.equal(p.$("#decision-replay img"), null);
+});
+
+test("Decision replay withholds milestones when the recorded chain fails validation", async (t) => {
+  const p = await mount(t, { result: {
+    audit: { valid: false },
+    trace: [{ step: "human_review", outcome: '{"decision":"approve"}' }],
+  } });
+  assert.equal(p.$("#decision-replay-steps").children.length, 0);
+  assert.equal(p.$("#decision-replay-detail").hidden, true);
+  assert.equal(p.$("#decision-replay-unavailable").hidden, false);
+});
