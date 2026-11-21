@@ -9,6 +9,8 @@ from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, StringConstraints
 from typing_extensions import Annotated
 
@@ -17,6 +19,7 @@ from . import registry
 
 ListingText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 SUPPORTED_CATEGORIES = {"supplement", "cosmetic"}
+FRONTEND = Path(__file__).resolve().parents[2] / "frontend"
 
 
 class Listing(BaseModel):
@@ -111,6 +114,11 @@ def create_app(database: Path) -> FastAPI:
         yield
 
     service = FastAPI(title="TrustCart Baseline Lead", version="0.1.0", lifespan=lifespan)
+    service.mount("/static", StaticFiles(directory=FRONTEND), name="static")
+
+    @service.get("/", include_in_schema=False)
+    def storefront() -> FileResponse:
+        return FileResponse(FRONTEND / "index.html")
 
     @service.post("/v1/verifications", status_code=201, response_model=Verification)
     def submit(listing: Listing, response: Response) -> Verification:

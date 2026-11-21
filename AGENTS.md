@@ -22,7 +22,7 @@
 - `README.md` and `BASELINE.md` describe the baseline. Verify claims against the current checkout and tests before relying on them.
 - `PRODUCT.md` defines the full product target; `REGISTRATION.md` records the promised end-to-end demo and commitments. Implement these incrementally rather than treating every described feature as already delivered.
 - `DEMO.md`, `DEMO.en.md`, `DEPLOY.md`, `DEPLOY.en.md`, and `GAPS_AND_QA.md` are supporting scenarios and operational references. Their feature lists, paths, deployment claims, and test counts require verification against this checkout.
-- At this revision, the code contains identity/category checks, a synthetic registry adapter, SQLite persistence, and baseline tests. The frontend, claims extraction, evidence/reviewer workflows, OAuth, and deployment entrypoint described elsewhere remain implementation work. Recheck this inventory as features land.
+- At this revision, the code contains identity/category checks, a synthetic registry adapter, SQLite persistence, and a responsive Shopee-style storefront with synthetic catalog data and a local demo cart. The storefront is separate from verification results. Claims extraction, evidence/reviewer workflows, OAuth, and the deployment entrypoint described elsewhere remain implementation work. Recheck this inventory as features land.
 - Preserve SQLite persistence while extending the product. References to in-memory storage or a future database in older documents do not authorize replacing working persistence.
 - If requirements conflict, use the status policy below for new behavior. Change existing baseline behavior only in the task that implements and tests the relevant transition; update affected documentation with it. Raise any remaining material ambiguity before implementing dependent behavior.
 
@@ -46,3 +46,5 @@
 6. Report what changed, why, validation results, and remaining limitations. If committing, prefix the commit subject with `[codex]`; do not commit secrets or unrelated changes.
 
 Build dependencies in small steps: define and test status transitions before evidence/reviewer flows; add each rule R-03 through R-05 separately; add grounded extraction independently from rule decisions; protect reviewer/API actions before exposing them externally. Build shopper, seller, and reviewer components against tested endpoints. Treat authorized live-registry integration and deployment as separate tasks, never implied by completing a local feature.
+
+Frontend component tests: `npm ci` once after checkout or dependency changes, then `npm test` (Node.js 18+). These test DOM interactions without network access; use browser checks for layout, responsive behavior, keyboard focus, and native dialogs.

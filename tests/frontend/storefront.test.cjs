@@ -1,0 +1,189 @@
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const { JSDOM } = require("jsdom");
+
+function page(t, setup = () => {}) {
+  const dom = new JSDOM(
+    fs.readFileSync(path.join(__dirname, "../../frontend/index.html"), "utf8"),
+    {
+      runScripts: "outside-only",
+      url: "http://localhost/",
+      pretendToBeVisual: true,
+    },
+  );
+  dom.window.HTMLDialogElement.prototype.showModal = function () {
+    this.open = true;
+  };
+  dom.window.HTMLDialogElement.prototype.close = function () {
+    this.open = false;
+  };
+  dom.window.HTMLElement.prototype.scrollIntoView = function () {};
+  setup(dom.window);
+  dom.window.eval(
+    fs.readFileSync(path.join(__dirname, "../../frontend/app.js"), "utf8"),
+  );
+  t.after(() => dom.window.close());
+  const document = dom.window.document;
+  return {
+    window: dom.window,
+    document,
+    $: (selector) => document.querySelector(selector),
+    $$: (selector) => [...document.querySelectorAll(selector)],
+  };
+}
+function submit(p, value) {
+  p.$("#search").value = value;
+  p.$("#search-form").dispatchEvent(
+    new p.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+}
+
+test("search finds matching demo products, handles no matches, and can reset", (t) => {
+  const p = page(t);
+  assert.equal(p.$$(".product-card").length, 12);
+  submit(p, "หูฟัง");
+  assert.equal(p.$$(".product-card").length, 1);
+  assert.match(p.$(".product-name").textContent, /หูฟัง/);
+  assert.equal(p.$("#clear-filters").hidden, false);
+  submit(p, "<img src=x onerror=alert(1)>");
+  assert.equal(p.$$(".product-card").length, 0);
+  assert.equal(p.$("#empty-state").hidden, false);
+  assert.equal(p.$("#results-summary img"), null);
+  p.$("#reset-search").click();
+  assert.equal(p.$$(".product-card").length, 12);
+  assert.equal(p.$("#empty-state").hidden, true);
+});
+
+test("category selection combines with search and all-categories clears the selection", (t) => {
+  const p = page(t);
+  assert.equal(p.$$(".category").length, 24);
+  p.$('[data-category="10"]').click();
+  assert.equal(
+    p.$('[data-category="10"]').getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.equal(p.$$(".product-card").length, 1);
+  submit(p, "ไม่ตรงกับสินค้า");
+  assert.equal(p.$("#empty-state").hidden, false);
+  p.$("#all-categories").click();
+  assert.equal(p.$("#search").value, "");
+  assert.equal(p.$$(".product-card").length, 12);
+});
+
+test("catalog sorting and load-more show prices in the chosen order", (t) => {
+  const p = page(t);
+  p.$("#load-more").click();
+  assert.equal(p.$$(".product-card").length, 24);
+  assert.equal(p.$("#load-more").hidden, true);
+  p.$("#sort").value = "price-low";
+  p.$("#sort").dispatchEvent(new p.window.Event("change"));
+  assert.equal(p.$(".price").textContent, "฿49");
+  p.$("#sort").value = "price-high";
+  p.$("#sort").dispatchEvent(new p.window.Event("change"));
+  assert.equal(p.$(".price").textContent, "฿12,990");
+});
+
+test("promotions cycle in both directions and a demo coupon can be claimed", (t) => {
+  const p = page(t);
+  assert.equal(p.$$(".shortcut").length, 7);
+  assert.match(p.$("#hero-image").src, /hero.webp$/);
+  p.$("#next-slide").click();
+  assert.match(p.$("#hero-image").src, /trendy.webp$/);
+  assert.equal(p.$$('.carousel-dots [aria-current="true"]').length, 1);
+  p.$("#previous-slide").click();
+  assert.match(p.$("#hero-image").src, /hero.webp$/);
+  p.$("#previous-slide").click();
+  assert.match(p.$("#hero-image").src, /home.webp$/);
+  p.$(".new-user-banner").click();
+  assert.equal(p.$("#promo-dialog").open, true);
+  p.$("#claim-coupon").click();
+  assert.equal(p.$("#claim-coupon").disabled, true);
+  assert.match(p.$("#claim-coupon").textContent, /เก็บแล้ว/);
+  assert.equal(p.$("#toast").hidden, false);
+});
+
+test("flash deals open the full catalog and countdown never becomes negative", (t) => {
+  let now = 1000000;
+  let tick;
+  const p = page(t, (window) => {
+    window.Date.now = () => now;
+    window.setInterval = (callback) => {
+      tick = callback;
+      return 0;
+    };
+  });
+  assert.equal(p.$$(".flash-card").length, 6);
+  assert.match(p.$("#countdown").textContent, /^\d{2} : \d{2} : \d{2}$/);
+  p.$("#all-deals").click();
+  assert.equal(p.$$(".product-card").length, 24);
+  now += 3600000;
+  tick();
+  assert.equal(p.$("#countdown").textContent, "00 : 00 : 00");
+});
+
+test("product details add chosen quantity, merge repeated items, total correctly, and remove", (t) => {
+  const p = page(t);
+  p.$(".product-card").click();
+  assert.equal(p.$("#product-dialog").open, true);
+  assert.match(p.$("#product-title").textContent, /หูฟัง/);
+  p.$("#quantity").value = "2";
+  p.$("#add-to-cart").click();
+  assert.equal(p.$("#cart-count").textContent, "2");
+  p.$(".product-card").click();
+  p.$("#add-to-cart").click();
+  p.$("#open-cart").click();
+  assert.equal(p.$("#cart-dialog").open, true);
+  assert.equal(p.$$(".cart-item").length, 1);
+  assert.match(p.$("#cart-total").textContent, /1,287/);
+  p.$("[data-remove]").click();
+  assert.equal(p.$$(".cart-item").length, 0);
+  assert.equal(p.$("#cart-count").hidden, true);
+  assert.match(p.$("#cart-items").textContent, /ยังไม่มีสินค้า/);
+});
+
+test("invalid quantities cannot be added to the cart", (t) => {
+  const p = page(t);
+  p.$(".product-card").click();
+  for (const invalid of ["0", "-1", "1.5", "100", ""]) {
+    p.$("#quantity").value = invalid;
+    p.$("#add-to-cart").click();
+    assert.equal(p.$("#cart-count").hidden, true);
+    assert.equal(p.$("#product-dialog").open, true);
+  }
+});
+
+test("utility actions explain demo limitations without collecting credentials", (t) => {
+  const p = page(t);
+  p.$('[data-info="account"]').click();
+  assert.equal(p.$("#info-dialog").open, true);
+  assert.match(p.$("#info-body").textContent, /บัญชี/);
+  assert.equal(p.$('input[type="password"]'), null);
+  p.$("#info-dialog [data-close]").click();
+  assert.equal(p.$("#info-dialog").open, false);
+});
+
+test("language changes update navigation, search hints, categories, product details and cart", (t) => {
+  const p = page(t);
+  p.$("#language").value = "en";
+  p.$("#language").dispatchEvent(new p.window.Event("change"));
+  assert.equal(p.document.documentElement.lang, "en");
+  assert.equal(p.$("#catalog-title").textContent, "Daily discovery");
+  assert.match(p.$("#search").placeholder, /New here/);
+  assert.equal(p.$('[data-category="10"]').textContent, "Electronics");
+  p.$("[data-query]").click();
+  assert.match(p.$(".product-name").textContent, /headphones/);
+  p.$(".product-card").click();
+  assert.match(p.$("#product-title").textContent, /headphones/);
+  assert.equal(p.$("#add-to-cart").textContent, "Add to cart");
+  p.$("#add-to-cart").click();
+  p.$("#open-cart").click();
+  assert.match(p.$("#cart-items").textContent, /headphones/);
+  assert.match(p.$("#cart-total").textContent, /Demo total: ฿429/);
+  p.$("#cart-dialog [data-close]").click();
+  p.$("#language").value = "th";
+  p.$("#language").dispatchEvent(new p.window.Event("change"));
+  assert.equal(p.document.documentElement.lang, "th");
+  assert.equal(p.$("#catalog-title").textContent, "สินค้าแนะนำประจำวัน");
+});

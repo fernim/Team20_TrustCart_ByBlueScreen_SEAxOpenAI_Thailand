@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="TrustCart marketplace UI prototype. Synthetic products, no real purchases. Independent of Shopee."
+    />
+    <title>TrustCart • Marketplace Demo</title>
+    <link rel="icon" href="/static/assets/bag.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script defer src="/static/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-i18n="skip">ข้ามไปที่เนื้อหาหลัก</a>
+    <div class="demo-strip">
+      <span data-i18n="demo"
+        >TrustCart · เว็บไซต์จำลอง · สินค้าจำลอง · ไม่มีการซื้อขายจริง ·
+        ไม่ใช่เว็บไซต์ทางการของ Shopee</span
+      ><a href="/docs" data-i18n="api">เอกสาร API</a>
+    </div>
+    <header class="header">
+      <div class="container">
+        <nav class="utility" aria-label="Utility">
+          <div class="utility-left">
+            <button data-info="seller">Seller Centre</button
+            ><span class="divider"></span
+            ><button data-info="seller" data-i18n="sell">เปิดร้านค้า</button
+            ><span class="divider"></span
+            ><button data-info="download" data-i18n="download">ดาวน์โหลด</button
+            ><span class="divider"></span
+            ><span data-i18n="follow">ติดตามเราบน</span
+            ><button class="social" data-info="social" aria-label="Facebook">
+              f</button
+            ><button class="social" data-info="social" aria-label="Instagram">
+              ◎</button
+            ><button class="social" data-info="social" aria-label="Line">
+              ●
+            </button>
+          </div>
+          <div class="utility-right">
+            <button data-info="notifications">
+              <span aria-hidden="true">♧</span>
+              <span data-i18n="notifications">การแจ้งเตือน</span></button
+            ><button data-info="help">
+              <span aria-hidden="true">ⓘ</span>
+              <span data-i18n="help">ช่วยเหลือ</span></button
+            ><label class="language"
+              ><span aria-hidden="true">◎</span
+              ><select id="language" aria-label="Language">
+                <option value="th">ไทย</option>
+                <option value="en">English</option>
+              </select></label
+            ><button data-info="account" data-i18n="signup">สมัครใหม่</button
+            ><span class="divider"></span
+            ><button data-info="account" data-i18n="login">เข้าสู่ระบบ</button>
+          </div>
+        </nav>
+        <div class="search-row">
+          <a class="brand" href="/" aria-label="Shopee style demo homepage"
+            ><img
+              src="/static/assets/bag.svg"
+              alt=""
+              width="45"
+              height="52"
+            /><span>Shopee<small>TrustCart demo</small></span></a
+          >
+          <div class="search-area">
+            <form id="search-form" role="search">
+              <input
+                id="search"
+                type="search"
+                autocomplete="off"
+                aria-label="ค้นหาสินค้าและร้านค้า"
+                placeholder="ลูกค้าใหม่ รับเลย โค้ดส่วนลด หรือโค้ดส่งฟรี*"
+              /><button class="search-button" type="submit" aria-label="ค้นหา">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="10" cy="10" r="6.5" />
+                  <path d="m15 15 6 6" />
+                </svg>
+              </button>
+            </form>
+            <div class="search-hints" id="search-hints"></div>
+          </div>
+          <button class="cart-button" id="open-cart" aria-label="ตะกร้าสินค้า">
+            <svg viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M3 4h4l4 17h14l4-13H8" />
+              <circle cx="13" cy="27" r="1.5" />
+              <circle cx="24" cy="27" r="1.5" /></svg
+            ><span id="cart-count" hidden>0</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <section class="hero-zone" aria-label="Promotions">
+        <div class="container">
+          <h1 class="sr-only" data-i18n="homeTitle">
+            ช้อปสินค้าออนไลน์ — เว็บไซต์จำลอง TrustCart
+          </h1>
+          <div class="promotions">
+            <div
+              class="carousel"
+              aria-roledescription="carousel"
+              aria-label="โปรโมชั่น"
+            >
+              <button class="hero-banner" id="hero-banner" data-promo="welcome">
+                <img
+                  id="hero-image"
+                  src="/static/assets/hero.webp"
+                  alt="ลูกค้าใหม่ รับฟรีออเดอร์แรก ส่งฟรีขั้นต่ำ 0 บาท"
+                />
+              </button>
+              <button
+                class="carousel-arrow previous"
+                id="previous-slide"
+                aria-label="โปรโมชั่นก่อนหน้า"
+              >
+                ‹</button
+              ><button
+                class="carousel-arrow next"
+                id="next-slide"
+                aria-label="โปรโมชั่นถัดไป"
+              >
+                ›
+              </button>
+              <div class="carousel-dots" id="carousel-dots"></div>
+            </div>
+            <div class="side-promos">
+              <button data-promo="trendy">
+                <img
+                  src="/static/assets/trendy.webp"
+                  alt="Shopee Trendy โค้ดลดสูงสุด 30%"
+                /></button
+              ><button data-promo="home">
+                <img
+                  src="/static/assets/home.webp"
+                  alt="ดีลเครื่องใช้ไฟฟ้า ลดสูงสุด 65%"
+                />
+              </button>
+            </div>
+          </div>
+          <nav class="shortcuts" id="shortcuts" aria-label="บริการ"></nav>
+        </div>
+      </section>
+      <div class="container content">
+        <button class="new-user-banner" data-promo="welcome">
+          <img
+            src="/static/assets/new-user.webp"
+            alt="สิทธิพิเศษลูกค้าใหม่ โค้ดส่วนลดและโค้ดส่งฟรี"
+            width="1200"
+            height="110"
+          />
+        </button>
+        <section class="panel categories" aria-labelledby="categories-title">
+          <div class="section-heading">
+            <h2 id="categories-title" data-i18n="categories">หมวดหมู่</h2>
+            <button class="text-button" id="all-categories" data-i18n="all">
+              ดูทั้งหมด
+            </button>
+          </div>
+          <div class="category-grid" id="categories"></div>
+        </section>
+        <section class="panel flash" aria-labelledby="flash-title">
+          <div class="section-heading">
+            <div class="flash-heading">
+              <h2 id="flash-title">FLASH<span>ϟ</span>SALE</h2>
+              <span class="countdown" id="countdown" aria-label="เวลาที่เหลือ"
+                >00 : 46 : 48</span
+              ><span class="demo-tag" data-i18n="sampleDeals">ดีลจำลอง</span>
+            </div>
+            <button class="text-button" id="all-deals" data-i18n="all">
+              ดูทั้งหมด
+            </button>
+          </div>
+          <div class="flash-grid" id="flash-products"></div>
+        </section>
+        <section class="catalog" aria-labelledby="catalog-title">
+          <div class="catalog-title">
+            <h2 id="catalog-title" data-i18n="discover">สินค้าแนะนำประจำวัน</h2>
+          </div>
+          <div class="catalog-toolbar">
+            <p id="results-summary" role="status"></p>
+            <div>
+              <button
+                id="clear-filters"
+                class="text-button"
+                hidden
+                data-i18n="clear"
+              >
+                ล้างตัวกรอง</button
+              ><label
+                ><span class="sr-only" data-i18n="sort">เรียงสินค้า</span
+                ><select id="sort">
+                  <option value="recommended" data-i18n="recommended">
+                    แนะนำ
+                  </option>
+                  <option value="price-low" data-i18n="priceLow">
+                    ราคา: ต่ำไปสูง
+                  </option>
+                  <option value="price-high" data-i18n="priceHigh">
+                    ราคา: สูงไปต่ำ
+                  </option>
+                </select></label
+              >
+            </div>
+          </div>
+          <div class="product-grid" id="products"></div>
+          <div class="empty-state" id="empty-state" hidden>
+            <span aria-hidden="true">⌕</span>
+            <h3 data-i18n="noResults">ไม่พบสินค้า</h3>
+            <p data-i18n="tryAgain">ลองคำค้นอื่น หรือเลือกหมวดหมู่ใหม่</p>
+            <button class="primary" id="reset-search" data-i18n="reset">
+              แสดงสินค้าทั้งหมด
+            </button>
+          </div>
+          <button class="load-more" id="load-more" data-i18n="more">
+            ดูเพิ่มเติม
+          </button>
+        </section>
+        <section class="about">
+          <h2 data-i18n="aboutTitle">
+            ช้อปปิ้งออนไลน์ในมุมมองใหม่ กับ TrustCart
+          </h2>
+          <p data-i18n="aboutBody">
+            ต้นแบบหน้าร้านสำหรับสาธิต TrustCart โดยอ้างอิงรูปแบบหน้าแรกของ
+            Shopee Thailand สินค้า ราคา
+            และโปรโมชั่นในหน้านี้ใช้เพื่อการสาธิตเท่านั้น
+            ไม่มีการชำระเงินหรือสั่งซื้อจริง
+          </p>
+          <p data-i18n="verificationNote">
+            หน้านี้ไม่แสดงผลการรับรองสินค้า ระบบตรวจสอบทะเบียนจำลองอยู่ที่ API
+            และครอบคลุมเฉพาะการตรวจสอบตัวตนและหมวดหมู่ในข้อมูลจำลอง
+          </p>
+          <a href="/docs" data-i18n="api">เอกสาร API</a>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <div class="container footer-grid">
+        <section>
+          <h3 data-i18n="helpCenter">ศูนย์ช่วยเหลือ</h3>
+          <button data-info="help" data-i18n="howTo">
+            วิธีใช้งานเว็บไซต์จำลอง</button
+          ><button data-info="cart" data-i18n="cart">ตะกร้าสินค้า</button
+          ><button data-info="help" data-i18n="shipping">
+            การจัดส่งสินค้า
+          </button>
+        </section>
+        <section>
+          <h3 data-i18n="aboutTrustCart">เกี่ยวกับ TRUSTCART</h3>
+          <a href="/docs" data-i18n="api">เอกสาร API</a
+          ><button data-info="about" data-i18n="aboutDemo">
+            เกี่ยวกับต้นแบบ</button
+          ><a
+            href="https://shopee.co.th/"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n="reference"
+            >เว็บไซต์อ้างอิง: Shopee Thailand</a
+          >
+        </section>
+        <section>
+          <h3 data-i18n="payments">วิธีการชำระเงิน</h3>
+          <div class="payment-logos">
+            <span>VISA</span><span>Mastercard</span><span>PromptPay</span>
+          </div>
+          <p data-i18n="noPayment">เพื่อแสดงรูปแบบเท่านั้น ไม่รับชำระเงิน</p>
+          <h3 data-i18n="delivery">บริการจัดส่ง</h3>
+          <div class="payment-logos">
+            <span>SPX</span><span>J&amp;T</span><span>ไปรษณีย์ไทย</span>
+          </div>
+        </section>
+        <section>
+          <h3 data-i18n="follow">ติดตามเราบน</h3>
+          <button data-info="social">Facebook</button
+          ><button data-info="social">Instagram</button
+          ><button data-info="social">Line</button>
+        </section>
+        <section>
+          <h3>TEAM BLUESCREEN</h3>
+          <p>Sea × OpenAI<br />Thailand Hackathon</p>
+          <p data-i18n="synthetic">ข้อมูลสินค้าจำลองทั้งหมด</p>
+        </section>
+      </div>
+      <div class="container footer-bottom">
+        <span>© 2026 TrustCart · Team BlueScreen</span
+        ><span data-i18n="independent"
+          >ต้นแบบอิสระ ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ Shopee</span
+        ><a href="#main" data-i18n="backTop">กลับด้านบน</a>
+      </div>
+    </footer>
+    <dialog id="product-dialog" aria-labelledby="product-title">
+      <button class="dialog-close" data-close aria-label="ปิด">×</button>
+      <div id="product-detail"></div>
+    </dialog>
+    <dialog id="cart-dialog" aria-labelledby="cart-title">
+      <button class="dialog-close" data-close aria-label="ปิด">×</button>
+      <h2 id="cart-title" data-i18n="cart">ตะกร้าสินค้า</h2>
+      <p class="dialog-note" data-i18n="cartNote">
+        ตะกร้าจำลอง · ไม่มีการสั่งซื้อจริง · รีเซ็ตเมื่อโหลดหน้าใหม่
+      </p>
+      <div id="cart-items"></div>
+      <div id="cart-total"></div>
+    </dialog>
+    <dialog id="info-dialog" aria-labelledby="info-title">
+      <button class="dialog-close" data-close aria-label="ปิด">×</button>
+      <h2 id="info-title"></h2>
+      <p id="info-body"></p>
+      <button class="primary" data-close data-i18n="understood">
+        เข้าใจแล้ว
+      </button>
+    </dialog>
+    <dialog id="promo-dialog" aria-labelledby="promo-title">
+      <button class="dialog-close" data-close aria-label="ปิด">×</button
+      ><span class="coupon-icon" aria-hidden="true">%</span>
+      <h2 id="promo-title"></h2>
+      <p data-i18n="couponNote">
+        โค้ดสำหรับสาธิตเท่านั้น ไม่สามารถใช้กับคำสั่งซื้อจริงได้
+      </p>
+      <div class="coupon-code">DEMO-WELCOME</div>
+      <button id="claim-coupon" class="primary" data-i18n="claim">
+        เก็บโค้ดจำลอง
+      </button>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <noscript
+      ><p class="noscript">
+        เปิดใช้ JavaScript เพื่อค้นหาและดูสินค้าจำลอง / Enable JavaScript to
+        browse demo products.
+      </p></noscript
+    >
+  </body>
+</html>

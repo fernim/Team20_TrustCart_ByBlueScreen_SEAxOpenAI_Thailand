@@ -14,7 +14,9 @@ python -m venv .venv
 .venv/Scripts/python -m uvicorn backend.app.main:app --port 8000
 ```
 
-Open `http://127.0.0.1:8000/docs` for the interactive API contract. In another PowerShell terminal, submit the sample marketplace listing and retrieve the stored result.
+On macOS/Linux, use `.venv/bin/python` in place of `.venv/Scripts/python`.
+
+Open `http://127.0.0.1:8000/` for the storefront UI prototype, or `http://127.0.0.1:8000/docs` for the interactive API contract. In another PowerShell terminal, submit the sample marketplace listing and retrieve the stored result.
 
 ```powershell
 $listing = @{
@@ -43,8 +45,28 @@ The API covers R-01 registration identity and the registry category match from R
 
 An authorized registry connector, marketplace authentication, claims and evidence checks, and a reviewer workflow are future integration work. The public source repository and any future hosted API are separate deliverables.
 
+## Storefront UI prototype
+
+The homepage recreates the visual structure of [Shopee Thailand](https://shopee.co.th/): orange search header, promotional banners, seven service shortcuts, a two-row category grid, flash deals, product cards, and footer. FastAPI serves the HTML, CSS, vanilla JavaScript, and local images without a frontend build step.
+
+- Search in Thai or English, filter by category, sort by price, and load more demo products.
+- Switch Thai/English navigation and catalog text. Reference banner artwork retains its original Thai text.
+- Cycle banners, save a sample voucher, open product details, choose quantities, and add/remove items in a demo cart. The cart and voucher reset on page reload.
+- Utility links explain prototype limitations. Accounts, seller portals, payment, checkout, shipping, and social connections are not implemented.
+
+All 24 catalog entries, prices, sales counts, and offers are illustrative. The UI does not display verification verdicts or call the registry; the existing verification API remains separate. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
+
 ## Tests
 
 ```powershell
 .venv/Scripts/python -m pytest -q
 ```
+
+Frontend component tests require Node.js 18+ and npm (development only):
+
+```bash
+npm ci
+npm test
+```
+
+The DOM tests cover search and empty states, combined filters, sorting, pagination, banners, coupons, countdown expiry, product details, cart validation/totals/removal, utility dialogs, and language switching. Python tests cover page/static serving alongside the baseline API. Desktop and mobile visual behavior should also be checked in a browser after UI changes.
