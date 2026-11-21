@@ -2,9 +2,11 @@
   "name": "trustcart-storefront",
   "private": true,
   "scripts": {
-    "test": "node --test tests/frontend/*.test.cjs"
+    "test": "node --test tests/frontend/*.test.cjs",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "jsdom": "26.1.0"
   }
 }
