@@ -96,6 +96,8 @@ def decorated(connection, product, owner, public=False):
         and submission["status"] == "APPROVED"
         and submission["confidence"] >= 0.75
         and not submission["human_review_required"]
+        and (submission["listing"]["title"].strip() or submission["listing"]["description"].strip())
+        and any(rule["rule"] == "R-03" and rule["result"] == "pass" for rule in submission["rule_results"])
         and audit(submission)["valid"]
     )
     if public:

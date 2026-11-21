@@ -1,18 +1,33 @@
 """Seeded roles with opaque server sessions; no credentials are stored in source."""
 
 import hashlib
+import os
 import secrets
 import time
 from contextlib import closing
+from typing import Optional
 from urllib.parse import urlsplit, quote
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from . import database as store
+from . import marketplace_auth
 from .connected_store import transaction
+from .demo_access import allows_browser_write
 
 router = APIRouter(prefix="/v1/auth", tags=["Accounts"])
 COOKIE = "trustcart_session"
+VERIFIED_SESSION_PREFIX = "verified."
+LOGIN_PASSWORD_ENV = {
+    "buyer": "TRUSTCART_BUYER_PASSWORD",
+    "seller1": "TRUSTCART_SELLER1_PASSWORD",
+    "seller2": "TRUSTCART_SELLER2_PASSWORD",
+    "reviewer": "TRUSTCART_REVIEWER_PASSWORD",
+}
+
+
+def requires_role_passwords():
+    return bool(os.environ.get(marketplace_auth.CLIENT_CONFIG_ENV, "").strip())
 
 
 def principal(request):
@@ -30,8 +45,24 @@ def require(request, role=None):
 
 async def access_guard(request, call_next):
     request.state.user = None
+    path = request.url.path
+    scheme, _, bearer_token = request.headers.get("authorization", "").partition(" ")
+    bearer = scheme.lower() == "bearer"
+    token_request = path == marketplace_auth.TOKEN_PATH and request.method == "POST"
+    if bearer or token_request:
+        if COOKIE in request.cookies or (bearer and token_request):
+            return marketplace_auth.oauth_error("invalid_request", 400)
+        if not allows_browser_write(request):
+            return marketplace_auth.oauth_error("invalid_request", 403)
+        if bearer:
+            request.state.user, failure = marketplace_auth.bearer_principal(request, bearer_token)
+            if failure is not None:
+                return failure
+        response = await call_next(request)
+        return set_response_headers(response, path)
+
     token = request.cookies.get(COOKIE)
-    if token:
+    if token and (not requires_role_passwords() or token.startswith(VERIFIED_SESSION_PREFIX)):
         with closing(store.connect(request.app.state.database)) as connection:
             row = connection.execute(
                 "SELECT account_id,csrf,expires_at FROM tc_sessions WHERE id=?",
@@ -48,7 +79,6 @@ async def access_guard(request, call_next):
                         shop_id=account[1],
                         csrf_token=row[1],
                     )
-    path = request.url.path
     public_read = request.method in ("GET", "HEAD") and (
         path in ("/", "/login", "/v1/auth/me", "/version")
         or path.startswith(("/static/", "/products/", "/v1/catalog/"))
@@ -114,6 +144,10 @@ async def access_guard(request, call_next):
         ):
             return JSONResponse({"detail": "Invalid CSRF token"}, status_code=403)
     response = await call_next(request)
+    return set_response_headers(response, path)
+
+
+def set_response_headers(response, path):
     if not path.startswith("/static/"):
         response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
@@ -123,14 +157,21 @@ async def access_guard(request, call_next):
 
 class Login(BaseModel):
     username: str = Field(max_length=80)
+    password: Optional[str] = Field(default=None, max_length=500)
 
 
 @router.post("/login")
 def login(payload: Login, request: Request, response: Response):
-    # Public demo role selection: this is not production identity authentication.
-    if payload.username not in ("buyer", "seller1", "seller2", "reviewer"):
+    password_env = LOGIN_PASSWORD_ENV.get(payload.username)
+    if password_env is None:
         raise HTTPException(401, "Unknown demo account")
     token = secrets.token_urlsafe(32)
+    if requires_role_passwords():
+        expected = os.environ.get(password_env)
+        if not expected or not secrets.compare_digest((payload.password or "").encode(), expected.encode()):
+            raise HTTPException(401, "Invalid account or password")
+        # The marker is included in the stored digest and distinguishes verified sessions.
+        token = VERIFIED_SESSION_PREFIX + token
     csrf = secrets.token_urlsafe(32)
     with transaction(request.app.state.database) as connection:
         old = request.cookies.get(COOKIE)

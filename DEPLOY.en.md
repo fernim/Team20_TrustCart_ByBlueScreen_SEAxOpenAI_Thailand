@@ -73,9 +73,7 @@ OPENAI_MODEL=gpt-4o-mini
 | `TRUSTCART_PASSWORD` | Every page and API needs login (cookie lasts 8 hours, logout button) | Open access |
 | `OPENAI_API_KEY` | AI extracts extra claims + translates user text automatically | Keyword rules; user-typed text is not translated |
 | `OPENAI_MODEL` | Chooses the model | `gpt-4o-mini` |
-| `TRUSTCART_CLIENTS` | Turns on OAuth 2.0 for external systems: `client_id:secret:scope scope;...` | `/oauth/token` returns 503 (not configured) |
-| `TRUSTCART_TOKEN_KEY` | Token signing key (random, ≥ 32 characters) | Derived from the client list |
-| `TRUSTCART_TOKEN_TTL` | Token lifetime (seconds) | `900` |
+| `TRUSTCART_MARKETPLACE_CLIENTS` | Enables OAuth client credentials with JSON client-to-shop mappings and seller scopes. Requires verified role passwords for browser sessions. | `/oauth/token` returns 503 |
 | `REGISTRY_SOURCE` | Chooses the registry source (Registry Adapter) | `mock` |
 
 > The server reads `.env.local` at startup but **does not override** values already set in the real environment
@@ -169,25 +167,7 @@ Set the password (type the value when the CLI asks; do not put it in a command t
 npx --yes vercel@latest env add TRUSTCART_PASSWORD production
 ```
 
-(Optional) Turn on OAuth 2.0 for API clients: generate a random secret first, then type it when the CLI asks:
-
-```bash
-python -c "import secrets;print('shopee-sandbox-demo:'+secrets.token_urlsafe(24)+':verifications:write reports:read')"
-```
-
-```bash
-npx --yes vercel@latest env add TRUSTCART_CLIENTS production
-```
-
-```bash
-npx --yes vercel@latest env add TRUSTCART_TOKEN_KEY production
-```
-
-Test (replace with your client_id/secret):
-
-```bash
-curl -s -X POST https://trustcart-bluescreen.vercel.app/oauth/token -d grant_type=client_credentials -d client_id=$CLIENT_ID -d client_secret=$CLIENT_SECRET
-```
+For the synthetic marketplace API, configure `TRUSTCART_MARKETPLACE_CLIENTS` in the target environment's secret settings. Use HTTP Basic client authentication and a URL-encoded `grant_type=client_credentials` at `/oauth/token`. Tokens expire after 900 seconds. The [current API configuration](README.md#marketplace-api-clients) lists the supported scopes and browser role settings.
 
 (Optional) Turn on AI:
 
@@ -314,7 +294,7 @@ TrustCart_BlueScreen/
 │   │   ├── agent.py          # Verification agent: R-01..R-05, policy, hash-chained trace
 │   │   ├── llm.py            # OpenAI extraction + translation (optional)
 │   │   ├── gate.py           # Password gate + bearer-token routing
-│   │   ├── oauth.py          # OAuth 2.0 client credentials (JWT, TTL, scopes)
+│   │   ├── marketplace_auth.py  # OAuth client credentials and scoped opaque tokens
 │   │   └── registry.py       # Registry Adapter (mock default, swappable)
 │   └── data/                 # Synthetic registry, listings, claim rules (TH/EN pairs)
 ├── frontend/index.html       # Shopper / Seller / Reviewer / API plugin UI (TH/EN)

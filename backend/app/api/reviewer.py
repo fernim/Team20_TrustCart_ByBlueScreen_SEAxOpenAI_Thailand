@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from .. import database as store
 from ..demo_access import REVIEWER_ACCESS_RESPONSES, require_demo_reviewer
-from ..workflow import Review, audit, continue_trace, edit, reevaluate, risk
+from ..workflow import Review, audit, continue_trace, denial_basis, edit, reevaluate, risk
+from .response_models import SavedVerificationResponse
 
 
 router = APIRouter(
@@ -29,12 +30,13 @@ def queue(request: Request):
     tags=["Reviewer"],
     summary="Record a reviewer decision",
     responses={
+        200: {"model": SavedVerificationResponse},
         404: {"description": "Verification not found"},
         409: {"description": "Mutation rejected because the audit, saved listing, or approval requirements are unmet"},
     },
 )
 def review(verification_id: UUID, review: Review, request: Request):
-    """Recheck the listing and record the reviewer decision with a note and the current audit hash."""
+    """Recheck the listing and record a supported decision with a note and the current audit hash."""
     with edit(request.app.state.database, verification_id, review.chain_hash, allow_reviewed=True) as (
         connection, result, payload
     ):
@@ -47,7 +49,10 @@ def review(verification_id: UUID, review: Review, request: Request):
         ):
             raise HTTPException(409, "Resolve failed checks and uncertainty before approval")
         actor = getattr(request.state, "reviewer_actor", "demo-reviewer")
-        trace.add("human_review", json.dumps(dict(actor=actor, **review.model_dump()), sort_keys=True))
+        event = dict(actor=actor, **review.model_dump())
+        if review.decision == "deny":
+            event["denial_basis"] = denial_basis(result)
+        trace.add("human_review", json.dumps(event, sort_keys=True))
         connection.execute("INSERT INTO reviews VALUES (?, ?, ?, ?, ?, ?)", (
             str(uuid4()), result["id"], review.decision, review.note, review.chain_hash, datetime.now(timezone.utc).isoformat()))
         result.update(status="APPROVED" if review.decision == "approve" else "DENIED",

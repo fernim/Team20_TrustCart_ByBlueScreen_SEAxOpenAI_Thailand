@@ -11,6 +11,7 @@ def isolate_external_configuration(monkeypatch):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("TRUSTCART_REVIEWER_PASSWORD", raising=False)
     monkeypatch.delenv("TRUSTCART_AI_TRANSFER_APPROVED", raising=False)
+    monkeypatch.delenv("TRUSTCART_MARKETPLACE_CLIENTS", raising=False)
 
 
 @pytest.fixture(autouse=True)
