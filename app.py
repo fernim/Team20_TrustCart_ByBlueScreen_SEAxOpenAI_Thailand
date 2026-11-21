@@ -56,22 +56,25 @@ def create_demo_app(database: Path):
     service = create_app(database)
     service.title = "TrustCart Marketplace API"
     service.description = (
-        "Password-protected synthetic marketplace demo. Use GET /v1/demo/transactions "
-        "to explore the 20 rule-evaluated synthetic scenarios. The working verification endpoint "
-        "checks synthetic registration identity and category and returns a "
-        "Location header for retrieving the decision. Demo scenarios for R-03 "
-        "through R-05 include phrase-based claim screening, registry permit comparison, and seller evidence checks. "
-        "Upload synthetic evidence, recheck, and send a reviewer decision with the latest chain_hash. "
-        "Use /v1/reports, /v1/widgets and /v1/audit for shopper results. Stale hashes and failed audit checks return 409. "
-        "The shared demo login grants access to all three demonstration roles. "
-        "Sign in with username demo and the shared demo password. "
-        "Use Try it out on POST /v1/verifications with the example body, "
-        "then copy the returned id into GET /v1/verifications/{verification_id}. "
-        "Responses include a status, confidence, human_review_required and a "
-        "hash-chained trace. HTTP 401 means authentication is required, "
-        "404 means the result was not found and 422 means the request is invalid. "
-        "Hosted SQLite storage is temporary and a result may be unavailable "
-        "after a function restart or on another instance."
+        "TrustCart evaluates synthetic marketplace listings and returns a status, confidence, "
+        "rule results, and a hash-chained audit trace. The shared HTTP Basic login grants "
+        "access to all demo roles. Sign in as `demo` with the separately shared password.\n\n"
+        "### Try the L1 evidence workflow\n\n"
+        "1. Get the L1 listing from `GET /v1/demo/scenarios` and submit it to "
+        "`POST /v1/verifications`. L1 returns `PENDING`. Use the returned ID or "
+        "the `Location` header to retrieve the saved result.\n"
+        "2. Upload the synthetic label and certificate with the declared identity fields to "
+        "`POST /v1/verifications/{verification_id}/evidence`.\n"
+        "3. Call `POST /v1/verifications/{verification_id}/recheck`, then submit the review "
+        "decision and note to `POST /v1/verifications/{verification_id}/review`. Send the latest "
+        "`chain_hash` with every action. If it is stale, reload the verification before retrying.\n"
+        "4. Retrieve the report and audit from `GET /v1/reports/{verification_id}` and "
+        "`GET /v1/audit/{verification_id}`.\n\n"
+        "`GET /v1/demo/scenarios` returns all 40 synthetic listing fixtures. "
+        "`GET /v1/agency/summary` aggregates saved synthetic decisions without seller identities.\n\n"
+        "`GET /v1/demo/transactions?offline=true` shows how all 20 dashboard transactions "
+        "route to `UNKNOWN` during a registry outage. Hosted SQLite is temporary, so a saved "
+        "verification may be unavailable after a function restart or on another instance."
     )
     original_openapi = service.openapi
 
@@ -125,6 +128,7 @@ def create_demo_app(database: Path):
 
     @service.get("/v1/demo/scenarios", tags=["Demo"])
     def scenarios():
+        """Return all 40 synthetic listing fixtures for scenarios L1–L40."""
         return demo_listings()
 
     @service.post("/demo/tamper/{verification_id}", tags=["Demo"])
