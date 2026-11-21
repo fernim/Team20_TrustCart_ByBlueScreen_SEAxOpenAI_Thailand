@@ -14,8 +14,10 @@ Seller product summaries show the first saved image (or an empty-image placehold
 
 The reviewer workspace also lists saved products with image, price, stock, and the latest persisted verification status. “Open report” retrieves that row’s verification ID and displays its detailed stepper, reasons, and audit trace. The list refreshes on focus, visibility restoration, and every five seconds while visible. List updates preserve an already-open historical report; the reviewer explicitly opens the new result. Failed list requests clear stale summaries and expose a retry action, independently of manual report lookup and session history.
 
-## Matched passing demos
+## Matching real-product demos
 
-The two legacy LumaVale seller demos are repaired with `python -m scripts.repair_demo_products --base-url http://localhost:8000`. The script only targets their original titles and legacy identity. It reads the existing DEMO-001 identity from the registry adapter and submits corrected names, descriptions and supplement packaging through versioned product updates. Existing price/stock and historical verifications are preserved; reruns are no-ops. Registry fixtures and verification policy are unchanged.
+Run `python -m scripts.repair_demo_products --base-url http://localhost:8000` to replace the two legacy LumaVale demos and the previous matching generic-illustration demos with DHC Vitamin C 40/120 capsule listings. Exact variant photos and factual pack names come from the official DHC product page, verified 2026-11-21: https://top.dhc.co.jp/shop/health/tempo/item/e00003/ . Source URLs are recorded in `frontend/assets/sources.json`.
 
-`frontend/assets/demo-supplement.png` is a raster rendering of the existing local `demo-supplement.svg` illustration. It depicts generic supplement packaging, not a real branded product or evidence of authenticity. The passing demo uses Demo Supplement / Demo Brand consistently; real-brand reference photos remain unverified. No automatic photo matching or new reviewer requirement is introduced.
+The repair uses versioned product API updates and preserves existing prices, stock and historical reports. It does not change other listings and reruns are no-ops. Generic artwork remains only to identify the preceding demo data for migration.
+
+These real references have no supplied registration or licence-holder evidence. They use an unsupported reference source and receive UNKNOWN through the existing verifier, with no customer badge. The manufacturer page establishes photo/name/pack correspondence, not registry approval. No registry records, registration numbers or verification policy are changed. Prices and stock remain demo values.
