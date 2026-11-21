@@ -11,8 +11,26 @@ from ..workflow import RISK_POLICY_HASH
 router = APIRouter()
 
 
-@router.post("/v1/verifications", status_code=201, response_model=Verification)
+@router.post(
+    "/v1/verifications",
+    status_code=201,
+    response_model=Verification,
+    tags=["Verifications"],
+    summary="Submit a listing for verification",
+    responses={
+        201: {
+            "description": "Verification saved",
+            "headers": {
+                "Location": {
+                    "description": "Relative URL for retrieving the saved verification.",
+                    "schema": {"type": "string"},
+                },
+            },
+        },
+    },
+)
 def submit(listing: Listing, response: Response, request: Request) -> Verification:
+    """Evaluate a listing against the synthetic registry and return its decision and audit trace."""
     trace = Trace()
     status, reason, rule_results = evaluate_rules(listing, trace, request.app.state.extraction_client)
     confidence = {Status.UNKNOWN: 0.0, Status.PENDING: 0.60}.get(status, 1.0)
@@ -35,7 +53,13 @@ def submit(listing: Listing, response: Response, request: Request) -> Verificati
     return result
 
 
-@router.get("/v1/verifications/{verification_id}", response_model=Verification)
+@router.get(
+    "/v1/verifications/{verification_id}",
+    response_model=Verification,
+    tags=["Verifications"],
+    summary="Retrieve the current verification",
+    responses={404: {"description": "Verification not found"}},
+)
 def retrieve(verification_id: UUID, request: Request) -> Verification:
     with closing(sqlite3.connect(request.app.state.database)) as connection:
         row = connection.execute(

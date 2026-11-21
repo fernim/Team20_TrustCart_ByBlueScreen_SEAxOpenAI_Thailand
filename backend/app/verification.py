@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Tuple
@@ -14,7 +15,7 @@ from .rules import advertising_claims
 
 
 ListingText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
-SUPPORTED_CATEGORIES = {"supplement", "cosmetic"}
+SUPPORTED_CATEGORIES = {"supplement", "cosmetic", "drug"}
 
 
 class Listing(BaseModel):
@@ -26,6 +27,7 @@ class Listing(BaseModel):
     description: str = Field(default="", max_length=10000)
     simulate_registry_outage: bool = Field(default=False, description="Demo-only, request-scoped outage simulation. Forces UNKNOWN.")
     advertising_permit: Optional[str] = Field(default=None, max_length=200)
+    registry_source: str = Field(default="synthetic", max_length=50)
 
 
 class Status(str, Enum):
@@ -86,6 +88,13 @@ def evaluate_rules(
         "registration_identity_and_category_matched": "pass",
         "registration_category_mismatch": "fail",
     }.get(reason, "skip")
+    text = listing.title + "\n" + listing.description
+    category_claim = record is not None and record.category == "supplement" and any(
+        phrase in text.casefold() for phrase in ("ยารักษา", "ขาวถาวร", "treats hypertension", "cures adhd"))
+    if category_claim:
+        category_result = "fail"
+        if status == Status.APPROVED:
+            status, reason = Status.DENIED, "category_claim_mismatch"
     add("R-02", category_result, "Registered category check", "ตรวจสอบประเภทผลิตภัณฑ์")
     if listing.title or listing.description:
         matches, missing = advertising_claims(listing.title, listing.description, listing.category.casefold())
@@ -103,7 +112,15 @@ def evaluate_rules(
             status, reason = Status.DENIED, "advertising_claim_failed"
     else:
         add("R-03", "skip", "No advertising text submitted", "ไม่ได้ส่งข้อความโฆษณา")
-    if record is None or not listing.advertising_permit:
+    permit_problem = bool(record and (
+        (record.permit_required and not listing.advertising_permit) or
+        (listing.advertising_permit and (listing.advertising_permit != record.advertising_permit or not record.permit_active))
+    ))
+    if permit_problem:
+        add("R-04", "fail", "Required permit missing, expired or conflicting", "ใบอนุญาตโฆษณาขาดหาย หมดอายุ หรือไม่ตรงกัน")
+        if status == Status.APPROVED:
+            status, reason = Status.PENDING, "permit_conflict"
+    elif record is None or not listing.advertising_permit:
         add("R-04", "skip", "Permit comparison unavailable", "ไม่สามารถเปรียบเทียบใบอนุญาตโฆษณา")
     else:
         permit_conflict = listing.advertising_permit != record.advertising_permit
@@ -136,6 +153,16 @@ def evaluate_rules(
 
 def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str, Optional[registry.RegistryRecord]]:
     category = listing.category.casefold()
+    if listing.simulate_registry_outage:
+        trace.add("registry_lookup", "unavailable")
+        return Status.UNKNOWN, "registry_unavailable", None
+    if listing.registry_source != "synthetic" or listing.registration_reference.startswith("FOREIGN-"):
+        trace.add("registry_source", "unsupported")
+        return Status.UNKNOWN, "unsupported_registry", None
+    reference = listing.registration_reference
+    if not reference.startswith("DEMO-") and not re.fullmatch(r"\d{2}-\d-\d{5}-\d-\d{4}", reference):
+        trace.add("registry_format", "unrecognized")
+        return Status.UNKNOWN, "reference_format_unrecognized", None
     if category not in SUPPORTED_CATEGORIES:
         trace.add("category_mapping", "unmapped")
         return Status.UNKNOWN, "category_unmapped", None
@@ -156,7 +183,7 @@ def evaluate(listing: Listing, trace: Trace) -> Tuple[Status, str, Optional[regi
         return Status.UNKNOWN, "registry_category_unmapped", None
     trace.add("registry_category_mapping", "mapped")
 
-    if not record.active:
+    if not record.active or record.registration_status in {"EXPIRED", "REVOKED"}:
         trace.add("registry_identity", "inactive")
         return Status.DENIED, "registration_inactive", record
 

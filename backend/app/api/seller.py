@@ -14,18 +14,32 @@ from ..workflow import Revision, continue_trace, edit, reevaluate
 router = APIRouter()
 
 
-@router.post("/v1/verifications/{verification_id}/evidence", tags=["Seller"])
+@router.post(
+    "/v1/verifications/{verification_id}/evidence",
+    tags=["Seller"],
+    summary="Upload synthetic seller evidence",
+    responses={
+        404: {"description": "Verification not found"},
+        409: {"description": "Stale audit hash, invalid audit chain, or saved listing cannot be rechecked"},
+        413: {"description": "An evidence file exceeds 2 MiB"},
+    },
+)
 async def evidence(
     request: Request,
     verification_id: UUID,
-    chain_hash: Annotated[str, Form()],
-    product_name: Annotated[ListingText, Form()],
-    license_holder: Annotated[ListingText, Form()],
-    registration_reference: Annotated[ListingText, Form()],
-    label: UploadFile = File(...),
-    certificate: UploadFile = File(...),
+    chain_hash: Annotated[str, Form(description="Use the latest chain_hash from this verification.")],
+    product_name: Annotated[ListingText, Form(description="Product name declared in the evidence.")],
+    license_holder: Annotated[ListingText, Form(description="Licence holder declared in the evidence.")],
+    registration_reference: Annotated[ListingText, Form(description="Registration reference declared in the evidence.")],
+    label: UploadFile = File(description="Nonempty synthetic label file, up to 2 MiB."),
+    certificate: UploadFile = File(description="Nonempty synthetic certificate file, up to 2 MiB."),
 ):
-    """Upload synthetic demo evidence. Only file hashes and declared product fields are stored."""
+    """Save the declared identity and SHA-256 file digests, then return the updated verification.
+
+    R-05 compares the seller's declarations with the synthetic registry. The API discards the
+    uploaded file contents after hashing. Empty files and invalid or blank declarations return
+    422. Use the returned chain_hash for the next action.
+    """
     hashes = []
     for kind, upload in (("label", label), ("certificate", certificate)):
         digest = hashlib.sha256()
@@ -52,8 +66,17 @@ async def evidence(
     return result
 
 
-@router.post("/v1/verifications/{verification_id}/recheck", tags=["Seller"])
+@router.post(
+    "/v1/verifications/{verification_id}/recheck",
+    tags=["Seller"],
+    summary="Recheck a saved verification",
+    responses={
+        404: {"description": "Verification not found"},
+        409: {"description": "Stale audit hash, invalid audit chain, or saved listing cannot be rechecked"},
+    },
+)
 def recheck(verification_id: UUID, revision: Revision, request: Request):
+    """Evaluate the saved listing with the latest evidence and append the result to the audit trace."""
     with edit(request.app.state.database, verification_id, revision.chain_hash) as (connection, result, payload):
         trace = continue_trace(result)
         trace.add("recheck", "Requested with chain_hash " + revision.chain_hash)

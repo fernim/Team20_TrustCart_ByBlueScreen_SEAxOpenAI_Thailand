@@ -20,8 +20,17 @@ def queue(request: Request):
     return sorted(pending, key=lambda result: (-result["risk"]["score"], result["id"]))
 
 
-@router.post("/v1/verifications/{verification_id}/review", tags=["Reviewer"])
+@router.post(
+    "/v1/verifications/{verification_id}/review",
+    tags=["Reviewer"],
+    summary="Record a reviewer decision",
+    responses={
+        404: {"description": "Verification not found"},
+        409: {"description": "Mutation rejected because the audit, saved listing, or approval requirements are unmet"},
+    },
+)
 def review(verification_id: UUID, review: Review, request: Request):
+    """Recheck the listing and record the reviewer decision with a note and the current audit hash."""
     with edit(request.app.state.database, verification_id, review.chain_hash) as (connection, result, payload):
         trace = continue_trace(result)
         reevaluate(connection, result, payload, trace, request.app.state.extraction_client)
