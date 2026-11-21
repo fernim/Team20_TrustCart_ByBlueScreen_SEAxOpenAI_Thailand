@@ -7,7 +7,7 @@
     return result;
   }
   function render(report, result, options = {}) {
-    const title = node("h2", result.listing_title || "ผลการตรวจสอบข้อมูลจำลอง");
+    const title = node("h2", result.listing_title || "ผลการตรวจสอบสินค้า");
     const stepper = node("ol", undefined, "review-stepper");
     const traceEntries = Array.isArray(result.trace) ? result.trace : [];
     const stages = [
@@ -95,7 +95,7 @@
         blockers.length
           ? blockers.join(" • ")
           : canConfirm
-            ? "ผลนี้เป็นข้อมูลจำลอง ไม่ใช่การรับรองอย่างเป็นทางการ"
+            ? "ผลตรวจครอบคลุมเฉพาะกฎที่ระบบรองรับ ไม่ใช่การรับรองอย่างเป็นทางการ"
             : "ต้องตรวจสอบสถานะ ความเชื่อมั่น และการส่งเจ้าหน้าที่ก่อนยืนยัน",
       ),
     );
@@ -127,7 +127,7 @@
       fields,
       node(
         "p",
-        "ตรวจตัวตนและหมวดหมู่ในทะเบียนจำลอง พร้อมกฎ R-03 แบบจำกัดสำหรับคำกล่าวอ้างเกินจริง ไม่ใช่การรับรองสินค้า บัญชีผู้ขาย หรือการรับรองตามกฎหมาย",
+        "ตรวจตัวตน หมวดหมู่ และคำกล่าวอ้างตามกฎที่ระบบรองรับ ไม่ใช่การรับรองสินค้า บัญชีผู้ขาย หรือการรับรองตามกฎหมาย",
         "dialog-note",
       ),
     );

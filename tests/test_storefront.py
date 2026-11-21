@@ -42,7 +42,7 @@ def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
         assert 'id="verification-dialog"' not in customer
         submission = client.post('/v1/verifications', json={
             'registration_reference':'DEMO-001', 'product_name':'Vitamin C Supplement',
-            'license_holder':'LumaVale Demo', 'category':'supplement',
+            'license_holder':'LumaVale', 'category':'supplement',
         })
         assert submission.json()['status'] == 'APPROVED'
         stored = client.get(submission.headers['location']).json()
@@ -51,7 +51,7 @@ def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
 
 
 def test_seller_page_and_listing_snapshot_roundtrip(tmp_path):
-    payload = {'registration_reference':'DEMO-001','product_name':'Vitamin C Supplement','license_holder':'LumaVale Demo','category':'supplement','title':'LumaVale Vitamin C','description':'Synthetic listing.'}
+    payload = {'registration_reference':'DEMO-001','product_name':'Vitamin C Supplement','license_holder':'LumaVale','category':'supplement','title':'LumaVale Vitamin C','description':'Synthetic listing.'}
     with TestClient(create_app(tmp_path/'seller.sqlite3')) as client:
         assert client.get('/seller').status_code == 200
         result = client.post('/v1/verifications',json=payload)

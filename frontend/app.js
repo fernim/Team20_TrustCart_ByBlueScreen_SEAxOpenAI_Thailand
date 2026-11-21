@@ -156,14 +156,7 @@
       1290,
       456,
     ],
-    [
-      "อุปกรณ์ตกแต่งรถยนต์ ชุดจำลอง",
-      "Demo automotive accessory set",
-      20,
-      159,
-      299,
-      345,
-    ],
+    ["อุปกรณ์ตกแต่งรถยนต์ ชุด", "Automotive accessory set", 20, 159, 299, 345],
     [
       "ชุดเครื่องเขียน สำหรับโต๊ะทำงาน",
       "Desk stationery set",
@@ -172,15 +165,8 @@
       199,
       2490,
     ],
-    ["บัตรกำนัลจำลอง สำหรับสาธิต", "Sample gift voucher", 22, 100, 120, 80],
-    [
-      "ดีลร้านค้าใกล้บ้าน สำหรับสาธิต",
-      "Sample neighbourhood store deal",
-      23,
-      69,
-      99,
-      91,
-    ],
+    ["บัตรกำนัล ", "Gift voucher", 22, 100, 120, 80],
+    ["ดีลร้านค้าใกล้บ้าน ", "Neighbourhood store deal", 23, 69, 99, 91],
   ].map(([th, en, category, price, original, sold], id) => ({
     id,
     th,
@@ -199,34 +185,33 @@
   };
   // This listing uses the existing synthetic fixture; no registry record is invented here.
   const checkedProduct = catalog[14];
-  checkedProduct.th = "ลูมาเวล วิตามินซี · แบรนด์สมมติ";
-  checkedProduct.en = "LumaVale Vitamin C · fictional brand";
+  checkedProduct.th = "ลูมาเวล วิตามินซี";
+  checkedProduct.en = "LumaVale Vitamin C";
   const overclaimExamples = [
     {
       th: "ออราเฟิร์น คอลลาเจน — ผิวดูอ่อนวัยใน 3 วัน",
       en: "AuraFern Collagen — younger-looking skin in 3 days",
-      descriptionTh:
-        "แบรนด์สมมติ AuraFern · ตัวอย่างคำกล่าวอ้างเกินจริงสำหรับทดสอบ: ‘ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน’ ข้อความนี้ไม่ได้รับการยืนยันและไม่ใช่คำแนะนำ",
+      descriptionTh: "AuraFern คอลลาเจน ผิวดูอ่อนวัยใน 3 วัน เห็นผลแน่นอนทุกคน",
       descriptionEn:
-        "Fictional brand AuraFern. Overclaim test example: ‘Younger-looking skin in 3 days, guaranteed for everyone.’ Unsupported sample advertising, not advice.",
+        "AuraFern Collagen. Younger-looking skin in 3 days, guaranteed for everyone.",
       price: 329,
     },
     {
       th: "โนวาลีฟ วิตามินซี — ผิวกระจ่างใสทันที 100%",
       en: "NovaLeaf Vitamin C — instantly brighter skin, 100% guaranteed",
       descriptionTh:
-        "แบรนด์สมมติ NovaLeaf · ตัวอย่างคำกล่าวอ้างเกินจริงสำหรับทดสอบ: ‘ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก’ เป็นข้อความโฆษณาจำลองที่อ้างผลทันทีและรับประกันเกินจริง ไม่ใช่ข้อเท็จจริง",
+        "NovaLeaf วิตามินซี ผิวกระจ่างใสทันที 100% ตั้งแต่ครั้งแรก",
       descriptionEn:
-        "Fictional brand NovaLeaf. Overclaim test example: ‘Instantly brighter skin, 100% guaranteed from the first use.’ Unsupported instant-result guarantee, not a factual benefit.",
+        "NovaLeaf Vitamin C. Instantly brighter skin, 100% guaranteed from the first use.",
       price: 189,
     },
     {
       th: "ซันพีค น้ำมันปลา — ความจำดีขึ้นทันทีทุกคน",
       en: "SunPeak Fish Oil — instantly better memory for everyone",
       descriptionTh:
-        "แบรนด์สมมติ SunPeak · ตัวอย่างคำกล่าวอ้างเกินจริงสำหรับทดสอบ: ‘ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น’ ข้อความนี้ไม่ได้รับการยืนยัน ใช้เป็นกรณีทดสอบเท่านั้น ไม่ใช่คำแนะนำ",
+        "SunPeak น้ำมันปลา ความจำดีขึ้นทันที เห็นผลทุกคนโดยไม่มีข้อยกเว้น",
       descriptionEn:
-        "Fictional brand SunPeak. Overclaim test example: ‘Instantly better memory for everyone, without exception.’ Unsupported sample claim for testing only, not advice.",
+        "SunPeak Fish Oil. Instantly better memory for everyone, without exception.",
       price: 259,
     },
   ];
@@ -323,7 +308,7 @@
   const text = {
     th: {
       results: "รายการ",
-      allProducts: "สินค้าจำลองทั้งหมด",
+      allProducts: "สินค้าทั้งหมด",
       search: "ค้นหา",
       clear: "ล้างตัวกรอง",
       noResults: "ไม่พบสินค้า",
@@ -336,11 +321,11 @@
       all: "ดูทั้งหมด",
       close: "ปิด",
       cart: "ตะกร้าสินค้า",
-      homeTitle: "ช้อปสินค้าออนไลน์ — เว็บไซต์จำลอง TrustCart",
+      homeTitle: "ช้อปสินค้าออนไลน์ — TrustCart",
     },
     en: {
       results: "items",
-      allProducts: "All demo products",
+      allProducts: "All products",
       search: "Search",
       clear: "Clear filters",
       noResults: "No products found",
@@ -408,16 +393,6 @@
       );
     }
     copy.append(productName, element("span", "shipping-tag", t("shipping")));
-    if (product.overclaim)
-      copy.append(
-        element(
-          "span",
-          "overclaim-warning",
-          state.language === "th"
-            ? "ตัวอย่างคำกล่าวอ้างเกินจริง"
-            : "Overclaim test example",
-        ),
-      );
     const bottom = element("div", "product-bottom");
     bottom.append(
       element("span", "price", price(product.price)),
@@ -533,14 +508,14 @@
     welcome: "สิทธิพิเศษลูกค้าใหม่",
     trendy: "ช้อปปี้เทรนด์ดี้",
     home: "ดีลเครื่องใช้ไฟฟ้า",
-    claimed: "เก็บแล้ว · โค้ดจำลอง",
-    claim: "เก็บโค้ดจำลอง",
-    couponSaved: "เก็บโค้ดจำลองแล้ว",
+    claimed: "เก็บโค้ดแล้ว",
+    claim: "เก็บโค้ด",
+    couponSaved: "เก็บโค้ดแล้ว",
     previous: "โปรโมชั่นก่อนหน้า",
     next: "โปรโมชั่นถัดไป",
     promo: "โปรโมชั่น",
     soldFast: "ขายดี",
-    sampleTime: "เวลานับถอยหลังสำหรับสาธิต",
+    sampleTime: "เวลานับถอยหลัง",
   });
   Object.assign(text.en, {
     welcome: "New customer offers",
@@ -713,30 +688,29 @@
   Object.assign(text.th, {
     quantity: "จำนวน",
     add: "เพิ่มไปยังตะกร้า",
-    added: "เพิ่มสินค้าลงตะกร้าจำลองแล้ว",
+    added: "เพิ่มสินค้าลงตะกร้าแล้ว",
     quantityError: "กรุณาระบุจำนวนเต็มตั้งแต่ 1 ถึง 99 ชิ้น",
     emptyCart: "ยังไม่มีสินค้าในตะกร้า",
-    total: "ยอดรวมจำลอง",
+    total: "ยอดรวม",
     remove: "ลบ",
-    sampleProduct:
-      "สินค้าจำลอง · ภาพประกอบจากเว็บไซต์อ้างอิง · ไม่ใช่ผลการรับรอง",
-    accountTitle: "บัญชีสำหรับสาธิต",
+    sampleProduct: "สินค้า · ภาพประกอบจากเว็บไซต์อ้างอิง · ไม่ใช่ผลการรับรอง",
+    accountTitle: "บัญชี",
     accountBody:
-      "ต้นแบบนี้ไม่มีระบบบัญชี ไม่ต้องกรอกชื่อผู้ใช้หรือรหัสผ่าน สามารถทดลองค้นหาและเพิ่มสินค้าลงตะกร้าจำลองได้ทันที",
+      "ระบบบัญชียังไม่เปิดให้บริการ คุณสามารถค้นหาและเพิ่มสินค้าลงตะกร้าได้",
     sellerTitle: "Seller Centre",
     sellerBody:
-      "หน้าผู้ขายยังไม่อยู่ในขอบเขตต้นแบบนี้ ทดลองใช้งาน API ตรวจสอบข้อมูลจำลองได้ที่ /docs",
-    helpTitle: "วิธีใช้งานเว็บไซต์จำลอง",
+      "หน้าผู้ขายยังไม่อยู่ในขอบเขตต้นแบบนี้ ทดลองใช้งาน API ตรวจสอบข้อมูลได้ที่ /docs",
+    helpTitle: "วิธีใช้งานเว็บไซต์",
     helpBody:
-      "ค้นหาสินค้า เลือกหมวดหมู่ เปิดรายละเอียด และทดลองเพิ่มสินค้าลงตะกร้า ข้อมูลทั้งหมดเป็นข้อมูลจำลอง ไม่มีการชำระเงินหรือจัดส่งจริง",
-    downloadTitle: "เว็บไซต์จำลองบนมือถือ",
+      "ค้นหาสินค้า เลือกหมวดหมู่ เปิดรายละเอียด และเพิ่มสินค้าลงตะกร้า การชำระเงินยังไม่เปิดให้บริการ",
+    downloadTitle: "เว็บไซต์บนมือถือ",
     downloadBody:
       "ต้นแบบนี้รองรับการใช้งานผ่านเบราว์เซอร์บนมือถือ ไม่มีแอปพลิเคชันให้ดาวน์โหลด",
-    socialTitle: "ช่องทางสำหรับสาธิต",
+    socialTitle: "ช่องทาง",
     socialBody:
       "ปุ่มนี้แสดงรูปแบบหน้าร้านเท่านั้น ต้นแบบไม่เชื่อมต่อบัญชีโซเชียลมีเดีย",
     notificationsTitle: "การแจ้งเตือน",
-    notificationsBody: "ไม่มีการแจ้งเตือนใหม่ในเว็บไซต์จำลอง",
+    notificationsBody: "ไม่มีการแจ้งเตือนใหม่ในเว็บไซต์",
     aboutTitle: "เกี่ยวกับต้นแบบ TrustCart",
     aboutBody:
       "สร้างโดย Team BlueScreen โดยอ้างอิงรูปแบบหน้าแรกของ Shopee Thailand เพื่อสาธิตหน้าร้านเท่านั้น ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ Shopee",
@@ -744,16 +718,16 @@
   Object.assign(text.en, {
     quantity: "Quantity",
     add: "Add to cart",
-    added: "Added to demo cart",
+    added: "Added to cart",
     quantityError: "Enter a whole number from 1 to 99",
     emptyCart: "Your cart is empty",
-    total: "Demo total",
+    total: "Total",
     remove: "Remove",
     sampleProduct:
       "Synthetic product · reference imagery · no verification result",
     accountTitle: "Demo account",
     accountBody:
-      "This prototype has no account system. No username or password is needed. Browse products and try the demo cart directly.",
+      "Accounts are not available yet. You can browse products and add items to your cart.",
     sellerTitle: "Seller Centre",
     sellerBody:
       "The seller portal is outside this UI prototype. Try the synthetic verification API at /docs.",
@@ -816,35 +790,14 @@
       $("#product-dialog").close();
       toast(t("added"));
     });
-    details.append(
-      heading,
-      element(
-        "div",
-        "detail-note",
-        hasProductVerification(product)
-          ? state.language === "th"
-            ? "สินค้าจำลอง · ตรวจเฉพาะทะเบียนและหมวดหมู่"
-            : "Synthetic product · identity and category check only"
-          : t("sampleProduct"),
-      ),
-      amount,
-      quantity,
-      add,
-    );
+    details.append(heading, amount, quantity, add);
     if (product.overclaim) {
-      const warning = element(
-        "p",
-        "overclaim-warning",
-        state.language === "th"
-          ? "ตัวอย่างคำกล่าวอ้างเกินจริง · แบรนด์สมมติ · ไม่ได้รับการยืนยัน"
-          : "Overclaim test example · fictional brand · unverified",
-      );
       const description = element(
         "p",
         "product-description",
         state.language === "th" ? product.descriptionTh : product.descriptionEn,
       );
-      details.insertBefore(warning, amount);
+
       details.insertBefore(description, amount);
     }
     if (product.sourceUrl) {
@@ -864,7 +817,7 @@
         element(
           "p",
           "detail-note",
-          "ตัวอย่างอ้างอิง · สรุปข้อมูลบรรจุภัณฑ์จากชื่อรายการ ไม่ใช่คำอธิบายต้นฉบับ · ยังไม่ได้ตรวจยืนยัน",
+          "ข้อมูลบรรจุภัณฑ์จากรายการอ้างอิง · ยังไม่ได้ตรวจยืนยัน",
         ),
         amount,
       );
@@ -1050,6 +1003,48 @@
     state.language = $("#language").value === "en" ? "en" : "th";
     renderLanguage();
   });
+  Object.assign(text.th, {
+    accountTitle: "บัญชีผู้ใช้",
+    helpTitle: "ศูนย์ช่วยเหลือ",
+    downloadTitle: "ใช้งานบนมือถือ",
+    downloadBody: "เปิดเว็บไซต์นี้ผ่านเบราว์เซอร์บนมือถือ",
+    socialTitle: "ติดตามเรา",
+    socialBody: "ช่องทางโซเชียลยังไม่เปิดให้บริการ",
+    aboutTitle: "เกี่ยวกับ TrustCart",
+    aboutBody: "ระบบตรวจสอบข้อมูลสินค้าจาก Team BlueScreen",
+    sellerBody: "จัดการรายการสินค้าได้ที่ Seller Centre",
+    sampleTime: "เวลาที่เหลือ",
+  });
+  Object.assign(text.en, {
+    demo: "TrustCart · Product verification",
+    sampleDeals: "Special deals",
+    synthetic: "TrustCart",
+    homeTitle: "Shop online with TrustCart",
+    claim: "Save voucher",
+    claimed: "Voucher saved",
+    couponSaved: "Voucher saved",
+    sampleTime: "Time remaining",
+    cartNote: "Cart resets when you reload",
+    couponNote: "Checkout is not available yet.",
+    aboutTitle: "Shop with TrustCart",
+    aboutBody:
+      "Discover products and check listing information with TrustCart.",
+    verificationNote:
+      "Verification results cover the checks supported by TrustCart.",
+    independent: "TrustCart by Team BlueScreen · Independent of Shopee",
+    aboutDemo: "About TrustCart",
+    helpTitle: "Help",
+    howTo: "How to shop",
+    aboutTrustCart: "About TrustCart",
+    accountTitle: "Account",
+    downloadBody: "Use this website in your mobile browser.",
+    socialTitle: "Social channels",
+    socialBody: "Social accounts are not connected yet.",
+    notificationsBody: "You have no new notifications.",
+    sellerBody: "Manage your listings in Seller Centre.",
+    helpBody:
+      "Search, browse categories and add products to your cart. Checkout is not available yet.",
+  });
   renderHints();
   renderCart();
   renderCountdown();
@@ -1089,11 +1084,11 @@
               : product.th.split(" — ")[0],
           license_holder:
             product.id === checkedProduct.id
-              ? "LumaVale Demo"
-              : product.en.split(" ")[0] + " Demo",
+              ? "LumaVale"
+              : product.en.split(" ")[0],
           category: "supplement",
           title: product.th,
-          description: product.descriptionTh || "แบรนด์สมมติ · ผลิตภัณฑ์จำลอง",
+          description: product.descriptionTh || "วิตามินซี ชนิดเม็ด",
         }),
       });
       if (!response.ok) throw new Error("verification unavailable");

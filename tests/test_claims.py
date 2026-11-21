@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import create_app
 from backend.app import registry
 
-BASE = dict(registration_reference='DEMO-001', product_name='Vitamin C Supplement', license_holder='LumaVale Demo', category='supplement')
+BASE = dict(registration_reference='DEMO-001', product_name='Vitamin C Supplement', license_holder='LumaVale', category='supplement')
 
 @pytest.mark.parametrize('title,description,expected_code', [
     ('ออราเฟิร์น คอลลาเจน — ผิวดูอ่อนวัยใน 3 วัน', 'เห็นผลแน่นอนทุกคน', 'rapid_appearance_change'),

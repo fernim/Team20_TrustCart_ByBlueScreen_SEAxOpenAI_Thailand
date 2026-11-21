@@ -103,7 +103,7 @@ test("promotions cycle in both directions and a demo coupon can be claimed", (t)
   assert.equal(p.$("#promo-dialog").open, true);
   p.$("#claim-coupon").click();
   assert.equal(p.$("#claim-coupon").disabled, true);
-  assert.match(p.$("#claim-coupon").textContent, /เก็บแล้ว/);
+  assert.match(p.$("#claim-coupon").textContent, /เก็บโค้ดแล้ว/);
   assert.equal(p.$("#toast").hidden, false);
 });
 
@@ -183,7 +183,7 @@ test("language changes update navigation, search hints, categories, product deta
   p.$("#add-to-cart").click();
   p.$("#open-cart").click();
   assert.match(p.$("#cart-items").textContent, /headphones/);
-  assert.match(p.$("#cart-total").textContent, /Demo total: ฿429/);
+  assert.match(p.$("#cart-total").textContent, /Total: ฿429/);
   p.$("#cart-dialog [data-close]").click();
   p.$("#language").value = "th";
   p.$("#language").dispatchEvent(new p.window.Event("change"));
@@ -308,7 +308,7 @@ test("customer badge opens a short status without exposing the reviewer report",
   }
 });
 
-test("three fictional-brand examples retain clear overclaim labels and no verified badge", (t) => {
+test("overclaim product copy has no fictional-brand remarks and no verified badge", (t) => {
   const p = page(t);
   p.$('[data-category="1"]').click();
   assert.equal(p.$$(".product-card").length, 6);
@@ -316,11 +316,11 @@ test("three fictional-brand examples retain clear overclaim labels and no verifi
   for (const card of p.$$(".overclaim-example")) {
     assert.equal(card.querySelector(".product-verified"), null);
     card.click();
-    assert.match(
-      p.$("#product-detail").textContent,
-      /ตัวอย่างคำกล่าวอ้างเกินจริง/,
+    assert.ok(p.$("#product-title").textContent.length > 10);
+    assert.equal(
+      p.$("#product-detail").textContent.includes("แบรนด์สมมติ"),
+      false,
     );
-    assert.match(p.$("#product-detail").textContent, /แบรนด์สมมติ/);
     assert.ok(p.$(".product-description").textContent.length > 40);
     p.$("#product-dialog [data-close]").click();
   }
@@ -350,8 +350,10 @@ test("overclaim listings submit their actual copy and never show a customer stat
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(submitted.length, 4);
   assert.equal(
-    submitted.filter((item) =>
-      item.description.includes("ตัวอย่างคำกล่าวอ้างเกินจริง"),
+    submitted.filter(
+      (item) =>
+        item.description.includes("ทันที") ||
+        item.description.includes("เห็นผลแน่นอน"),
     ).length,
     3,
   );
@@ -365,4 +367,18 @@ test("overclaim listings submit their actual copy and never show a customer stat
       .length,
     4,
   );
+});
+
+test("storefront product language contains no simulation or fictional-brand remarks", (t) => {
+  const p = page(t);
+  p.$('[data-category="1"]').click();
+  for (const card of p.$$(".product-card")) {
+    card.click();
+    assert.doesNotMatch(
+      p.$("#product-detail").textContent,
+      /จำลอง|แบรนด์สมมติ/,
+    );
+    p.$("#product-dialog [data-close]").click();
+  }
+  assert.doesNotMatch(p.document.body.textContent, /จำลอง|แบรนด์สมมติ/);
 });

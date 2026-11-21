@@ -5,22 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="TrustCart marketplace UI prototype. Synthetic products, no real purchases. Independent of Shopee."
+      content="TrustCart marketplace and product verification."
     />
-    <title>TrustCart • Marketplace Demo</title>
+    <title>TrustCart • Marketplace</title>
     <link rel="icon" href="/static/assets/bag.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/static/styles.css" />
     <script defer src="/static/app.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main" data-i18n="skip">ข้ามไปที่เนื้อหาหลัก</a>
-    <div class="demo-strip">
-      <span data-i18n="demo"
-        >TrustCart · เว็บไซต์จำลอง · สินค้าจำลอง · ไม่มีการซื้อขายจริง ·
-        ไม่ใช่เว็บไซต์ทางการของ Shopee</span
-      ><a href="/docs" data-i18n="api">เอกสาร API</a>
-    </div>
-    <nav class="demo-views" aria-label="Demo views">
+    <nav class="demo-views" aria-label="Views">
       <span>หน้าลูกค้า / Customer</span
       ><a id="reviewer-link" href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
       <a href="/seller">หน้าผู้ขาย / Seller</a>
@@ -63,13 +57,13 @@
           </div>
         </nav>
         <div class="search-row">
-          <a class="brand" href="/" aria-label="Shopee style demo homepage"
+          <a class="brand" href="/" aria-label="TrustCart homepage"
             ><img
               src="/static/assets/bag.svg"
               alt=""
               width="45"
               height="52"
-            /><span>Shopee<small>TrustCart demo</small></span></a
+            /><span>Shopee<small>TrustCart</small></span></a
           >
           <div class="search-area">
             <form id="search-form" role="search">
@@ -102,7 +96,7 @@
       <section class="hero-zone" aria-label="Promotions">
         <div class="container">
           <h1 class="sr-only" data-i18n="homeTitle">
-            ช้อปสินค้าออนไลน์ — เว็บไซต์จำลอง TrustCart
+            ช้อปสินค้าออนไลน์กับ TrustCart
           </h1>
           <div class="promotions">
             <div
@@ -173,7 +167,7 @@
               <h2 id="flash-title">FLASH<span>ϟ</span>SALE</h2>
               <span class="countdown" id="countdown" aria-label="เวลาที่เหลือ"
                 >00 : 46 : 48</span
-              ><span class="demo-tag" data-i18n="sampleDeals">ดีลจำลอง</span>
+              ><span class="demo-tag" data-i18n="sampleDeals">ดีลพิเศษ</span>
             </div>
             <button class="text-button" id="all-deals" data-i18n="all">
               ดูทั้งหมด
@@ -225,18 +219,12 @@
           </button>
         </section>
         <section class="about">
-          <h2 data-i18n="aboutTitle">
-            ช้อปปิ้งออนไลน์ในมุมมองใหม่ กับ TrustCart
-          </h2>
+          <h2 data-i18n="aboutTitle">ช้อปสินค้าอย่างมั่นใจกับ TrustCart</h2>
           <p data-i18n="aboutBody">
-            ต้นแบบหน้าร้านสำหรับสาธิต TrustCart โดยอ้างอิงรูปแบบหน้าแรกของ
-            Shopee Thailand สินค้า ราคา
-            และโปรโมชั่นในหน้านี้ใช้เพื่อการสาธิตเท่านั้น
-            ไม่มีการชำระเงินหรือสั่งซื้อจริง
+            เลือกซื้อสินค้า ค้นหาดีล และตรวจสอบข้อมูลรายการก่อนตัดสินใจ
           </p>
           <p data-i18n="verificationNote">
-            หน้านี้ไม่แสดงผลการรับรองสินค้า ระบบตรวจสอบทะเบียนจำลองอยู่ที่ API
-            และครอบคลุมเฉพาะการตรวจสอบตัวตนและหมวดหมู่ในข้อมูลจำลอง
+            ผลตรวจสอบครอบคลุมเฉพาะกฎที่ระบบรองรับ
           </p>
           <a href="/docs" data-i18n="api">เอกสาร API</a>
         </section>
@@ -246,8 +234,7 @@
       <div class="container footer-grid">
         <section>
           <h3 data-i18n="helpCenter">ศูนย์ช่วยเหลือ</h3>
-          <button data-info="help" data-i18n="howTo">
-            วิธีใช้งานเว็บไซต์จำลอง</button
+          <button data-info="help" data-i18n="howTo">วิธีใช้งาน</button
           ><button data-info="cart" data-i18n="cart">ตะกร้าสินค้า</button
           ><button data-info="help" data-i18n="shipping">
             การจัดส่งสินค้า
@@ -257,7 +244,7 @@
           <h3 data-i18n="aboutTrustCart">เกี่ยวกับ TRUSTCART</h3>
           <a href="/docs" data-i18n="api">เอกสาร API</a
           ><button data-info="about" data-i18n="aboutDemo">
-            เกี่ยวกับต้นแบบ</button
+            เกี่ยวกับ TrustCart</button
           ><a
             href="https://shopee.co.th/"
             target="_blank"
@@ -286,13 +273,14 @@
         <section>
           <h3>TEAM BLUESCREEN</h3>
           <p>Sea × OpenAI<br />Thailand Hackathon</p>
-          <p data-i18n="synthetic">ข้อมูลสินค้าจำลองทั้งหมด</p>
+          <p data-i18n="synthetic">TrustCart</p>
         </section>
       </div>
       <div class="container footer-bottom">
         <span>© 2026 TrustCart · Team BlueScreen</span
         ><span data-i18n="independent"
-          >ต้นแบบอิสระ ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ Shopee</span
+          >TrustCart โดย Team BlueScreen · ไม่มีความเกี่ยวข้องอย่างเป็นทางการกับ
+          Shopee</span
         ><a href="#main" data-i18n="backTop">กลับด้านบน</a>
       </div>
     </footer>
@@ -303,13 +291,13 @@
     <dialog id="product-status-dialog" aria-labelledby="product-status-title">
       <button class="dialog-close" data-close aria-label="ปิด">×</button>
       <h2 id="product-status-title">สถานะสินค้า</h2>
-      <p class="dialog-note" data-i18n="synthetic">ข้อมูลสินค้าจำลองทั้งหมด</p>
+      <p class="dialog-note" data-i18n="synthetic">TrustCart</p>
     </dialog>
     <dialog id="cart-dialog" aria-labelledby="cart-title">
       <button class="dialog-close" data-close aria-label="ปิด">×</button>
       <h2 id="cart-title" data-i18n="cart">ตะกร้าสินค้า</h2>
       <p class="dialog-note" data-i18n="cartNote">
-        ตะกร้าจำลอง · ไม่มีการสั่งซื้อจริง · รีเซ็ตเมื่อโหลดหน้าใหม่
+        ตะกร้าสินค้าจะเริ่มใหม่เมื่อโหลดหน้าใหม่
       </p>
       <div id="cart-items"></div>
       <div id="cart-total"></div>
@@ -326,19 +314,17 @@
       <button class="dialog-close" data-close aria-label="ปิด">×</button
       ><span class="coupon-icon" aria-hidden="true">%</span>
       <h2 id="promo-title"></h2>
-      <p data-i18n="couponNote">
-        โค้ดสำหรับสาธิตเท่านั้น ไม่สามารถใช้กับคำสั่งซื้อจริงได้
-      </p>
+      <p data-i18n="couponNote">การชำระเงินยังไม่เปิดให้บริการ</p>
       <div class="coupon-code">DEMO-WELCOME</div>
       <button id="claim-coupon" class="primary" data-i18n="claim">
-        เก็บโค้ดจำลอง
+        เก็บโค้ด
       </button>
     </dialog>
     <div id="toast" class="toast" role="status" hidden></div>
     <noscript
       ><p class="noscript">
-        เปิดใช้ JavaScript เพื่อค้นหาและดูสินค้าจำลอง / Enable JavaScript to
-        browse demo products.
+        เปิดใช้ JavaScript เพื่อค้นหาและดูสินค้า / Enable JavaScript to browse
+        products.
       </p></noscript
     >
   </body>

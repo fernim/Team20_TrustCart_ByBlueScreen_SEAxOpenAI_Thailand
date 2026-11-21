@@ -22,7 +22,7 @@ def test_submit_and_retrieve(tmp_path, reference, product, category, status):
     payload = {
         "registration_reference": reference,
         "product_name": product,
-        "license_holder": "LumaVale Demo",
+        "license_holder": "LumaVale",
         "category": category,
     }
     with TestClient(create_app(database)) as client:
@@ -57,7 +57,7 @@ def test_registry_outage_routes_to_review(tmp_path, monkeypatch):
             json={
                 "registration_reference": "DEMO-001",
                 "product_name": "Vitamin C Supplement",
-                "license_holder": "LumaVale Demo",
+                "license_holder": "LumaVale",
                 "category": "supplement",
             },
         )

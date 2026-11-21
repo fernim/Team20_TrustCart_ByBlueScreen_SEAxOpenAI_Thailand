@@ -22,7 +22,7 @@ Open `http://127.0.0.1:8000/` for the storefront UI prototype, or `http://127.0.
 $listing = @{
     registration_reference = 'DEMO-001'
     product_name = 'Vitamin C Supplement'
-    license_holder = 'LumaVale Demo'
+    license_holder = 'LumaVale'
     category = 'supplement'
 } | ConvertTo-Json
 
@@ -90,3 +90,7 @@ Two normal, unverified reference listings now use short title excerpts from Shop
 Open `/seller` from the view navigation or Seller Centre. The Shopee-style workspace provides product title, description, category, registration reference, registered product name and licence-holder fields. Save an unverified local draft, or submit to the existing verification API. The full submitted listing is saved with its verification in SQLite, so selecting a current-session report restores its original fields. Legacy reports without snapshots require the seller to enter missing fields again.
 
 The seller product list shares current-session report IDs with the reviewer page. Seller and reviewer use the same progress renderer; sellers see status, rule progress and corrective reasons, while raw audit entries and hashes appear only in the reviewer view. Editing a field clears the displayed result and requires a fresh check. Corrections create a new report and preserve previous results. Network failures never display approval. Drafts use browser local storage; the recent report list is session-local. This is a local prototype without seller authentication, marketplace publication, or uploads. The supplied Shopee URL is the public storefront; this is a styled recreation rather than a verified copy of the authenticated Seller Centre.
+
+## Product-facing presentation
+
+Customer, seller and reviewer screens use normal product-facing wording without simulation or fictional-brand labels. The sample registry holder is now `LumaVale`; its reference remains `DEMO-001`. This copy cleanup does not add real-registry access, accounts, checkout, publication or official Shopee affiliation. Backend `registry_source` metadata remains truthful and existing audit records are preserved. Catalog fixtures and unsupported claim examples remain test data even though those remarks are no longer displayed in product copy.
