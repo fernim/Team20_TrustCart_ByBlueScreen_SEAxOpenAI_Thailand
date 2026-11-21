@@ -34,6 +34,8 @@ def run(client, result, mode="replay"):
 
 
 def approve_review(client, password, product, result):
+    if result["status"] == "APPROVED":
+        return result
     login(client, password, "reviewer")
     response = client.post(
         "/v1/reviewer/submissions/" + result["id"] + "/decision",
@@ -57,8 +59,8 @@ def test_replay_approval_and_buyer_document_isolation(connected):
     client, password = connected
     product, result = setup_case(client, password)
     result = run(client, result)
-    assert result["status"] == "PENDING" and result["mode"] == "replay"
-    assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
+    assert result["status"] == "APPROVED" and result["mode"] == "replay"
+    assert client.get("/v1/catalog/products").json()[0]["badge_eligible"]
     result = approve_review(client, password, product, result)
     assert len(result["rule_results"]) == 5
     doc = result["documents"][0]["id"]

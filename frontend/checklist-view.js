@@ -64,12 +64,23 @@ window.TrustCartChecklist = (() => {
     section.append(
       node(
         "p",
-        text(
-          "ผลเบื้องต้นไม่ใช่การอนุมัติ ต้องให้ Agency ตรวจและยืนยันก่อนแสดงเครื่องหมาย",
-          "Pre-checks are not approval. Agency must review and confirm before a badge is granted.",
-        ),
+        result.status === "APPROVED" && result.stage === "COMPLETED"
+          ? text(
+              "ผ่านการตรวจตามกฎและเกณฑ์ความมั่นใจแล้ว ไม่ต้องอนุมัติซ้ำ ข้อมูลทะเบียนเป็นข้อมูลจำลอง",
+              "Passed the required rules and confidence threshold. No additional approval is needed. Registry data is synthetic.",
+            )
+          : result.status === "DENIED"
+            ? text(
+                "พบข้อที่ไม่ผ่าน ต้องแก้ไขและส่งตรวจฉบับใหม่",
+                "Required checks failed. Correct the listing and submit a new revision.",
+              )
+            : text(
+                "กรณีไม่แน่ใจหรือข้อมูลไม่ครบจะส่งให้ Agency ตรวจ ผลที่ยังยืนยันไม่ได้ไม่มีเครื่องหมาย",
+                "Uncertain or incomplete evidence goes to Agency. Unconfirmed results receive no badge.",
+              ),
       ),
     );
+
     if (result.mode === "replay")
       section.append(
         node(

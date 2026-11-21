@@ -355,7 +355,11 @@
       feedback(
         submission.stage === "UNAVAILABLE"
           ? "Check complete: UNKNOWN. Automated checks unavailable; Agency can inspect the case. Retry is required before approval."
-          : `Check complete: ${submission.status}. Checklist saved and sent to Agency. No approval badge until reviewer confirmation.`,
+          : submission.status === "APPROVED"
+            ? "Check complete: APPROVED. Required checks passed with sufficient confidence; no further approval is needed."
+            : submission.status === "DENIED"
+              ? "Check complete: DENIED. Correct the recorded failures and submit a new revision."
+              : "Check complete: PENDING. More information or reviewer confirmation is needed; checklist sent to Agency.",
       );
     } finally {
       showSelected();

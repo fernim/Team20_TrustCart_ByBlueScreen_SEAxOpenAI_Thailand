@@ -1,4 +1,5 @@
 import httpx
+import pytest
 from contextlib import closing
 from backend.app import database as store
 from test_connected_access import connected, login
@@ -26,7 +27,7 @@ def submit(client, result):
     )
 
 
-def test_submit_automatically_checks_documents_and_claims_then_routes_without_badge(
+def test_submit_auto_approves_only_completed_confident_checks(
     connected,
 ):
     client, password = connected
@@ -38,17 +39,17 @@ def test_submit_automatically_checks_documents_and_claims_then_routes_without_ba
     checked = response.json()
     assert calls == ["documents", "claims"]
     assert checked["mode"] == "live"
-    assert checked["status"] == "PENDING"
-    assert checked["stage"] == "REVIEWER_REQUIRED" and checked["human_review_required"]
+    assert checked["status"] == "APPROVED"
+    assert checked["stage"] == "COMPLETED" and not checked["human_review_required"]
     assert checked["precheck_status"] == "APPROVED"
     assert len(checked["rule_results"]) == 5
     assert checked["document_check"]["state"] == "completed"
     assert checked["claim_check"]["state"] == "completed"
-    assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
+    assert client.get("/v1/catalog/products").json()[0]["badge_eligible"]
     assert submit(client, result).json()["chain_hash"] == checked["chain_hash"]
     assert calls == ["documents", "claims"]
     login(client, password, "reviewer")
-    queue = client.get("/v1/reviewer/queue?work_queue=to_review").json()
+    queue = client.get("/v1/reviewer/queue?work_queue=completed").json()
     assert any(row["id"] == checked["id"] for row in queue["items"])
     stored = client.get("/v1/reviewer/submissions/" + checked["id"]).json()
     assert stored["audit"]["valid"]
@@ -86,7 +87,7 @@ def test_ungrounded_claims_are_dropped_and_stale_submits_never_call_provider(con
     }
     checked = submit(client, result).json()
     assert checked["claim_check"]["claims"] == []
-    assert checked["status"] == "PENDING"
+    assert checked["status"] == "APPROVED"
     client.put(
         "/v1/seller/products/" + product["id"],
         json={**product["listing"], "expected_version": 1},
@@ -159,7 +160,7 @@ def test_real_provider_boundary_calls_openai_for_both_checklists(
     monkeypatch.setattr(httpx, "post", post)
     checked = submit(client, result).json()
     assert called == ["document_readiness", "listing_claims"]
-    assert checked["status"] == "PENDING" and checked["precheck_status"] == "APPROVED"
+    assert checked["status"] == "APPROVED" and checked["precheck_status"] == "APPROVED"
 
 
 def test_grounded_claim_failure_and_missing_check_cannot_be_overridden(connected):
@@ -168,7 +169,7 @@ def test_grounded_claim_failure_and_missing_check_cannot_be_overridden(connected
     configure_checks(client, [])
     checked = submit(client, result).json()
     assert checked["status"] == "DENIED"
-    assert checked["stage"] == "REVIEWER_REQUIRED"
+    assert checked["stage"] == "COMPLETED"
     assert any(
         rule["rule"] == "R-03" and rule["result"] == "fail"
         for rule in checked["rule_results"]
@@ -214,3 +215,47 @@ def test_review_cannot_skip_unrun_checks_even_with_confirmed_documents(connected
     )
     assert response.status_code == 409
     assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
+
+
+def test_low_confidence_or_missing_information_stays_pending(connected):
+    client, password = connected
+    _, result = setup_case(client, password, "uncertain")
+    configure_checks(client, [])
+    checked = submit(client, result).json()
+    assert checked["status"] == "PENDING"
+    assert checked["stage"] == "REVIEWER_REQUIRED" and checked["human_review_required"]
+    assert checked["document_check"]["result"] == "review"
+    assert not client.get("/v1/catalog/products").json()[0]["badge_eligible"]
+    _, result = setup_case(client, password)
+
+    def missing_information(listing, docs):
+        findings = replay(listing, docs)
+        findings["missing"] = ["Additional label information is required"]
+        return findings
+
+    configure_checks(client, [])
+    client.app.state.document_assessor = missing_information
+    checked = submit(client, result).json()
+    assert checked["status"] == "PENDING" and checked["human_review_required"]
+    assert checked["document_check"]["result"] == "review"
+
+
+
+@pytest.mark.parametrize("confidence,status", [(0.74, "PENDING"), (0.75, "APPROVED")])
+def test_auto_approval_respects_confidence_threshold(connected, confidence, status):
+    client, password = connected
+    _, result = setup_case(client, password)
+    configure_checks(client, [])
+
+    def assessor(listing, docs):
+        findings = replay(listing, docs)
+        findings["confidence"] = confidence
+        return findings
+
+    client.app.state.document_assessor = assessor
+    checked = submit(client, result).json()
+    assert checked["status"] == status
+    assert checked["human_review_required"] is (status == "PENDING")
+    assert client.get("/v1/catalog/products").json()[0]["badge_eligible"] is (
+        status == "APPROVED"
+    )

@@ -293,11 +293,16 @@ def run(submission_id: UUID, payload: Run, request: Request):
                     )
                     event(result, "R-03", rule)
     result["precheck_status"] = result["status"]
-    if result["status"] == "APPROVED":
-        result.update(status="PENDING", reason="agency_review_required")
+    # Confident, complete findings can pass the deterministic rules automatically.
+    # Only unresolved evidence/uncertainty needs an additional Agency decision.
+    needs_review = result["status"] in ("PENDING", "UNKNOWN")
     result.update(
-        stage="UNAVAILABLE" if result["status"] == "UNKNOWN" else "REVIEWER_REQUIRED",
-        human_review_required=True,
+        stage=(
+            "UNAVAILABLE"
+            if result["status"] == "UNKNOWN"
+            else "REVIEWER_REQUIRED" if needs_review else "COMPLETED"
+        ),
+        human_review_required=needs_review,
     )
     event(
         result,
@@ -305,7 +310,7 @@ def run(submission_id: UUID, payload: Run, request: Request):
         {
             "status": result["status"],
             "precheck_status": result["precheck_status"],
-            "required": True,
+            "required": needs_review,
         },
     )
     with transaction(request.app.state.database) as connection:
