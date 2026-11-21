@@ -43,3 +43,5 @@ The reviewer remains an unauthenticated, read-only local demo. UI separation is 
 Seller progress uses `verification-view.js`, shared with the reviewer. Seller rendering disables raw audit details while retaining the backend status, check outcomes and concrete fixes. Editing invalidates the on-screen result immediately; loading and error messages are announced in a live region.
 
 Seller summaries use 88px saved-image thumbnails, product titles, price/stock/status metadata, and distinct Edit/View product actions. Below 760px actions wrap beneath the summary. Status pills in the seller workspace are separate from the customer’s product-only verification badge. Shop-level “ร้านแนะนำ” labels are absent because this app has no seller recommendation records.
+
+The reviewer’s latest-product list reuses seller thumbnail and metadata styles, with an Open report action in place of Edit/View product. It displays persisted verification statuses only. Mobile actions span the row. Unchanged refreshes preserve DOM controls and focus; report lookup, list loading, and list errors have separate states. Detailed reports remain reviewer-only.

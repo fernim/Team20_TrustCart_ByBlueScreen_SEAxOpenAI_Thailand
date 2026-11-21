@@ -21,7 +21,7 @@ const report = {
     },
   ],
 };
-function reviewer(t, fetch, setup = () => {}, url = "http://localhost/reviewer") {
+function reviewer(t, fetch, setup = () => {}, url = "http://localhost/reviewer", productsFetch = async () => ({ok:true,json:async()=>[]})) {
   const dom = new JSDOM(
     fs.readFileSync(
       path.join(__dirname, "../../frontend/reviewer.html"),
@@ -29,7 +29,8 @@ function reviewer(t, fetch, setup = () => {}, url = "http://localhost/reviewer")
     ),
     { url, runScripts: "outside-only" },
   );
-  dom.window.fetch = fetch;
+  dom.window.fetch = (url,options) => url === "/v1/products" ? productsFetch(url,options) : fetch(url,options);
+  dom.window.HTMLElement.prototype.scrollIntoView = function () {};
   setup(dom.window);
   dom.window.eval(
     fs.readFileSync(
@@ -270,4 +271,58 @@ test('reviewer ignores a late failure after a newer successful lookup', async (t
   await new Promise((resolve) => setImmediate(resolve));
   assert.match(p.$('#reviewer-report').textContent, /APPROVED/);
   assert.equal(p.$('#reviewer-error').hidden, true);
+});
+
+test('reviewer product list shows current saved summary and opens its latest report',async(t)=>{
+  let latest={id:'saved-product',version:1,listing:{title:'Saved product',price:'249.50',stock:7,images:['data:image/png;base64,aA==']},verification:report};
+  const p=reviewer(t,async()=>({ok:true,json:async()=>latest.verification}),()=>{},'http://localhost/reviewer',async()=>({ok:true,json:async()=>[latest]}));
+  await new Promise(r=>setImmediate(r));
+  const row=p.$('.reviewer-product-entry');
+  assert.equal(row.querySelector('img').getAttribute('src'),latest.listing.images[0]);
+  assert.match(row.querySelector('.seller-item-price').textContent,/249.50/);
+  assert.match(row.querySelector('.seller-item-stock').textContent,/7/);
+  assert.match(row.querySelector('.seller-item-status').textContent,/APPROVED/);
+  latest={...latest,version:2,listing:{...latest.listing,price:'99.00',stock:0},verification:{...report,id:'8aba58f0-1e89-4ba6-89af-3b86b469c819',status:'DENIED'}};
+  p.dom.window.dispatchEvent(new p.dom.window.Event('focus'));
+  await new Promise(r=>setImmediate(r));
+  assert.match(p.$('.reviewer-product-entry').textContent,/99.00.*สต็อก 0.*DENIED/);
+  p.$('.reviewer-open-report').click();
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#report-id').value,latest.verification.id);
+  assert.match(p.$('#reviewer-report').textContent,/DENIED/);
+  assert.ok(p.$('.reviewer-trace'));
+});
+
+test('reviewer product list failure clears stale summaries and allows retry',async(t)=>{
+  let fail=false;
+  const p=reviewer(t,async()=>({ok:true,json:async()=>report}),()=>{},'http://localhost/reviewer',async()=>{
+    if(fail) throw Error('offline');
+    return {ok:true,json:async()=>[{id:'saved',listing:{title:'Saved',price:'10',stock:1,images:[]},verification:report}]};
+  });
+  await new Promise(r=>setImmediate(r));
+  assert.ok(p.$('.reviewer-product-entry'));
+  fail=true;p.dom.window.dispatchEvent(new p.dom.window.Event('focus'));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('.reviewer-product-entry'),null);
+  assert.equal(p.$('#reviewer-products-error').hidden,false);
+  fail=false;p.$('#retry-reviewer-products').click();
+  await new Promise(r=>setImmediate(r));
+  assert.ok(p.$('.reviewer-product-entry'));
+});
+
+test('late reviewer product responses cannot overwrite a newer saved status',async(t)=>{
+  const pending=[];
+  const p=reviewer(t,async()=>({ok:true,json:async()=>report}),()=>{},'http://localhost/reviewer',()=>new Promise(resolve=>pending.push(resolve)));
+  p.dom.window.dispatchEvent(new p.dom.window.Event('focus'));
+  const record={id:'saved',listing:{title:'Latest product',price:'99',stock:0,images:[]},verification:{...report,status:'DENIED'}};
+  pending[1]({ok:true,json:async()=>[record]});
+  await new Promise(r=>setImmediate(r));
+  pending[0]({ok:true,json:async()=>[{...record,verification:report}]});
+  await new Promise(r=>setImmediate(r));
+  assert.match(p.$('.seller-item-status').textContent,/DENIED/);
+  const row=p.$('.reviewer-product-entry');
+  p.dom.window.fetch=async()=>({ok:true,json:async()=>[record]});
+  p.dom.window.dispatchEvent(new p.dom.window.Event('focus'));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('.reviewer-product-entry'),row);
 });

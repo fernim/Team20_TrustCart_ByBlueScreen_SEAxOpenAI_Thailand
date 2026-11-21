@@ -238,3 +238,8 @@ textarea { font: inherit; }
  .seller-item-actions > * { flex:1; }
  .seller-product-entry .seller-product-row { flex-basis:auto; }
 }
+
+.reviewer-product-entry .reviewer-open-report { align-self:center; min-height:44px; }
+@media (max-width:760px) {
+ .reviewer-product-entry .reviewer-open-report { grid-column:1 / -1; width:100%; white-space:normal; }
+}

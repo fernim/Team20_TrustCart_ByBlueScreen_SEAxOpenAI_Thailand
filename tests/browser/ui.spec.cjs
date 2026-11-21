@@ -291,3 +291,31 @@ test('seller summaries show media price stock and status with Edit and View prod
   await expect(market.locator('img')).toHaveAttribute('src','/static/assets/product-dhc-40.jpg');
   await expect(market.locator('.product-verified')).toHaveCount(0);
 });
+
+test('reviewer summaries open the latest report while keeping prior audits accessible',async({page,request})=>{
+  const fs=require('node:fs'); const path=require('node:path');
+  const image='data:image/webp;base64,'+fs.readFileSync(path.join(__dirname,'../../frontend/assets/product-neocell.webp')).toString('base64');
+  const listing={title:`Reviewer list ${test.info().project.name}`,description:'Product description',category:'supplement',registration_reference:'DEMO-001',product_name:'Vitamin C Supplement',license_holder:'LumaVale',price:'249.50',stock:7,images:[image]};
+  const created=await request.post('/v1/products',{data:listing});
+  expect(created.status()).toBe(201); const first=await created.json();
+  await page.goto('/reviewer');
+  const row=page.locator('.reviewer-product-entry').filter({hasText:listing.title});
+  await expect(row.locator('img')).toHaveAttribute('src',image);
+  await expect(row.locator('.seller-item-price')).toHaveText('฿249.50');
+  await expect(row.locator('.seller-item-stock')).toContainText('7');
+  await expect(row.locator('.seller-item-status')).toContainText('APPROVED');
+  await row.locator('.reviewer-open-report').click();
+  await expect(page.locator('#reviewer-report')).toContainText(first.verification.id);
+  await expect(page.locator('.reviewer-trace')).toBeVisible();
+  const edited=await request.put(`/v1/products/${first.id}`,{data:{...listing,expected_version:1,price:'99.00',stock:0,description:'guaranteed for everyone'}});
+  expect(edited.status()).toBe(200); const latest=await edited.json();
+  await expect(row.locator('.seller-item-status')).toContainText('DENIED',{timeout:10000});
+  await expect(row.locator('.seller-item-price')).toHaveText('฿99.00');
+  await expect(row.locator('.seller-item-stock')).toContainText('0');
+  await expect(page.locator('#reviewer-report')).toContainText(first.verification.id);
+  await row.locator('.reviewer-open-report').click();
+  await expect(page.locator('#reviewer-report')).toContainText(latest.verification.id);
+  await expect(page.locator('#reviewer-report')).toContainText('advertising_overclaim');
+  await expect(page.locator('.reviewer-trace')).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width+1);
+});
