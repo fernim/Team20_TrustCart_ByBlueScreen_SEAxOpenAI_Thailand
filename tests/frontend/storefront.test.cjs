@@ -428,3 +428,121 @@ test("customer catalog keeps one seller product with its newest content and remo
   await new Promise((r) => setImmediate(r));
   assert.equal(p.$('[data-product="seller-1"] .product-status'), null);
 });
+
+for (const key of ['download', 'social', 'notifications', 'help', 'account', 'about']) {
+  test(`utility ${key} opens an informative dialog`, (t) => {
+    const p = page(t);
+    p.$(`[data-info="${key}"]`).click();
+    assert.equal(p.$('#info-dialog').open, true);
+    assert.ok(p.$('#info-title').textContent);
+    assert.ok(p.$('#info-body').textContent);
+    assert.equal(p.$('#info-dialog input'), null);
+    p.$('#info-dialog [data-close]').click();
+    assert.equal(p.$('#info-dialog').open, false);
+  });
+}
+
+test('all shortcut and banner controls open promotions; coupon remains claimed', (t) => {
+  const p = page(t);
+  for (const control of [...p.$$('.shortcut'), ...p.$$('[data-promo]')]) {
+    control.click();
+    assert.equal(p.$('#promo-dialog').open, true);
+    assert.ok(p.$('#promo-title').textContent);
+    p.$('#promo-dialog [data-close]').click();
+  }
+  p.$('.shortcut').click();
+  p.$('#claim-coupon').click();
+  p.$('#promo-dialog [data-close]').click();
+  p.$('.shortcut').click();
+  assert.equal(p.$('#claim-coupon').disabled, true);
+});
+
+test('carousel dots select every slide and keep one active indicator', (t) => {
+  const p = page(t);
+  for (const [index, image] of ['hero', 'trendy', 'home'].entries()) {
+    p.$$('#carousel-dots button')[index].click();
+    assert.ok(p.$('#hero-image').src.endsWith(`${image}.webp`));
+    assert.equal(p.$$('#carousel-dots [aria-current="true"]').length, 1);
+    assert.equal(p.$$('#carousel-dots button')[index].getAttribute('aria-current'), 'true');
+  }
+});
+
+test('each category can be selected and reset using all categories or clear filters', (t) => {
+  const p = page(t);
+  for (let index = 0; index < 24; index++) {
+    p.$(`[data-category="${index}"]`).click();
+    assert.equal(p.$(`[data-category="${index}"]`).getAttribute('aria-pressed'), 'true');
+    p.$('#all-categories').click();
+    assert.equal(p.$(`[data-category="${index}"]`).getAttribute('aria-pressed'), 'false');
+  }
+  submit(p, 'headphones');
+  p.$('#clear-filters').click();
+  assert.equal(p.$('#search').value, '');
+  assert.equal(p.$$('.product-card').length, 12);
+});
+
+test('flash product opens matching details; cart rejects cumulative quantity over 99', (t) => {
+  const p = page(t);
+  const id = p.$('.flash-card').dataset.product;
+  p.$('.flash-card').click();
+  const title = p.$('#product-title').textContent;
+  p.$('#quantity').value = '99';
+  p.$('#add-to-cart').click();
+  assert.equal(p.$('#cart-count').textContent, '99');
+  p.$(`[data-product="${id}"]`).click();
+  assert.equal(p.$('#product-title').textContent, title);
+  p.$('#add-to-cart').click();
+  assert.equal(p.$('#cart-count').textContent, '99');
+  assert.equal(p.$('#product-dialog').open, true);
+  assert.equal(p.document.activeElement, p.$('#quantity'));
+});
+
+test('cart handles multiple products and restores focus after removing each', (t) => {
+  const p = page(t);
+  for (const id of p.$$('.product-card').slice(0, 2).map((card) => card.dataset.product)) {
+    p.$(`[data-product="${id}"]`).click();
+    p.$('#add-to-cart').click();
+  }
+  p.$('[data-info="cart"]').click();
+  assert.equal(p.$('#cart-dialog').open, true);
+  assert.equal(p.$$('.cart-item').length, 2);
+  p.$('[data-remove]').click();
+  assert.equal(p.$$('.cart-item').length, 1);
+  assert.equal(p.document.activeElement, p.$('[data-remove]'));
+  p.$('[data-remove]').click();
+  assert.equal(p.document.activeElement, p.$('#cart-dialog [data-close]'));
+  assert.match(p.$('#cart-total').textContent, /฿0/);
+});
+
+test('dialog backdrop closes only for a click outside its bounds', (t) => {
+  const p = page(t);
+  p.$('#open-cart').click();
+  const dialog = p.$('#cart-dialog');
+  dialog.getBoundingClientRect = () => ({ left: 10, right: 100, top: 10, bottom: 100 });
+  dialog.dispatchEvent(new p.window.MouseEvent('click', { clientX: 50, clientY: 50 }));
+  assert.equal(dialog.open, true);
+  dialog.dispatchEvent(new p.window.MouseEvent('click', { clientX: 0, clientY: 0 }));
+  assert.equal(dialog.open, false);
+});
+
+test('seller catalog storage refresh removes deleted listings and closes their dialog', async (t) => {
+  let records = [{ id: 'seller-storage', listing: { title: '<img src=x>', description: '<script>bad</script>',
+    category: 'cosmetic' }, verification: reportFixture }];
+  const p = page(t, (window) => {
+    window.fetch = async (url) => url === '/v1/products'
+      ? { ok: true, json: async () => records } : { ok: false };
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  const card = p.$('[data-product="seller-storage"]');
+  assert.ok(card);
+  assert.equal(card.querySelector('img[src="x"]'), null);
+  card.click();
+  assert.equal(p.$('#product-title').textContent.includes('<img src=x>'), true);
+  assert.equal(p.$('#product-detail script'), null);
+  assert.equal(p.$('#add-to-cart').disabled, true);
+  records = [];
+  p.window.dispatchEvent(new p.window.StorageEvent('storage', { key: 'trustcart-products-updated' }));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(p.$('[data-product="seller-storage"]'), null);
+  assert.equal(p.$('#product-dialog').open, false);
+});
