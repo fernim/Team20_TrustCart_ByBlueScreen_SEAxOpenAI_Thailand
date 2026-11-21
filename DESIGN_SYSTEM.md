@@ -71,3 +71,5 @@ Reviews show five items per page, star/photo filters, accessible photo dialogs a
 - Buyer cards and product pages show a clickable product tick only for `badge_eligible`. No account gets a verification tick. Private documents, findings and hashes never render in the buyer view.
 - Private document links and listing snapshots are available to the owning seller and reviewer. Only reviewers receive the expanded audit control. Decision forms require a reason; approval additionally requires original-document inspection confirmations.
 - Live versus Replay is visible beside each result. Demo plan activation explicitly states that no payment is taken. Preserve visible synthetic-registry context without making the customer popup a technical report.
+
+Storefront product cards and galleries use the local supplement illustration (`demo-supplement.png`) for missing seller photos, empty gallery entries, or image-load failures. A fallback image never grants a verification badge; valid product photos stay unchanged.

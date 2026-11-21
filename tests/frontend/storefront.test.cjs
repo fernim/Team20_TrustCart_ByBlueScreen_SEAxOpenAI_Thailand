@@ -816,3 +816,16 @@ test('related products prioritize the same category and exclude unpriced saved r
   assert.equal(p.$('#detail-related [data-product="unpriced-drug"]'),null);
   assert.equal(p.$('#detail-related .product-verified'),null);
 });
+
+test('missing and broken product photos use the supplement placeholder across cards and gallery', async(t)=>{
+ const records=[{id:'empty-photo',listing:{title:'Empty photo',category:'supplement',price:'99',images:[]},verification:null},{id:'broken-photo',listing:{title:'Broken photo',category:'supplement',price:'99',images:['/missing-product.png','']},verification:null}];
+ const p=page(t,w=>{w.fetch=async()=>({ok:true,json:async()=>records});});
+ await new Promise(r=>setImmediate(r));
+ const fallback='/static/assets/demo-supplement.png';
+ assert.equal(p.$('[data-product="empty-photo"] img').getAttribute('src'),fallback);
+ const broken=p.$('[data-product="broken-photo"] img');broken.dispatchEvent(new p.window.Event('error'));assert.equal(broken.getAttribute('src'),fallback);
+ p.$('[data-product="broken-photo"] .product-open').click();
+ const main=p.$('.product-gallery > img');main.dispatchEvent(new p.window.Event('error'));assert.equal(main.getAttribute('src'),fallback);
+ p.$('.product-thumbnails button:last-child').click();assert.equal(main.getAttribute('src'),fallback);
+ main.dispatchEvent(new p.window.Event('error'));assert.equal(main.getAttribute('src'),fallback);
+});

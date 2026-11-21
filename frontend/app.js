@@ -376,9 +376,14 @@
     if (content !== undefined) node.textContent = content;
     return node;
   }
+  const productPlaceholder = "/static/assets/demo-supplement.png";
+  const imageOrPlaceholder = (src) => typeof src === "string" && src.trim() ? src : productPlaceholder;
   function productImage(product) {
     const img = element("img");
-    img.src = product.images?.[0] || (product.sellerProduct ? "/static/assets/no-product-image.svg" : image(product.category));
+    img.src = imageOrPlaceholder(product.images?.[0] || (product.sellerProduct ? productPlaceholder : image(product.category)));
+    img.addEventListener("error", () => {
+      if (img.getAttribute("src") !== productPlaceholder) img.src = productPlaceholder;
+    });
     img.alt = name(product);
     img.loading = "lazy";
     img.width = 200;
@@ -1030,7 +1035,7 @@
     const mainImage = productImage(product);
     mainImage.loading = "eager";
     gallery.append(mainImage);
-    const imageSources = product.images?.length ? product.images : [mainImage.getAttribute("src")];
+    const imageSources = product.images?.length ? product.images.map(imageOrPlaceholder) : [mainImage.getAttribute("src")];
     selection.gallery = Math.min(selection.gallery, imageSources.length - 1);
     mainImage.src = imageSources[selection.gallery];
     const thumbnails = element("div", "product-thumbnails");

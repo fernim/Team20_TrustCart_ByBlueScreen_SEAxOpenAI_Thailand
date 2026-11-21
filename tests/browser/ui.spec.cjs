@@ -124,3 +124,15 @@ test('full product page reviews filters photos and related navigation work', asy
   await expect(page.locator('[data-review-filter="photos"]')).toHaveAttribute('aria-pressed','true');
   expect(errors).toEqual([]);
 });
+
+test('missing and failed product images display the supplement placeholder', async ({page})=>{
+ await page.route('**/v1/catalog/products',route=>route.fulfill({json:[{id:'placeholder-demo',listing:{title:'Placeholder example',category:'supplement',price:'99',stock:2,images:['/missing-product-photo.png','']},verification:null,badge_eligible:false}]}));
+ await page.goto('/');
+ const photo=page.locator('[data-product="placeholder-demo"] img');
+ await expect(photo).toHaveAttribute('src','/static/assets/demo-supplement.png');
+ await expect.poll(()=>photo.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+ await page.locator('[data-product="placeholder-demo"] .product-open').click();
+ const main=page.locator('.product-gallery > img');await expect(main).toHaveAttribute('src','/static/assets/demo-supplement.png');
+ await page.locator('.product-thumbnails button').last().click();await expect(main).toHaveAttribute('src','/static/assets/demo-supplement.png');
+ await expect.poll(()=>main.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+});
