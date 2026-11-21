@@ -215,28 +215,19 @@
     );
   }
   function verificationLabel() {
-    return state.language === "th"
-      ? "ทะเบียนตรงกัน · จำลอง"
-      : "Registration matched · demo";
-  }
-  function verificationExplanation() {
-    return state.language === "th"
-      ? "ตรวจสอบเฉพาะสินค้ารายการนี้: ชื่อสินค้า ผู้ถือใบอนุญาต และหมวดหมู่ตรงกับทะเบียนจำลองที่มีสถานะใช้งาน ไม่ใช่การยืนยันบัญชีผู้ขาย ไม่ใช่การรับรองจาก อย. และไม่ใช่การรับรองความปลอดภัยหรือประสิทธิภาพของสินค้า"
-      : "This listing only: product name, licence holder and category match an active synthetic registration. This does not verify the seller account, represent Thai FDA certification, or establish product safety or effectiveness.";
+    return state.language === "th" ? "ตรวจทะเบียนแล้ว" : "Registration checked";
   }
   function productCheckmark() {
     const badge = element("button", "product-verified");
     badge.type = "button";
     const label =
-      state.language === "th"
-        ? "เปิดรายงานการตรวจสอบสินค้า"
-        : "Open product verification report";
+      state.language === "th" ? "ดูสถานะสินค้า" : "View product status";
     badge.setAttribute("aria-label", `${verificationLabel()} — ${label}`);
     badge.setAttribute("aria-haspopup", "dialog");
     badge.title = `${verificationLabel()} — ${label}`;
     badge.addEventListener("click", (event) => {
       event.stopPropagation();
-      renderVerificationReport();
+      renderVerificationStatus();
       openDialog($("#verification-dialog"));
     });
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -350,142 +341,20 @@
     card.append(open, copy);
     return card;
   }
-  function renderVerificationReport() {
-    const en = state.language === "en";
-    const report = $("#verification-report");
-    report.replaceChildren();
-    $("#verification-title").textContent = en
-      ? "Product verification report"
-      : "รายงานการตรวจสอบสินค้า";
-    report.append(
-      element("h3", "report-product", name(checkedProduct)),
-      element("p", "dialog-note", verificationExplanation()),
-    );
-    const result = productVerification;
-    if (!result || typeof result !== "object") {
-      report.append(
-        element(
-          "p",
-          "",
-          en ? "Verification report unavailable." : "ไม่พบรายงานการตรวจสอบ",
-        ),
-      );
-      return;
-    }
-    const fields = element("dl", "report-summary");
-    const field = (label, value) =>
-      fields.append(element("dt", "", label), element("dd", "", value));
-    const status = ["APPROVED", "PENDING", "DENIED", "UNKNOWN"].includes(
-      result.status,
-    )
-      ? result.status
-      : "UNKNOWN";
-    field(
-      en ? "Status (demo checks only)" : "สถานะ (เฉพาะการตรวจข้อมูลจำลอง)",
-      status,
-    );
-    field(
-      en ? "Confidence" : "ความเชื่อมั่น",
-      Number.isFinite(result.confidence)
-        ? `${Math.round(result.confidence * 100)}%`
-        : "—",
-    );
-    field(
-      en ? "Human review" : "เจ้าหน้าที่ตรวจสอบ",
-      result.human_review_required === false
-        ? en
-          ? "Not requested"
-          : "ไม่ต้องส่งตรวจ"
-        : en
-          ? "Required"
-          : "ต้องส่งตรวจ",
-    );
-    field(en ? "Report ID" : "รหัสรายงาน", result.id || "—");
-    const reasons = {
-      registration_identity_and_category_matched: en
-        ? "Product name, licence holder and category match the active synthetic registration."
-        : "ชื่อสินค้า ผู้ถือใบอนุญาต และหมวดหมู่ตรงกับทะเบียนจำลองที่มีสถานะใช้งาน",
-      registration_identity_failed: en
-        ? "The registration identity check failed."
-        : "ข้อมูลตัวตนสินค้าไม่ผ่านการตรวจสอบทะเบียน",
-      registration_category_mismatch: en
-        ? "The listing category does not match the registration."
-        : "หมวดหมู่สินค้าไม่ตรงกับทะเบียน",
-      category_unmapped: en
-        ? "The listing category is not supported."
-        : "ระบบยังไม่รองรับหมวดหมู่สินค้านี้",
-      registry_category_unmapped: en
-        ? "The registry category is not supported."
-        : "ระบบยังไม่รองรับหมวดหมู่ในทะเบียน",
-      registry_unavailable: en
-        ? "The registry could not be reached. Human review is required."
-        : "ไม่สามารถเชื่อมต่อทะเบียน ต้องส่งให้เจ้าหน้าที่ตรวจสอบ",
-      reference_missing: en
-        ? "The reference could not be confirmed in the registry."
-        : "ไม่สามารถยืนยันเลขอ้างอิงในทะเบียนได้",
-    };
-    report.append(
-      fields,
-      element("h3", "", en ? "Reason" : "เหตุผล"),
+  function renderVerificationStatus() {
+    const verified = hasProductVerification(checkedProduct);
+    $("#verification-title").textContent = verified
+      ? verificationLabel()
+      : state.language === "th"
+        ? "ยังไม่ยืนยัน"
+        : "Not confirmed";
+    $("#verification-report").replaceChildren(
+      element("span", "customer-check", verified ? "✓" : "—"),
       element(
         "p",
-        "report-reason",
-        reasons[result.reason] ||
-          result.reason ||
-          (en ? "No reason supplied." : "ไม่มีเหตุผลในรายงาน"),
+        "customer-demo-note",
+        state.language === "th" ? "ข้อมูลจำลอง" : "Demo data",
       ),
-    );
-    report.append(
-      element("h3", "", en ? "Recorded audit trace" : "บันทึกลำดับการตรวจสอบ"),
-      element(
-        "p",
-        "dialog-note",
-        en
-          ? "Recorded by the backend. Hash integrity is not independently verified by this view."
-          : "บันทึกจากระบบหลังบ้าน หน้านี้ไม่ได้ตรวจสอบความถูกต้องของแฮชซ้ำ",
-      ),
-    );
-    const trace = Array.isArray(result.trace) ? result.trace : [];
-    const list = element("ol", "report-trace");
-    trace.forEach((entry) => {
-      if (!entry || typeof entry !== "object") return;
-      const item = element("li");
-      item.append(
-        element("strong", "", `${entry.step || "—"} · ${entry.outcome || "—"}`),
-      );
-      const time = element("time", "report-time", entry.at || "—");
-      item.append(time);
-      const hashes = element("details", "report-hashes");
-      hashes.append(
-        element("summary", "", en ? "Audit hashes" : "แฮชของบันทึก"),
-      );
-      hashes.append(
-        element("p", "", en ? "Previous hash" : "แฮชก่อนหน้า"),
-        element(
-          "code",
-          "",
-          entry.previous_hash || (en ? "First entry" : "บันทึกแรก"),
-        ),
-        element("p", "", en ? "Entry hash" : "แฮชรายการนี้"),
-        element("code", "", entry.chain_hash || "—"),
-      );
-      item.append(hashes);
-      list.append(item);
-    });
-    report.append(
-      trace.length
-        ? list
-        : element(
-            "p",
-            "",
-            en
-              ? "No audit trace supplied."
-              : "ไม่มีบันทึกลำดับการตรวจสอบในรายงาน",
-          ),
-    );
-    report.append(
-      element("h3", "", en ? "Final chain hash" : "แฮชสุดท้ายของสายบันทึก"),
-      element("code", "report-final-hash", result.chain_hash || "—"),
     );
   }
   function matches() {
@@ -888,21 +757,12 @@
         verificationLabel(),
       );
       explain.id = "explain-verification";
-      explain.setAttribute("aria-expanded", "false");
-      explain.setAttribute("aria-controls", "verification-explanation");
-      const explanation = element(
-        "p",
-        "verification-explanation",
-        verificationExplanation(),
-      );
-      explanation.id = "verification-explanation";
-      explanation.hidden = true;
+      explain.setAttribute("aria-haspopup", "dialog");
       explain.addEventListener("click", () => {
-        explanation.hidden = !explanation.hidden;
-        explain.setAttribute("aria-expanded", String(!explanation.hidden));
+        renderVerificationStatus();
+        openDialog($("#verification-dialog"));
       });
       details.insertBefore(explain, amount);
-      details.insertBefore(explanation, amount);
     }
     layout.append(productImage(product), details);
     $("#product-detail").replaceChildren(layout);
@@ -1075,7 +935,7 @@
     renderSlide();
     renderCart();
     if (selectedProduct) renderDetail();
-    if ($("#verification-dialog").open) renderVerificationReport();
+    if ($("#verification-dialog").open) renderVerificationStatus();
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";

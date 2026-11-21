@@ -1254,13 +1254,6 @@ dialog h2 {
   text-decoration: underline;
   font-size: 13px;
 }
-.verification-explanation {
-  background: #eef7ff;
-  border-left: 3px solid #1688ed;
-  padding: 12px;
-  font-size: 13px;
-  line-height: 1.6;
-}
 
 .product-card {
   cursor: pointer;
@@ -1282,68 +1275,27 @@ dialog h2 {
   color: #006bc5;
   filter: drop-shadow(0 0 3px #1688ed55);
 }
-.report-product {
-  margin-top: 0;
-  font-weight: 500;
+#verification-dialog {
+  max-width: 340px;
+  text-align: center;
 }
-.report-summary {
-  display: grid;
-  grid-template-columns: minmax(110px, 1fr) 2fr;
-  gap: 10px 16px;
-  background: #f6f9fc;
-  padding: 16px;
+#verification-dialog h2 {
+  margin: 0 15px 10px;
+  font-size: 22px;
 }
-.report-summary dt {
-  color: #66717e;
+.customer-check {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 16px auto;
+  border-radius: 50%;
+  background: #eaf5ff;
+  color: #1688ed;
+  font-size: 40px;
+  line-height: 64px;
 }
-.report-summary dd {
+.customer-demo-note {
   margin: 0;
-  overflow-wrap: anywhere;
-}
-.report-trace {
-  padding-left: 24px;
-}
-.report-trace li {
-  padding: 8px 0 16px 8px;
-  border-bottom: 1px solid #eee;
-}
-.report-time {
-  display: block;
+  color: #888;
   font-size: 12px;
-  color: #777;
-  margin: 5px 0;
-}
-.report-hashes {
-  font-size: 12px;
-}
-.report-hashes summary {
-  cursor: pointer;
-  color: #0874c8;
-  padding: 6px 0;
-}
-.report-hashes p {
-  margin-bottom: 3px;
-}
-#verification-report code {
-  display: block;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-}
-.report-final-hash {
-  background: #f6f9fc;
-  padding: 12px;
-}
-@media (max-width: 600px) {
-  .report-summary {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-  .report-summary dd {
-    margin-bottom: 10px;
-  }
-}
-
-#verification-report {
-  overflow-wrap: anywhere;
 }

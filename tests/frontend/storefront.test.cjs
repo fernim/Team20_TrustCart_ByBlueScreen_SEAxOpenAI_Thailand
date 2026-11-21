@@ -211,8 +211,8 @@ test("product checkmark uses the backend result and never marks an account", asy
   assert.equal(p.$(".utility .product-verified"), null);
   p.$(".product-card").click();
   p.$("#explain-verification").click();
-  assert.equal(p.$("#verification-explanation").hidden, false);
-  assert.match(p.$("#verification-explanation").textContent, /จำลอง/);
+  assert.equal(p.$("#verification-dialog").open, true);
+  assert.equal(p.$("#verification-title").textContent, "ตรวจทะเบียนแล้ว");
 });
 
 for (const result of [
@@ -279,7 +279,7 @@ const reportFixture = {
   ],
 };
 
-test("clicking product badge opens its report directly without opening product details", async (t) => {
+test("customer badge shows a simple status without exposing the verification report", async (t) => {
   const p = page(t, (window) => {
     window.fetch = async () => ({ ok: true, json: async () => reportFixture });
   });
@@ -290,16 +290,23 @@ test("clicking product badge opens its report directly without opening product d
   badge.click();
   assert.equal(p.$("#verification-dialog").open, true);
   assert.equal(p.$("#product-dialog").open, false);
-  assert.match(p.$("#verification-report").textContent, /APPROVED/);
-  assert.match(p.$("#verification-report").textContent, /R-01/);
-  assert.match(p.$("#verification-report").textContent, /R-02/);
-  assert.match(p.$("#verification-report").textContent, /identity-chain/);
-  assert.match(p.$("#verification-report").textContent, /final-chain/);
-  assert.match(p.$("#verification-report").textContent, /2026-11-21T03:00:01Z/);
-  assert.match(p.$("#verification-report").textContent, /จำลอง/);
+  assert.equal(p.$("#verification-title").textContent, "ตรวจทะเบียนแล้ว");
+  const customerText = p.$("#verification-dialog").textContent;
+  for (const technical of [
+    "APPROVED",
+    "R-01",
+    "R-02",
+    "identity-chain",
+    "final-chain",
+    "รายงานการตรวจสอบสินค้า",
+    reportFixture.id,
+  ]) {
+    assert.equal(customerText.includes(technical), false);
+  }
+  assert.equal(p.$(".report-trace"), null);
 });
 
-test("detail badge opens the same report and backend text cannot inject markup", async (t) => {
+test("detail badge shows the same simple status and hides backend text", async (t) => {
   const p = page(t, (window) => {
     window.fetch = async () => ({
       ok: true,
@@ -314,8 +321,11 @@ test("detail badge opens the same report and backend text cannot inject markup",
   p.$('[data-product="14"]').click();
   p.$("#product-title .product-verified").click();
   assert.equal(p.$("#verification-dialog").open, true);
-  assert.match(p.$("#verification-report").textContent, /<img src=x/);
-  assert.equal(p.$("#verification-report img"), null);
+  assert.equal(
+    p.$("#verification-dialog").textContent.includes("<img src=x"),
+    false,
+  );
+  assert.equal(p.$("#verification-dialog img"), null);
   p.$("#verification-dialog [data-close]").click();
   assert.equal(p.$("#verification-dialog").open, false);
   assert.equal(p.$("#product-dialog").open, true);
