@@ -193,7 +193,7 @@ test("language changes update navigation, search hints, categories, product deta
 });
 
 test("product checkmark uses the saved backend result and never marks an account", async (t) => {
-  const p=page(t,w=>{w.fetch=async(url)=>url==="/v1/products"?{ok:true,json:async()=>[{id:"approved-demo",listing:{title:"Saved demo",category:"supplement",price:"199",stock:3},verification:reportFixture}]}:{ok:false};});
+  const p=page(t,w=>{w.fetch=async(url)=>url==="/v1/catalog/products"?{ok:true,json:async()=>[{id:"approved-demo",listing:{title:"Saved demo",category:"supplement",price:"199",stock:3},verification:reportFixture}]}:{ok:false};});
   await new Promise(resolve=>setImmediate(resolve));
   submit(p,"Saved demo");
   assert.equal(p.$$(".product-card .product-verified").length,1);
@@ -268,7 +268,7 @@ const reportFixture = {
 
 test("customer badge opens a short status without exposing the reviewer report", async (t) => {
   const p = page(t, (window) => {
-    window.fetch = async (url) => url === "/v1/products" ? {ok:true,json:async()=>[{id:"customer-badge",listing:{title:"Saved demo",category:"supplement",price:"199",stock:3},verification:reportFixture}]} : {ok:false};
+    window.fetch = async (url) => url === "/v1/catalog/products" ? {ok:true,json:async()=>[{id:"customer-badge",listing:{title:"Saved demo",category:"supplement",price:"199",stock:3},verification:reportFixture}]} : {ok:false};
   });
   await new Promise((resolve) => setImmediate(resolve));
   const badge = p.$(".product-card .product-verified");
@@ -374,7 +374,7 @@ test("customer catalog keeps one seller product with its newest content and remo
   let fail = false;
   const p = page(t, (window) => {
     window.fetch = async (url) => {
-      if (url === "/v1/products") {
+      if (url === "/v1/catalog/products") {
         if (fail) throw Error("offline");
         return {
           ok: true,
@@ -515,7 +515,7 @@ test('seller catalog storage refresh removes deleted listings and shows the miss
   let records = [{ id: 'seller-storage', listing: { title: '<img src=x>', description: '<script>bad</script>',
     category: 'cosmetic',price:'199.00',stock:null }, verification: reportFixture }];
   const p = page(t, (window) => {
-    window.fetch = async (url) => url === '/v1/products'
+    window.fetch = async (url) => url === '/v1/catalog/products'
       ? { ok: true, json: async () => records } : { ok: false };
   });
   await new Promise((resolve) => setImmediate(resolve));
@@ -632,7 +632,7 @@ test('Shopee-style detail separates gallery purchase and description with bounde
 
 test('approved product results never certify brand-shop references across languages', async (t) => {
   const p = page(t, (window) => {
-    window.fetch = async (url) => url === '/v1/products'
+    window.fetch = async (url) => url === '/v1/catalog/products'
       ? { ok: true, json: async () => [{id:"brand-test-demo",listing:{title:"Saved demo",category:"supplement",price:"199",stock:1},verification:reportFixture}] }
       : { ok: true, json: async () => reportFixture };
   });
@@ -670,7 +670,7 @@ test('direct seller product URLs load persisted content and retry after an outag
   let offline=true;
   const record={id:'deep-link',listing:{title:'Persisted product',category:'supplement',description:'Saved description',price:'39.50',stock:2,images:[]},verification:reportFixture};
   const p=page(t,w=>{w.fetch=async(url)=>{
-    if(url==='/v1/products') { if(offline) throw Error('offline'); return {ok:true,json:async()=>[record]}; }
+    if(url==='/v1/catalog/products') { if(offline) throw Error('offline'); return {ok:true,json:async()=>[record]}; }
     throw Error('unavailable');
   };},'http://localhost/products/deep-link');
   assert.equal(p.$('#storefront-home').hidden,true);
@@ -708,7 +708,7 @@ test('detail page keeps native product links and translates its specifications',
 });
 
 test('customer catalog has no invented preferred shops and excludes unpriced saved listings',async(t)=>{
-  const p=page(t,w=>{w.fetch=async(url)=>url==='/v1/products'?{ok:true,json:async()=>[{id:'unpriced',listing:{title:'Unpriced product',category:'supplement',price:null},verification:reportFixture}]}:{ok:false};});
+  const p=page(t,w=>{w.fetch=async(url)=>url==='/v1/catalog/products'?{ok:true,json:async()=>[{id:'unpriced',listing:{title:'Unpriced product',category:'supplement',price:null},verification:reportFixture}]}:{ok:false};});
   await new Promise(r=>setImmediate(r));
   assert.equal(p.$('[data-product="unpriced"]'),null);
   assert.equal(p.$$('.preferred').length,0);
@@ -716,7 +716,7 @@ test('customer catalog has no invented preferred shops and excludes unpriced sav
 });
 
 test('market supplement references use matching real photos without borrowing synthetic verification',async(t)=>{
-  const p=page(t,w=>{w.fetch=async(url)=>url==='/v1/products'?{ok:true,json:async()=>[]}:{ok:true,json:async()=>reportFixture};});
+  const p=page(t,w=>{w.fetch=async(url)=>url==='/v1/catalog/products'?{ok:true,json:async()=>[]}:{ok:true,json:async()=>reportFixture};});
   await new Promise(r=>setImmediate(r));
   p.$('[data-category="1"]').click();
   for(const card of p.$$('.product-card')) {
@@ -728,7 +728,7 @@ test('market supplement references use matching real photos without borrowing sy
 
 test('medicine category filters saved drugs and labels their product pages', async t => {
   const p = page(t, window => {
-    window.fetch = async url => url === '/v1/products' ? {ok:true,json:async()=>[
+    window.fetch = async url => url === '/v1/catalog/products' ? {ok:true,json:async()=>[
       {id:'medicine',listing:{title:'Medicine listing',category:'drug',price:'100',stock:3},verification:{status:'UNKNOWN'}}
     ]} : {ok:false};
   });
@@ -771,7 +771,7 @@ test('expanded detail shows sample ratings, filterable reviews and related links
 
 test('seller details have honest empty reviews and shipping while keeping latest data', async t => {
   const listing={title:'Saved listing',category:'drug',price:'100',stock:5,images:['data:image/png;base64,aA==','data:image/png;base64,aQ=='],description:'First line\n<script>literal</script>'};
-  const p=page(t, window=>{window.fetch=async url=>url==='/v1/products'?{ok:true,json:async()=>[{id:'saved-detail',listing,verification:{status:'UNKNOWN'}}]}:{ok:false};},'http://localhost/products/saved-detail');
+  const p=page(t, window=>{window.fetch=async url=>url==='/v1/catalog/products'?{ok:true,json:async()=>[{id:'saved-detail',listing,verification:{status:'UNKNOWN'}}]}:{ok:false};},'http://localhost/products/saved-detail');
   await new Promise(r=>setImmediate(r));
   assert.equal(p.$$('.review-card').length,0);
   assert.match(p.$('#detail-reviews').textContent,/ยังไม่มีรีวิว/);
@@ -805,7 +805,7 @@ test('review selections survive language changes', t => {
 });
 
 test('related products prioritize the same category and exclude unpriced saved records', async t => {
-  const p=page(t,window=>{window.fetch=async url=>url==='/v1/products'?{ok:true,json:async()=>[
+  const p=page(t,window=>{window.fetch=async url=>url==='/v1/catalog/products'?{ok:true,json:async()=>[
     {id:'current-drug',listing:{title:'Current',category:'drug',price:'10',stock:1},verification:{status:'UNKNOWN'}},
     {id:'related-drug',listing:{title:'Related',category:'drug',price:'20',stock:1},verification:{status:'UNKNOWN'}},
     {id:'unpriced-drug',listing:{title:'Unpriced',category:'drug',price:null,stock:1},verification:{status:'UNKNOWN'}}

@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="/static/tokens.css" />
     <link rel="stylesheet" href="/static/marketplace-ui.css" />
     <script defer src="/static/verification-view.js"></script>
-    <script defer src="/static/reviewer.js"></script>
+    <link rel="stylesheet" href="/static/workflow.css" /><script defer src="/static/session.js"></script><script defer src="/static/workflow.js"></script><script defer src="/static/reviewer-connected.js"></script>
   </head>
   <body class="reviewer-page">
-<nav class="integration-nav" aria-label="Verification tools"><a href="/workspace">Evidence, review and agency workspace</a><span>TrustCart · Synthetic data</span><a href="/docs">API docs</a></nav>
+<nav class="integration-nav" aria-label="Account"><a href="/">TrustCart · Synthetic registry demo</a><a href="/login">Sign in</a></nav>
     <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
     <nav class="demo-views" aria-label="Views">
       <a href="/">หน้าลูกค้า / Customer</a
@@ -24,13 +24,13 @@
         ><span class="workspace-title">Reviewer Centre <small>ศูนย์ตรวจสอบสินค้า</small></span>
       </div>
     </header>
-    <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#reviewer-products" aria-current="location">สินค้าล่าสุด</a><a href="#report-lookup">ค้นหารายงาน</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">READ-ONLY DEMO<br />ทะเบียนจำลอง<br />ไม่มีการอนุมัติโดยผู้ตรวจสอบ</div></aside><main id="main" class="reviewer-shell">
+    <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#reviewer-products" aria-current="location">สินค้าล่าสุด</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">DOCUMENT REVIEW<br />ทะเบียนจำลอง<br />Decisions require inspected evidence</div></aside><main id="main" class="reviewer-shell">
       <header>
         <p class="reviewer-eyebrow">TRUSTCART · REVIEWER</p>
         <h1>รายงานการตรวจสอบสินค้า</h1>
         <p>ตรวจสอบสถานะสินค้าและดูรายการที่ต้องแก้ไข</p>
       </header>
-      <section id="reviewer-products" class="seller-section" aria-labelledby="reviewer-products-title">
+      <section class="seller-section"><h2>คิวตรวจสอบ / Verification queue</h2><div id="queue-filters" class="reviewer-filters"><label>Shop<select id="filter-shop_id"><option value="">All shops</option></select></label><label>Status<select id="filter-status"><option value="">All statuses</option><option>APPROVED</option><option>PENDING</option><option>DENIED</option><option>UNKNOWN</option></select></label><label>Stage<select id="filter-stage"><option value="">All stages</option></select></label><label><input id="filter-action" type="checkbox" /> Requires my action</label></div><button id="refresh-queue" type="button">Refresh queue and report</button><p id="queue-summary" role="status"></p></section><section id="reviewer-products" class="seller-section" aria-labelledby="reviewer-products-title">
         <h2 id="reviewer-products-title">สินค้าล่าสุด</h2>
         <p class="dialog-note">ข้อมูลสินค้าที่บันทึกและผลตรวจล่าสุด · เปิดรายงานเพื่อดูเหตุผลและประวัติการตรวจสอบ</p>
         <p id="reviewer-products-loading" role="status" hidden>กำลังโหลดสินค้า…</p>
@@ -46,7 +46,7 @@
           <option value="">เลือกสินค้าเพื่อดูผล</option>
         </select>
       </section>
-      <div class="workspace-notice"><strong>พื้นที่ตรวจสอบแบบอ่านอย่างเดียว</strong><span>แสดงผลจากระบบและประวัติการตรวจสอบ · ใช้ข้อมูลทะเบียนจำลอง</span></div><form id="report-lookup">
+      <div class="workspace-notice"><strong>ตรวจเอกสารและตัดสินใจ</strong><span>Review the original documents and grounded AI findings. Registry data is synthetic.</span></div><form id="report-lookup" hidden>
         <label for="report-id">รหัสรายงาน</label>
         <div class="reviewer-lookup">
           <input
@@ -65,8 +65,8 @@
       </form>
       <p id="reviewer-error" role="alert" hidden></p>
       <p id="reviewer-loading" role="status" hidden>กำลังโหลดรายงาน…</p>
-      <article id="reviewer-report" aria-live="polite"></article>
+      <article id="reviewer-report" aria-live="polite"></article><form id="decision-form" class="seller-section" hidden><h2>Reviewer decision</h2><p>Approval requires inspecting each required original document and confirming the identity below. Rule failures cannot be overridden.</p><div id="confirm-documents" class="document-list"></div><label for="confirm-product_name">Product name from document</label><input id="confirm-product_name" /><label for="confirm-registration_reference">Registration reference from document</label><input id="confirm-registration_reference" /><label for="confirm-license_holder">Licence holder from document</label><input id="confirm-license_holder" /><label for="review-note">Reason / Instructions for seller</label><textarea id="review-note" required minlength="3" maxlength="2000"></textarea><div class="seller-actions"><button type="submit" value="approve" class="primary">Approve</button><button type="submit" value="deny">Deny</button><button type="submit" value="request_documents">Request documents</button></div></form>
     </main></div>
-  <p class="dialog-note" style="text-align:center"><a href="/workspace">TrustCart evidence, review and agency workspace</a> · Synthetic data</p>
+  <p class="dialog-note" style="text-align:center">TrustCart product verification · Synthetic data</p>
 </body>
 </html>

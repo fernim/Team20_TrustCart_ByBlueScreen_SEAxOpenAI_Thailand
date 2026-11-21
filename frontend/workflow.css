@@ -1,0 +1,318 @@
+.login-panel {
+  max-width: 460px;
+  margin: 60px auto;
+  padding: 32px;
+  background: white;
+}
+.login-panel form {
+  display: grid;
+  gap: 14px;
+}
+.login-panel input,
+.login-panel select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+}
+.integration-nav button {
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary);
+  cursor: pointer;
+}
+.flow-status {
+  font-size: 17px;
+  font-weight: 500;
+}
+.flow-action {
+  padding: 16px;
+  background: var(--brand-soft);
+  border-left: 3px solid var(--brand-primary);
+  line-height: 1.7;
+}
+.flow-steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+}
+.flow-step {
+  border: 1px solid var(--border-subtle);
+  padding: 14px;
+  min-width: 0;
+  font-size: 13px;
+}
+.flow-step strong,
+.flow-step span {
+  display: block;
+  margin-bottom: 10px;
+}
+.flow-step p {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.flow-step[data-state="pass"] {
+  border-top: 3px solid var(--status-pass);
+}
+.flow-step[data-state="fail"] {
+  border-top: 3px solid var(--status-block);
+}
+.flow-step[data-state="waiting"],
+.flow-step[data-state="not_checked"] {
+  border-top: 3px solid #b5b5b5;
+}
+.document-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.document-list a {
+  border: 1px solid var(--border-subtle);
+  padding: 12px;
+  color: var(--brand-primary);
+  overflow-wrap: anywhere;
+}
+.workflow-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+}
+.workflow-controls button,
+.workflow-controls select {
+  min-height: 42px;
+  padding: 10px 14px;
+}
+.workflow-controls input[type="file"] {
+  max-width: 100%;
+}
+.connected-panel {
+  padding: 24px;
+  background: white;
+  margin: 20px 0;
+}
+.connected-panel h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+.connected-panel label {
+  display: block;
+  margin: 12px 0;
+}
+.connected-panel input:not([type="checkbox"]),
+.connected-panel textarea,
+.connected-panel select {
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+}
+.connected-panel textarea {
+  width: 100%;
+}
+.document-finding {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 0;
+  overflow-wrap: anywhere;
+}
+.document-finding small {
+  display: block;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.queue-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.queue-metrics span {
+  padding: 16px;
+  background: var(--brand-soft);
+}
+.flow-history button {
+  display: block;
+  margin: 8px 0;
+}
+#review-detail pre {
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+#review-confirmations label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#review-confirmations input {
+  width: auto;
+}
+@media (max-width: 900px) {
+  .flow-steps {
+    grid-template-columns: 1fr;
+  }
+  .connected-panel {
+    padding: 16px;
+  }
+  .login-panel {
+    margin: 20px 12px;
+  }
+  .workflow-controls {
+    align-items: stretch;
+  }
+  .workflow-controls > * {
+    max-width: 100%;
+  }
+}
+#reviewer-report pre {
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+#verification-controls input:not([type="checkbox"]),
+#verification-controls select,
+#decision-form input:not([type="checkbox"]),
+#decision-form textarea {
+  max-width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+}
+#decision-form label,
+#document-form label {
+  display: block;
+  margin: 12px 0 6px;
+}
+#decision-form textarea {
+  width: 100%;
+  min-height: 100px;
+}
+#confirm-documents label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+#confirm-documents input {
+  width: auto;
+}
+#verification-controls button,
+#verification-plan button,
+#decision-form button,
+.reviewer-filters select,
+#refresh-queue {
+  padding: 10px 14px;
+  min-height: 42px;
+  margin: 6px 4px 6px 0;
+  cursor: pointer;
+}
+.reviewer-filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.reviewer-filters label {
+  display: grid;
+  gap: 8px;
+}
+.seller-product-entry {
+  gap: 16px;
+  align-items: center;
+}
+.seller-product-entry img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.seller-item-summary {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#seller-result {
+  background: white;
+  padding: 24px;
+  margin: 20px 0;
+}
+#seller-result h2 {
+  overflow-wrap: anywhere;
+}
+#seller-form input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+@media (max-width: 600px) {
+  .seller-product-entry {
+    flex-wrap: wrap;
+  }
+  .reviewer-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .seller-section select {
+    max-width: 100%;
+  }
+  #seller-result {
+    padding: 16px;
+  }
+}
+.submission-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  gap: 8px;
+  margin: 24px 0;
+}
+.submission-progress li {
+  padding: 12px;
+  background: var(--canvas);
+  border-top: 3px solid var(--border-subtle);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.submission-progress [aria-current="step"] {
+  border-color: var(--brand-primary);
+  background: var(--brand-soft);
+  font-weight: 500;
+}
+.submission-progress [data-state="previous"] {
+  border-color: var(--text-secondary);
+}
+@media (max-width: 600px) {
+  .submission-progress {
+    grid-template-columns: 1fr;
+  }
+  .submission-progress li {
+    border-top: 0;
+    border-left: 3px solid var(--border-subtle);
+  }
+}
+#load-demo,
+#demo-documents,
+#request-verification,
+#refresh-verification,
+#show-history,
+#document-form button[type="submit"],
+#refresh-queue,
+#decision-form button:not(.primary) {
+  border: 1px solid var(--border-subtle);
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  background: white;
+  min-height: 42px;
+  margin: 6px 4px 6px 0;
+}
+#load-demo:hover,
+#request-verification:hover,
+#refresh-verification:hover,
+#show-history:hover,
+#refresh-queue:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}

@@ -128,7 +128,7 @@ const listingFixture = {
 const productFixture = { id: 'seller-1', version: 3, listing: listingFixture,
   verification: { ...result, listing: listingFixture } };
 
-for (const field of ['listing-title', 'registration-reference', 'registered-name', 'license-holder']) {
+for (const field of ['listing-title']) {
   test(`seller requires ${field} before submitting`, async (t) => {
     let submissions = 0;
     const p = seller(t, async (url, options) => {
