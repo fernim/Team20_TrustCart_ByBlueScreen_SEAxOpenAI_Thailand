@@ -32,15 +32,47 @@ def test_product_media_price_stock_survive_edit_and_restart(tmp_path):
         assert latest['images']==[] and latest['stock']==0
         assert Decimal(latest['price'])==Decimal('149.00')
 
-@pytest.mark.parametrize('extra',[
+INVALID_COMMERCE_FIELDS = [
  {'price':'-1'}, {'price':'12.345'}, {'price':'NaN'}, {'stock':-1}, {'stock':1.5},
  {'images':['javascript:alert(1)']}, {'images':['https://example.com/image.png']},
  {'images':['data:image/svg+xml;base64,PHN2Zy8+']}, {'images':['data:image/png;base64,bm90LWFuLWltYWdl']},
  {'images':[PNG]*6}, {'images':[PNG.replace('image/png', 'image/jpeg')]},
  {'price':'100000000.00'}, {'stock':10000001},
  {'images':['data:image/png;base64,' + base64.b64encode(b'x' * (2 * 1024 * 1024 + 1)).decode('ascii')]},
-])
+]
+
+@pytest.mark.parametrize('extra', INVALID_COMMERCE_FIELDS)
 def test_invalid_product_commerce_fields_are_rejected(tmp_path,extra):
     with TestClient(create_app(tmp_path/'invalid.sqlite3')) as client:
         assert client.post('/v1/products',json={**BASE,**extra}).status_code==422
         assert client.get('/v1/products').json()==[]
+
+
+@pytest.mark.parametrize('extra', INVALID_COMMERCE_FIELDS)
+def test_invalid_commerce_edit_preserves_product_and_verification_history(tmp_path, extra):
+    db = tmp_path / 'invalid-edit.sqlite3'
+    with TestClient(create_app(db)) as client:
+        created = client.post('/v1/products', json={
+            **BASE, 'images': [PNG], 'price': '199.50', 'stock': 12,
+        })
+        assert created.status_code == 201
+        original = created.json()
+        product_url = '/v1/products/' + original['id']
+        report_url = '/v1/verifications/' + original['verification']['id']
+
+        rejected = client.put(product_url, json={
+            **original['listing'], 'expected_version': original['version'], **extra,
+        })
+        assert rejected.status_code == 422
+        assert client.get(product_url).json() == original
+        assert client.get(report_url).json() == original['verification']
+        assert client.get('/v1/products').json() == [original]
+
+        # Rejected input must not consume a version or invalidate the saved hash.
+        edited = client.put(product_url, json={
+            **original['listing'], 'expected_version': original['version'], 'stock': 0,
+        })
+        assert edited.status_code == 200
+        assert edited.json()['version'] == 2
+        assert edited.json()['listing']['stock'] == 0
+        assert client.get(report_url).json() == original['verification']

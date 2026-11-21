@@ -1,5 +1,9 @@
 # Automated UI checks
 
+## Product media API regression checks
+
+Run `.venv/bin/python -m pytest -q tests/test_product_media.py` on macOS/Linux (use `.venv/Scripts/python` on Windows). These checks cover image/price/stock persistence through edits and restarts, rejection of invalid commerce fields on creation and update, unchanged saved products and prior verification reports after rejected edits, and a successful subsequent edit using the original version.
+
 Use Node.js 18+ and the Python virtual environment described in the root README.
 
 ```sh
