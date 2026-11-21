@@ -149,3 +149,32 @@ test("reviewer shows literal overclaim evidence and specific denial reason", asy
   assert.match(text, /อ้างผลลัพธ์ทันที/);
   assert.match(text, /R-03/);
 });
+
+test("stepper explains blockers and never invents a passed check", async (t) => {
+  const p = reviewer(t, async () => ({
+    ok: true,
+    json: async () => ({
+      ...report,
+      status: "DENIED",
+      reason: "advertising_overclaim",
+      trace: [
+        { step: "R-01", outcome: "failed" },
+        { step: "R-02", outcome: "matched" },
+        { step: "R-03", outcome: '{"code":"instant_effect"}' },
+      ],
+      claim_findings: [
+        {
+          rule_id: "R-03",
+          code: "instant_effect",
+          phrase: "ผิวกระจ่างใสทันที",
+          reason_th: "อ้างผลลัพธ์ทันที",
+        },
+      ],
+    }),
+  }));
+  await p.load();
+  assert.equal(p.$('.review-step[data-rule="R-01"]').dataset.state, "blocked");
+  assert.equal(p.$('.review-step[data-rule="R-02"]').dataset.state, "passed");
+  assert.equal(p.$('.review-step[data-rule="R-03"]').dataset.state, "blocked");
+  assert.match(p.$(".review-next-action").textContent, /แก้ไข/);
+});

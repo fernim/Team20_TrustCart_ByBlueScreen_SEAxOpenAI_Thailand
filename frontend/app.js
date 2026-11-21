@@ -240,6 +240,23 @@
       overclaim: true,
     }),
   );
+  // Short excerpts from public Shopee titles; descriptions summarize visible pack data.
+  Object.assign(catalog[21], {
+    th: "Neocell Super Collagen + C",
+    en: "Neocell Super Collagen + C",
+    category: 1,
+    sourceUrl:
+      "https://shopee.co.th/Neocell-Super-Collagen--C--คอลลาเจน-วิตามินซี--(ขนาด-90-250-270-360-เม็ด)-i.38793442.783511072",
+    sourceDescription: "คอลลาเจน วิตามินซี ขนาด 90/250/270/360 เม็ด",
+  });
+  Object.assign(catalog[22], {
+    th: "Deva C Vitamin C 1000 มก.",
+    en: "Deva C Vitamin C 1000 mg",
+    category: 1,
+    sourceUrl:
+      "https://shopee.co.th/วิตามินซี-ดีว่าพลัสคอลลาเจน-(1ห่อ-30ซอง)-Deva-C-Vitamin-C-1000-มก.(ของแท้)-i.224681664.40201061048",
+    sourceDescription: "วิตามินซี ดีว่าพลัสคอลลาเจน 1 ห่อ 30 ซอง",
+  });
   let productVerification = null;
   const productVerifications = new Map();
   function hasProductVerification(product) {
@@ -384,7 +401,7 @@
     );
     const copy = element("div", "product-copy");
     const productName = element("h3", "product-name", name(product));
-    if (productVerifications.has(product.id)) {
+    if (hasProductVerification(product)) {
       productName.prepend(
         productCheckmark(product),
         document.createTextNode(" "),
@@ -764,7 +781,7 @@
     const details = element("div");
     const heading = element("h2", "", name(product));
     heading.id = "product-title";
-    if (productVerifications.has(product.id))
+    if (hasProductVerification(product))
       heading.prepend(productCheckmark(product), document.createTextNode(" "));
     const amount = element("div", "detail-price", price(product.price));
     const quantity = element("div", "quantity");
@@ -829,6 +846,29 @@
       );
       details.insertBefore(warning, amount);
       details.insertBefore(description, amount);
+    }
+    if (product.sourceUrl) {
+      const source = element(
+        "a",
+        "source-reference",
+        "ดูรายการอ้างอิงบน Shopee",
+      );
+      source.href = product.sourceUrl;
+      source.target = "_blank";
+      source.rel = "noopener noreferrer";
+      details.insertBefore(
+        element("p", "product-description", product.sourceDescription),
+        amount,
+      );
+      details.insertBefore(
+        element(
+          "p",
+          "detail-note",
+          "ตัวอย่างอ้างอิง · สรุปข้อมูลบรรจุภัณฑ์จากชื่อรายการ ไม่ใช่คำอธิบายต้นฉบับ · ยังไม่ได้ตรวจยืนยัน",
+        ),
+        amount,
+      );
+      details.insertBefore(source, amount);
     }
     layout.append(productImage(product), details);
     $("#product-detail").replaceChildren(layout);

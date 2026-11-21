@@ -12,6 +12,98 @@
   }
   function render(result) {
     const title = node("h2", result.listing_title || "ผลการตรวจสอบข้อมูลจำลอง");
+    const stepper = node("ol", undefined, "review-stepper");
+    const traceEntries = Array.isArray(result.trace) ? result.trace : [];
+    const stages = [
+      [
+        "R-01",
+        "ตรวจตัวตนสินค้า",
+        "ชื่อสินค้าและผู้ถือใบอนุญาตต้องตรงกับทะเบียน",
+        "แก้ไขชื่อสินค้า ผู้ถือใบอนุญาต หรือเลขอ้างอิงให้ตรงกับหลักฐาน",
+      ],
+      [
+        "R-02",
+        "ตรวจหมวดหมู่",
+        "หมวดหมู่ต้องตรงกับทะเบียน",
+        "แก้ไขหมวดหมู่สินค้าให้ตรงกับทะเบียน",
+      ],
+      [
+        "R-03",
+        "ตรวจคำโฆษณา",
+        "ไม่พบถ้อยคำที่เข้าข่ายกฎตัวอย่าง",
+        "แก้ไขชื่อและคำอธิบายเพื่อลบคำกล่าวอ้างเกินจริง แล้วส่งตรวจใหม่",
+      ],
+    ];
+    const blockers = [];
+    for (const [rule, label, passedText, action] of stages) {
+      const entries = traceEntries.filter((entry) => entry.step === rule);
+      const passed =
+        entries.length > 0 &&
+        entries.every((entry) => ["matched", "passed"].includes(entry.outcome));
+      const state = !entries.length
+        ? "not_checked"
+        : passed
+          ? "passed"
+          : "blocked";
+      const step = node("li", undefined, "review-step");
+      step.dataset.rule = rule;
+      step.dataset.state = state;
+      step.append(
+        node(
+          "span",
+          passed ? "✓" : state === "blocked" ? "!" : "—",
+          "step-marker",
+        ),
+        node("h3", label),
+        node(
+          "span",
+          `${rule} · ${passed ? "ผ่าน" : state === "blocked" ? "ไม่ผ่าน" : "ยังไม่ได้ตรวจ"}`,
+          "step-state",
+        ),
+        node(
+          "p",
+          passed
+            ? passedText
+            : state === "blocked"
+              ? action
+              : "ระบบยังไม่มีผลตรวจขั้นตอนนี้ ต้องตรวจให้ครบก่อนยืนยัน",
+        ),
+      );
+      stepper.append(step);
+      if (!passed)
+        blockers.push(state === "blocked" ? action : `ต้องตรวจ${label}ให้ครบ`);
+    }
+    const final = node("li", undefined, "review-step");
+    const canConfirm =
+      result.status === "APPROVED" &&
+      result.confidence >= 0.75 &&
+      result.human_review_required === false &&
+      blockers.length === 0;
+    final.dataset.state = canConfirm ? "passed" : "blocked";
+    final.append(
+      node("span", canConfirm ? "✓" : "!", "step-marker"),
+      node("h3", "ยืนยันผลตรวจ"),
+      node(
+        "p",
+        canConfirm
+          ? "ผ่านเฉพาะกฎตัวอย่างที่ระบบรองรับ"
+          : "ยังยืนยันไม่ได้ ต้องแก้ไขหรือให้เจ้าหน้าที่ตรวจสอบก่อน",
+      ),
+    );
+    stepper.append(final);
+    const actionBox = node("section", undefined, "review-next-action");
+    actionBox.append(
+      node("h3", canConfirm ? "ผลตรวจพร้อมแล้ว" : "อะไรทำให้ไปต่อไม่ได้?"),
+      node(
+        "p",
+        blockers.length
+          ? blockers.join(" • ")
+          : canConfirm
+            ? "ผลนี้เป็นข้อมูลจำลอง ไม่ใช่การรับรองอย่างเป็นทางการ"
+            : "ต้องตรวจสอบสถานะ ความเชื่อมั่น และการส่งเจ้าหน้าที่ก่อนยืนยัน",
+      ),
+    );
+    report.append(stepper, actionBox);
     const fields = node("dl", undefined, "reviewer-summary");
     const field = (label, value) =>
       fields.append(node("dt", label), node("dd", value));
@@ -49,6 +141,7 @@
         "dialog-note",
       ),
     );
+    report.prepend(title);
     if (Array.isArray(result.claim_findings) && result.claim_findings.length) {
       const findings = node("ul", undefined, "reviewer-findings");
       for (const finding of result.claim_findings) {
@@ -66,11 +159,8 @@
         );
         findings.append(row);
       }
-      report.insertBefore(
-        node("h3", "เหตุผลที่ไม่ผ่าน R-03"),
-        report.children[2],
-      );
-      report.insertBefore(findings, report.children[3]);
+      report.insertBefore(node("h3", "เหตุผลที่ไม่ผ่าน R-03"), fields);
+      report.insertBefore(findings, fields);
     }
     const trace = Array.isArray(result.trace) ? result.trace : [];
     const list = node("ol", undefined, "reviewer-trace");

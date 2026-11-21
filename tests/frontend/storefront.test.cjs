@@ -311,7 +311,7 @@ test("customer badge opens a short status without exposing the reviewer report",
 test("three fictional-brand examples retain clear overclaim labels and no verified badge", (t) => {
   const p = page(t);
   p.$('[data-category="1"]').click();
-  assert.equal(p.$$(".product-card").length, 4);
+  assert.equal(p.$$(".product-card").length, 6);
   assert.equal(p.$$(".overclaim-example").length, 3);
   for (const card of p.$$(".overclaim-example")) {
     assert.equal(card.querySelector(".product-verified"), null);
@@ -326,7 +326,7 @@ test("three fictional-brand examples retain clear overclaim labels and no verifi
   }
 });
 
-test("overclaim listings submit their actual copy and show clickable denial badges, never verified checks", async (t) => {
+test("overclaim listings submit their actual copy and never show a customer status badge", async (t) => {
   const submitted = [];
   const p = page(t, (window) => {
     window.fetch = async (url, options) => {
@@ -358,16 +358,7 @@ test("overclaim listings submit their actual copy and show clickable denial badg
   p.$('[data-category="1"]').click();
   for (const card of p.$$(".overclaim-example")) {
     assert.equal(card.querySelector(".product-verified"), null);
-    const badge = card.querySelector(".product-denied");
-    assert.equal(badge.tagName, "BUTTON");
-    badge.click();
-    assert.equal(p.$("#product-dialog").open, false);
-    assert.equal(p.$("#product-status-title").textContent, "ไม่ผ่านการตรวจสอบ");
-    assert.equal(
-      p.$("#product-status-dialog").textContent.includes("R-03"),
-      false,
-    );
-    p.$("#product-status-dialog [data-close]").click();
+    assert.equal(card.querySelector(".product-status"), null);
   }
   assert.equal(
     JSON.parse(p.window.sessionStorage.getItem("trustcart-demo-reports"))
