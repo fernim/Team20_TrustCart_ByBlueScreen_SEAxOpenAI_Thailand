@@ -77,3 +77,5 @@ Storefront product cards and galleries use the local supplement illustration (`d
 The seller subscription offer is a top-right header disclosure menu, shown only after the subscription check confirms an inactive plan. Active subscribers see no upsell or disabled activation panel. The dropdown stays within the viewport on mobile.
 
 Publishing confirmation is separate from verification feedback. After the product save succeeds, keep “Product published” visible even if verification waits for documents or cannot start. A list refresh or browser-storage error must not imply that publication failed.
+
+Agency pages do not refresh on timers or when returning to the tab. The queue loads on entry, then updates only through explicit user actions such as Refresh, retry, or filter changes. Case reports retain their manual Refresh control.

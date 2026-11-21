@@ -14,7 +14,7 @@ const row = {
   reason: "review",
   updated_at: "2026-11-21T10:00:00Z",
 };
-async function mount(t, handler, url = "http://localhost/agency") {
+async function mount(t, handler, url = "http://localhost/agency", setup = () => {}) {
   const dom = new JSDOM(fs.readFileSync("frontend/agency.html", "utf8"), {
     url,
     runScripts: "outside-only",
@@ -24,6 +24,7 @@ async function mount(t, handler, url = "http://localhost/agency") {
     ready: Promise.resolve({ role: "reviewer", id: "reviewer" }),
     api: handler,
   };
+  setup(dom.window);
   for (const file of ["agency-common.js", "agency.js"])
     dom.window.eval(fs.readFileSync("frontend/" + file, "utf8"));
   await dom.window.TrustCartAgency.ready;
@@ -93,4 +94,22 @@ test("Agency failed refresh removes stale cases and offers retry", async (t) => 
   assert.equal(p.$("#queue-body").children.length, 0);
   assert.equal(p.$("#queue-error").hidden, false);
   assert.equal(p.$("#queue-loading").hidden, true);
+});
+
+
+test("Agency loads once and refreshes only on explicit user action", async (t) => {
+  let calls = 0;
+  const timers = [];
+  const p = await mount(t, async () => { calls++; return response([row]); }, "http://localhost/agency", window => {
+    Object.defineProperty(window.document, "hidden", {value:false});
+    window.setInterval = callback => { timers.push(callback); return timers.length; };
+  });
+  assert.equal(calls, 1);
+  for (const callback of timers) await callback();
+  p.dom.window.dispatchEvent(new p.dom.window.Event("focus"));
+  p.dom.window.document.dispatchEvent(new p.dom.window.Event("visibilitychange"));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 1, "background activity must not reload the queue");
+  await p.$("#refresh-queue").onclick();
+  assert.equal(calls, 2, "manual Refresh must still load the queue");
 });

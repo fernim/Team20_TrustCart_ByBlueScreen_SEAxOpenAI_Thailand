@@ -199,13 +199,5 @@ window.TrustCartAgency = (() => {
     authorized = Boolean(await ui.session());
     await load();
   })();
-  setInterval(() => {
-    if (
-      authorized &&
-      !document.hidden &&
-      $("#main").getAttribute("aria-busy") !== "true"
-    )
-      load();
-  }, 10000);
   return { ready, load };
 })();

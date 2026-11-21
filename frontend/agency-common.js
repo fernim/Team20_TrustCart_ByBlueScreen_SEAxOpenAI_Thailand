@@ -56,9 +56,9 @@ window.AgencyUI = (() => {
       "Synthetic registry · Not official Thai FDA certification",
     ],
     local: ["เชื่อมข้อมูลกับหน้าร้านท้องถิ่น", "Shared with the local storefront"],
-    auto_refresh: [
-      "รีเฟรชคิวอัตโนมัติทุก 10 วินาที",
-      "Queue refreshes every 10 seconds",
+    manual_refresh: [
+      "กดรีเฟรชเพื่อดูข้อมูลล่าสุด",
+      "Use Refresh to load the latest updates",
     ],
     signout: ["ออกจากระบบ", "Sign out"],
     account: ["บัญชีเจ้าหน้าที่", "Staff account"],

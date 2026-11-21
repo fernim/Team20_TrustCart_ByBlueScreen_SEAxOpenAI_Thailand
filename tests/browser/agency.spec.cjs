@@ -221,3 +221,16 @@ test("Agency deep link returns after sign in and stale review requires reload", 
     ),
   ).toBe(true);
 });
+
+test('Agency stays unchanged until manual Refresh', async ({page})=>{
+ await page.clock.install();
+ let requests=0;
+ page.on('request',request=>{if(request.url().includes('/v1/reviewer/queue?'))requests++;});
+ await login(page);
+ await expect(page.locator('#queue-loading')).toBeHidden();
+ await expect.poll(()=>requests).toBe(1);
+ await page.clock.fastForward(31000);
+ expect(requests).toBe(1);
+ await page.locator('#refresh-queue').click();
+ await expect.poll(()=>requests).toBe(2);
+});
