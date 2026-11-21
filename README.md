@@ -94,3 +94,11 @@ The seller product list shares current-session report IDs with the reviewer page
 ## Product-facing presentation
 
 Customer, seller and reviewer screens use normal product-facing wording without simulation or fictional-brand labels. The sample registry holder is now `LumaVale`; its reference remains `DEMO-001`. This copy cleanup does not add real-registry access, accounts, checkout, publication or official Shopee affiliation. Backend `registry_source` metadata remains truthful and existing audit records are preserved. Catalog fixtures and unsupported claim examples remain test data even though those remarks are no longer displayed in product copy.
+
+## Seller products in the customer catalog
+
+Seller submissions now create persistent product records through `POST /v1/products`. Editing a selected product uses `PUT /v1/products/{id}` with `expected_version`; stale edits return 409 rather than overwriting newer data. Product content and its new verification are committed together in SQLite. Every revision keeps its immutable verification report and a traced product ID/version. `GET /v1/products` and `GET /v1/products/{id}` return the current product snapshot and latest verification, with caching disabled.
+
+Customers see saved seller products ahead of the example catalog. The catalog refreshes on load, focus, visibility restoration, cross-tab update notifications, and every five seconds while visible. Only APPROVED results with confidence at least 0.75, no human-review requirement and an audit hash receive a clickable badge. Denied/unconfirmed listings are normal cards. Refresh failures remove seller-product badges until a fresh result is available. Edits update the same product card; drafts remain private to the browser until submitted. No price, shipping promise or seller endorsement is invented for new products: price is shown as unavailable and adding an unpriced item to the cart is disabled.
+
+Seller product records survive restarts and are reloaded from the database, while prior verification reports remain accessible in Reviewer. This remains a local, unauthenticated workspace; tenant ownership and production access control have not been implemented.

@@ -245,8 +245,9 @@
   let productVerification = null;
   const productVerifications = new Map();
   function hasProductVerification(product) {
+    const productVerification = productVerifications.get(product.id);
     return (
-      product.id === checkedProduct.id &&
+      !product.overclaim &&
       productVerification?.status === "APPROVED" &&
       Number.isFinite(productVerification.confidence) &&
       productVerification.confidence >= 0.75 &&
@@ -345,7 +346,14 @@
   const name = (product) => product[state.language];
   const categoryName = (index) =>
     categories[index][state.language === "th" ? 0 : 1];
-  const price = (value) => "฿" + value.toLocaleString("en-US");
+  const price = (value) =>
+    value === null
+      ? state.language === "th"
+        ? "ยังไม่ระบุราคา"
+        : "Price not provided"
+      : "฿" + value.toLocaleString("en-US");
+  const findProduct = (id) =>
+    catalog.find((product) => String(product.id) === String(id));
   const image = (category) => `/static/assets/category-${category}.webp`;
   function element(tag, className, content) {
     const node = document.createElement(tag);
@@ -356,7 +364,9 @@
   function productImage(product) {
     const img = element("img");
     img.src =
-      product.id === checkedProduct.id || product.overclaim
+      product.id === checkedProduct.id ||
+      product.overclaim ||
+      product.sellerProduct
         ? "/static/assets/demo-supplement.svg"
         : image(product.category);
     img.alt = name(product);
@@ -368,7 +378,11 @@
   function productCard(product) {
     const card = element(
       "article",
-      product.overclaim ? "product-card overclaim-example" : "product-card",
+      product.overclaim
+        ? "product-card overclaim-example"
+        : product.sellerProduct
+          ? "product-card seller-catalog-product"
+          : "product-card",
     );
     card.dataset.product = product.id;
     const open = element("button", "product-open");
@@ -403,6 +417,16 @@
       ),
     );
     copy.append(bottom, element("span", "product-location", t("location")));
+    if (product.sellerProduct) {
+      picture
+        .querySelectorAll(".preferred,.discount")
+        .forEach((node) => node.remove());
+      copy
+        .querySelectorAll(
+          ".shipping-tag,.product-location,.product-bottom small",
+        )
+        .forEach((node) => node.remove());
+    }
     open.append(picture);
     card.append(open, copy);
     return card;
@@ -430,6 +454,10 @@
     }
     if (state.sort === "price-low") products.sort((a, b) => a.price - b.price);
     if (state.sort === "price-high") products.sort((a, b) => b.price - a.price);
+    if (state.sort === "recommended")
+      products.sort(
+        (a, b) => Number(!!b.sellerProduct) - Number(!!a.sellerProduct),
+      );
     return products;
   }
   function renderProducts() {
@@ -772,6 +800,7 @@
     });
     quantity.append(label, input);
     const add = element("button", "primary", t("add"));
+    add.disabled = product.price === null;
     add.id = "add-to-cart";
     add.addEventListener("click", () => {
       const quantity = Number(input.value);
@@ -800,6 +829,11 @@
 
       details.insertBefore(description, amount);
     }
+    if (product.sellerProduct)
+      details.insertBefore(
+        element("p", "product-description", product.descriptionTh || ""),
+        amount,
+      );
     if (product.sourceUrl) {
       const source = element(
         "a",
@@ -836,7 +870,7 @@
     $("#open-cart").setAttribute("aria-label", `${t("cart")} (${count})`);
     let total = 0;
     const items = [...cart].map(([id, quantity]) => {
-      const product = catalog[id];
+      const product = findProduct(id);
       total += product.price * quantity;
       const row = element("div", "cart-item");
       const copy = element("div");
@@ -870,7 +904,7 @@
   document.addEventListener("click", (event) => {
     const card = event.target.closest("[data-product]");
     if (card) {
-      selectedProduct = catalog[Number(card.dataset.product)];
+      selectedProduct = findProduct(card.dataset.product);
       renderDetail();
       openDialog($("#product-dialog"));
     }
@@ -1053,12 +1087,83 @@
   renderDeals();
   renderCategories();
   renderProducts();
+  let catalogRequest = 0;
+  async function refreshSellerProducts() {
+    if (typeof window.fetch !== "function") return;
+    const request = ++catalogRequest;
+    try {
+      const response = await window.fetch("/v1/products", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw Error();
+      const records = await response.json();
+      if (request !== catalogRequest) return;
+      if (!Array.isArray(records)) throw Error();
+      const incoming = records.filter(
+        (record) =>
+          record &&
+          typeof record.id === "string" &&
+          record.listing &&
+          record.verification,
+      );
+      for (let index = catalog.length - 1; index >= 0; index--)
+        if (catalog[index].sellerProduct) {
+          productVerifications.delete(catalog[index].id);
+          catalog.splice(index, 1);
+        }
+      for (const record of incoming) {
+        const listing = record.listing;
+        catalog.push({
+          id: record.id,
+          sellerProduct: true,
+          th: listing.title || listing.product_name,
+          en: listing.title || listing.product_name,
+          descriptionTh: listing.description,
+          descriptionEn: listing.description,
+          category:
+            listing.category === "supplement"
+              ? 1
+              : listing.category === "cosmetic"
+                ? 0
+                : 9,
+          price: null,
+          original: 0,
+          sold: 0,
+        });
+        productVerifications.set(record.id, record.verification);
+      }
+    } catch (_) {
+      if (request !== catalogRequest) return;
+      for (const product of catalog)
+        if (product.sellerProduct) productVerifications.delete(product.id);
+    }
+    renderProducts();
+    if (selectedProduct?.sellerProduct) {
+      const latest = findProduct(selectedProduct.id);
+      if (latest) {
+        selectedProduct = latest;
+        renderDetail();
+      } else $("#product-dialog").close();
+    }
+  }
+  window.addEventListener("focus", refreshSellerProducts);
+  window.addEventListener("storage", (event) => {
+    if (event.key === "trustcart-products-updated") refreshSellerProducts();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshSellerProducts();
+  });
+  window.setInterval(() => {
+    if (!document.hidden) refreshSellerProducts();
+  }, 5000);
+  refreshSellerProducts();
   function saveReviewerReports() {
     const reports = [...productVerifications.entries()]
       .filter(([, result]) => typeof result?.id === "string")
       .map(([productId, result]) => ({
         id: result.id,
-        title: catalog[productId].th,
+        title: findProduct(productId).th,
+        productId: findProduct(productId).sellerProduct ? productId : undefined,
         status: result.status,
       }));
     try {

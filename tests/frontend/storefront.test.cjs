@@ -112,8 +112,8 @@ test("flash deals open the full catalog and countdown never becomes negative", (
   let tick;
   const p = page(t, (window) => {
     window.Date.now = () => now;
-    window.setInterval = (callback) => {
-      tick = callback;
+    window.setInterval = (callback, milliseconds) => {
+      if (milliseconds === 1000) tick = callback;
       return 0;
     };
   });
@@ -381,4 +381,50 @@ test("storefront product language contains no simulation or fictional-brand rema
     p.$("#product-dialog [data-close]").click();
   }
   assert.doesNotMatch(p.document.body.textContent, /จำลอง|แบรนด์สมมติ/);
+});
+
+test("customer catalog keeps one seller product with its newest content and removes stale approval", async (t) => {
+  let status = "APPROVED";
+  let title = "Created seller listing";
+  let fail = false;
+  const p = page(t, (window) => {
+    window.fetch = async (url) => {
+      if (url === "/v1/products") {
+        if (fail) throw Error("offline");
+        return {
+          ok: true,
+          json: async () => [
+            {
+              id: "seller-1",
+              version: status === "APPROVED" ? 1 : 2,
+              listing: {
+                title,
+                description: "Seller description",
+                category: "supplement",
+              },
+              verification: { ...reportFixture, status },
+            },
+          ],
+        };
+      }
+      return { ok: false };
+    };
+  });
+  await new Promise((r) => setImmediate(r));
+  assert.equal(p.$$('[data-product="seller-1"]').length, 1);
+  assert.ok(p.$('[data-product="seller-1"] .product-verified'));
+  status = "DENIED";
+  title = "Edited seller listing";
+  p.window.dispatchEvent(new p.window.Event("focus"));
+  await new Promise((r) => setImmediate(r));
+  assert.equal(p.$$('[data-product="seller-1"]').length, 1);
+  assert.match(
+    p.$('[data-product="seller-1"]').textContent,
+    /Edited seller listing/,
+  );
+  assert.equal(p.$('[data-product="seller-1"] .product-status'), null);
+  fail = true;
+  p.window.dispatchEvent(new p.window.Event("focus"));
+  await new Promise((r) => setImmediate(r));
+  assert.equal(p.$('[data-product="seller-1"] .product-status'), null);
 });

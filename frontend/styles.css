@@ -1709,3 +1709,4 @@ dialog h2 {
     flex-wrap: wrap;
   }
 }
+.seller-catalog-product .discount { display:none; }

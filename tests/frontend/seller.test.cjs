@@ -42,10 +42,20 @@ const result = {
 };
 test("seller submits listing copy and sees backend status and blockers", async (t) => {
   const p = seller(t, async (url, options) => {
-    assert.equal(url, "/v1/verifications");
+    if (url === "/v1/products" && !options?.body)
+      return { ok: true, json: async () => [] };
+    assert.equal(url, "/v1/products");
     const body = JSON.parse(options.body);
     assert.equal(body.title, "ผิวกระจ่างใสทันที 100%");
-    return { ok: true, json: async () => ({ ...result, listing: body }) };
+    return {
+      ok: true,
+      json: async () => ({
+        id: "seller-1",
+        version: 1,
+        listing: body,
+        verification: { ...result, listing: body },
+      }),
+    };
   });
   p.$("#listing-title").value = "ผิวกระจ่างใสทันที 100%";
   await p.submit();
@@ -72,4 +82,39 @@ test("seller can save a draft without sending a verification request", (t) => {
   const p = seller(t, () => assert.fail("draft must be local"));
   p.$("#save-draft").click();
   assert.ok(p.dom.window.localStorage.getItem("trustcart-seller-draft"));
+});
+
+test("seller edits the same product ID with its current version", async (t) => {
+  let revision = 0;
+  const requests = [];
+  const p = seller(t, async (url, options) => {
+    if (!options?.body) return { ok: true, json: async () => [] };
+    requests.push({
+      url,
+      method: options.method,
+      body: JSON.parse(options.body),
+    });
+    const listing = JSON.parse(options.body);
+    revision++;
+    return {
+      ok: true,
+      json: async () => ({
+        id: "seller-1",
+        version: revision,
+        listing,
+        verification: { ...result, id: `report-${revision}`, listing },
+      }),
+    };
+  });
+  await p.submit();
+  p.$("#listing-title").value = "Edited seller title";
+  await p.submit();
+  assert.equal(requests[0].method, "POST");
+  assert.equal(requests[1].method, "PUT");
+  assert.equal(requests[1].url, "/v1/products/seller-1");
+  assert.equal(requests[1].body.expected_version, 1);
+  assert.equal(
+    p.dom.window.document.querySelectorAll(".seller-product-row").length,
+    1,
+  );
 });
