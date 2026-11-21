@@ -252,3 +252,71 @@ for (const failure of ["network", "http"]) {
     assert.equal(p.$$(".product-verified").length, 0);
   });
 }
+
+const reportFixture = {
+  id: "7aba58f0-1e89-4ba6-89af-3b86b469c819",
+  status: "APPROVED",
+  reason: "registration_identity_and_category_matched",
+  confidence: 1,
+  human_review_required: false,
+  registry_source: "synthetic",
+  chain_hash: "final-chain",
+  trace: [
+    {
+      step: "R-01",
+      outcome: "matched",
+      at: "2026-11-21T03:00:00Z",
+      previous_hash: null,
+      chain_hash: "identity-chain",
+    },
+    {
+      step: "R-02",
+      outcome: "matched",
+      at: "2026-11-21T03:00:01Z",
+      previous_hash: "identity-chain",
+      chain_hash: "final-chain",
+    },
+  ],
+};
+
+test("clicking product badge opens its report directly without opening product details", async (t) => {
+  const p = page(t, (window) => {
+    window.fetch = async () => ({ ok: true, json: async () => reportFixture });
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  const badge = p.$(".product-card .product-verified");
+  assert.equal(badge.tagName, "BUTTON");
+  assert.equal(badge.closest(".product-open"), null);
+  badge.click();
+  assert.equal(p.$("#verification-dialog").open, true);
+  assert.equal(p.$("#product-dialog").open, false);
+  assert.match(p.$("#verification-report").textContent, /APPROVED/);
+  assert.match(p.$("#verification-report").textContent, /R-01/);
+  assert.match(p.$("#verification-report").textContent, /R-02/);
+  assert.match(p.$("#verification-report").textContent, /identity-chain/);
+  assert.match(p.$("#verification-report").textContent, /final-chain/);
+  assert.match(p.$("#verification-report").textContent, /2026-11-21T03:00:01Z/);
+  assert.match(p.$("#verification-report").textContent, /จำลอง/);
+});
+
+test("detail badge opens the same report and backend text cannot inject markup", async (t) => {
+  const p = page(t, (window) => {
+    window.fetch = async () => ({
+      ok: true,
+      json: async () => ({
+        ...reportFixture,
+        reason: "<img src=x onerror=alert(1)>",
+        trace: [],
+      }),
+    });
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  p.$('[data-product="14"]').click();
+  p.$("#product-title .product-verified").click();
+  assert.equal(p.$("#verification-dialog").open, true);
+  assert.match(p.$("#verification-report").textContent, /<img src=x/);
+  assert.equal(p.$("#verification-report img"), null);
+  p.$("#verification-dialog [data-close]").click();
+  assert.equal(p.$("#verification-dialog").open, false);
+  assert.equal(p.$("#product-dialog").open, true);
+});

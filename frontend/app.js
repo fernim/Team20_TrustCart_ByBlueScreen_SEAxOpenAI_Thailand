@@ -225,9 +225,20 @@
       : "This listing only: product name, licence holder and category match an active synthetic registration. This does not verify the seller account, represent Thai FDA certification, or establish product safety or effectiveness.";
   }
   function productCheckmark() {
-    const badge = element("span", "product-verified");
-    badge.setAttribute("aria-label", verificationLabel());
-    badge.title = verificationLabel();
+    const badge = element("button", "product-verified");
+    badge.type = "button";
+    const label =
+      state.language === "th"
+        ? "เปิดรายงานการตรวจสอบสินค้า"
+        : "Open product verification report";
+    badge.setAttribute("aria-label", `${verificationLabel()} — ${label}`);
+    badge.setAttribute("aria-haspopup", "dialog");
+    badge.title = `${verificationLabel()} — ${label}`;
+    badge.addEventListener("click", (event) => {
+      event.stopPropagation();
+      renderVerificationReport();
+      openDialog($("#verification-dialog"));
+    });
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.setAttribute("aria-hidden", "true");
@@ -304,9 +315,11 @@
     return img;
   }
   function productCard(product) {
-    const card = element("button", "product-card");
-    card.type = "button";
+    const card = element("article", "product-card");
     card.dataset.product = product.id;
+    const open = element("button", "product-open");
+    open.type = "button";
+    open.setAttribute("aria-label", name(product));
     const picture = element("div", "product-picture");
     picture.append(
       productImage(product),
@@ -333,8 +346,147 @@
       ),
     );
     copy.append(bottom, element("span", "product-location", t("location")));
-    card.append(picture, copy);
+    open.append(picture);
+    card.append(open, copy);
     return card;
+  }
+  function renderVerificationReport() {
+    const en = state.language === "en";
+    const report = $("#verification-report");
+    report.replaceChildren();
+    $("#verification-title").textContent = en
+      ? "Product verification report"
+      : "รายงานการตรวจสอบสินค้า";
+    report.append(
+      element("h3", "report-product", name(checkedProduct)),
+      element("p", "dialog-note", verificationExplanation()),
+    );
+    const result = productVerification;
+    if (!result || typeof result !== "object") {
+      report.append(
+        element(
+          "p",
+          "",
+          en ? "Verification report unavailable." : "ไม่พบรายงานการตรวจสอบ",
+        ),
+      );
+      return;
+    }
+    const fields = element("dl", "report-summary");
+    const field = (label, value) =>
+      fields.append(element("dt", "", label), element("dd", "", value));
+    const status = ["APPROVED", "PENDING", "DENIED", "UNKNOWN"].includes(
+      result.status,
+    )
+      ? result.status
+      : "UNKNOWN";
+    field(
+      en ? "Status (demo checks only)" : "สถานะ (เฉพาะการตรวจข้อมูลจำลอง)",
+      status,
+    );
+    field(
+      en ? "Confidence" : "ความเชื่อมั่น",
+      Number.isFinite(result.confidence)
+        ? `${Math.round(result.confidence * 100)}%`
+        : "—",
+    );
+    field(
+      en ? "Human review" : "เจ้าหน้าที่ตรวจสอบ",
+      result.human_review_required === false
+        ? en
+          ? "Not requested"
+          : "ไม่ต้องส่งตรวจ"
+        : en
+          ? "Required"
+          : "ต้องส่งตรวจ",
+    );
+    field(en ? "Report ID" : "รหัสรายงาน", result.id || "—");
+    const reasons = {
+      registration_identity_and_category_matched: en
+        ? "Product name, licence holder and category match the active synthetic registration."
+        : "ชื่อสินค้า ผู้ถือใบอนุญาต และหมวดหมู่ตรงกับทะเบียนจำลองที่มีสถานะใช้งาน",
+      registration_identity_failed: en
+        ? "The registration identity check failed."
+        : "ข้อมูลตัวตนสินค้าไม่ผ่านการตรวจสอบทะเบียน",
+      registration_category_mismatch: en
+        ? "The listing category does not match the registration."
+        : "หมวดหมู่สินค้าไม่ตรงกับทะเบียน",
+      category_unmapped: en
+        ? "The listing category is not supported."
+        : "ระบบยังไม่รองรับหมวดหมู่สินค้านี้",
+      registry_category_unmapped: en
+        ? "The registry category is not supported."
+        : "ระบบยังไม่รองรับหมวดหมู่ในทะเบียน",
+      registry_unavailable: en
+        ? "The registry could not be reached. Human review is required."
+        : "ไม่สามารถเชื่อมต่อทะเบียน ต้องส่งให้เจ้าหน้าที่ตรวจสอบ",
+      reference_missing: en
+        ? "The reference could not be confirmed in the registry."
+        : "ไม่สามารถยืนยันเลขอ้างอิงในทะเบียนได้",
+    };
+    report.append(
+      fields,
+      element("h3", "", en ? "Reason" : "เหตุผล"),
+      element(
+        "p",
+        "report-reason",
+        reasons[result.reason] ||
+          result.reason ||
+          (en ? "No reason supplied." : "ไม่มีเหตุผลในรายงาน"),
+      ),
+    );
+    report.append(
+      element("h3", "", en ? "Recorded audit trace" : "บันทึกลำดับการตรวจสอบ"),
+      element(
+        "p",
+        "dialog-note",
+        en
+          ? "Recorded by the backend. Hash integrity is not independently verified by this view."
+          : "บันทึกจากระบบหลังบ้าน หน้านี้ไม่ได้ตรวจสอบความถูกต้องของแฮชซ้ำ",
+      ),
+    );
+    const trace = Array.isArray(result.trace) ? result.trace : [];
+    const list = element("ol", "report-trace");
+    trace.forEach((entry) => {
+      if (!entry || typeof entry !== "object") return;
+      const item = element("li");
+      item.append(
+        element("strong", "", `${entry.step || "—"} · ${entry.outcome || "—"}`),
+      );
+      const time = element("time", "report-time", entry.at || "—");
+      item.append(time);
+      const hashes = element("details", "report-hashes");
+      hashes.append(
+        element("summary", "", en ? "Audit hashes" : "แฮชของบันทึก"),
+      );
+      hashes.append(
+        element("p", "", en ? "Previous hash" : "แฮชก่อนหน้า"),
+        element(
+          "code",
+          "",
+          entry.previous_hash || (en ? "First entry" : "บันทึกแรก"),
+        ),
+        element("p", "", en ? "Entry hash" : "แฮชรายการนี้"),
+        element("code", "", entry.chain_hash || "—"),
+      );
+      item.append(hashes);
+      list.append(item);
+    });
+    report.append(
+      trace.length
+        ? list
+        : element(
+            "p",
+            "",
+            en
+              ? "No audit trace supplied."
+              : "ไม่มีบันทึกลำดับการตรวจสอบในรายงาน",
+          ),
+    );
+    report.append(
+      element("h3", "", en ? "Final chain hash" : "แฮชสุดท้ายของสายบันทึก"),
+      element("code", "report-final-hash", result.chain_hash || "—"),
+    );
   }
   function matches() {
     const query = state.query.toLocaleLowerCase().trim();
@@ -923,6 +1075,7 @@
     renderSlide();
     renderCart();
     if (selectedProduct) renderDetail();
+    if ($("#verification-dialog").open) renderVerificationReport();
   }
   $("#language").addEventListener("change", () => {
     state.language = $("#language").value === "en" ? "en" : "th";
