@@ -89,7 +89,7 @@ POST /v1/verifications  ──>  Registry adapter (synthetic in demo)
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** Local validation passes 141 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests. Shared PostgreSQL connectivity still requires hosted verification.
+- **Test results.** Local validation passes 141 Python tests, 114 Node component tests, and 34 desktop/mobile browser tests. Shared PostgreSQL connectivity still requires hosted verification.
 
 ## Run locally
 
@@ -231,7 +231,7 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 141 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests pass locally, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration. Reviewer access, completed-review protection, cross-origin write rejection, and audit simulation are covered; see [API judge Q&A](docs/JUDGE_QA.md).
+Validation: 141 Python tests, 114 Node component tests, and 34 desktop/mobile browser tests pass locally, including the documented OpenAPI workflow, grounded extraction, the L1 loop, evidence validation, dataset invariants, agency aggregation, and audit checks. Risk weights are illustrative and need calibration. Reviewer access, completed-review protection, cross-origin write rejection, and audit simulation are covered; see [API judge Q&A](docs/JUDGE_QA.md).
 
 ## Dataset and release update
 
@@ -250,6 +250,8 @@ Two normal, unverified reference listings now use short title excerpts from Shop
 The fe branch is integrated with the released main API. The root route serves the TrustCart marketplace, /seller manages versioned product listings, and /reviewer reads verification reports. /workspace retains evidence upload, rechecks, reviewer decisions, outage and tamper controls, and agency aggregation. /docs remains available behind the same password gate.
 
 Open **Evidence and review** on a saved product to load its current verification in `/workspace`. The workspace can also open a product from its saved-product list. Listing edits retain the product's price, stock, and images and create a new verification revision. Evidence, rechecks, and reviewer decisions update that verification, so the marketplace displays the current badge when it refreshes. Each workspace case links back to its marketplace product.
+
+The Agency tab shows the same saved, priced listings as Marketplace. Each row shows product details and the latest verification status and confidence, with links to the marketplace product and its current verification. The separate verification history includes earlier revisions and standalone checks. Static reference listings have no verification record.
 
 Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. The storefront, seller and reviewer retain the Shopee-style orange theme, compact controls and reference campaign imagery. Backend integration does not replace the visual theme.
 
@@ -306,7 +308,7 @@ The seller list displays each saved product’s image, price, stock and verifica
 
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Latest local validation: 141 Python tests, 114 Node component tests, and 32 desktop/mobile browser tests passed with `.venv/Scripts/python -m pytest -q`, `npm test`, and `npm run test:browser`. These checks use isolated SQLite, synthetic fixtures, and a fake database driver. A separate local PostgreSQL smoke test verified that two app instances share a product, evidence, rechecks, and reviewer decisions. Hosted Supabase connectivity still needs verification. The historical hosted desktop/mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. Hosted retesting remains the Vercel team member's task and was not rerun for this gap review. GitHub CI runs both the API and frontend suites.
+Latest local validation: 141 Python tests, 114 Node component tests, and 34 desktop/mobile browser tests passed with `.venv/Scripts/python -m pytest -q`, `npm test`, and `npm run test:browser`. These checks use isolated SQLite, synthetic fixtures, and a fake database driver. A separate local PostgreSQL smoke test verified that two app instances share a product, evidence, rechecks, and reviewer decisions. Hosted Supabase connectivity still needs verification. The historical hosted desktop/mobile run against the SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. Hosted retesting remains the Vercel team member's task and was not rerun for this gap review. GitHub CI runs both the API and frontend suites.
 
 The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
 

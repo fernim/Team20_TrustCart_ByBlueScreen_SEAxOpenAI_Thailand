@@ -112,9 +112,19 @@
     </div>
     <div id="agency-view" hidden>
       <h2>Agency overview</h2>
-      <p>Aggregate checks from saved synthetic verifications. Claim phrases are quoted test inputs.</p>
-      <button id="refresh-agency">Refresh aggregate</button>
-      <pre id="agency-summary">Run verifications, then refresh to view status, rule, category, day and audit totals.</pre>
+      <p id="agency-marketplace-summary" aria-live="polite">Load the saved marketplace listings to see their current verification.</p>
+      <button id="refresh-agency">Refresh agency data</button>
+      <div class="table-wrap">
+        <table><caption>Saved marketplace listings</caption>
+          <thead><tr><th>Product</th><th>Description</th><th>Category</th><th>Price</th><th>Stock</th><th>Current verification</th><th>Report</th></tr></thead>
+          <tbody id="agency-products"></tbody>
+        </table>
+      </div>
+      <details>
+        <summary>Verification history totals</summary>
+        <p>Includes standalone cases and earlier product revisions. Claim phrases are quoted test inputs.</p>
+        <pre id="agency-summary">Run verifications, then refresh to view status, rule, category, day and audit totals.</pre>
+      </details>
     </div>
     <p id="feedback" role="status" aria-live="polite"></p>
     <h2>Selected verification</h2>
@@ -160,12 +170,13 @@
 <script>
   const byId = id => document.getElementById(id);
   const statuses = ["APPROVED","PENDING","DENIED","UNKNOWN"];
-  const currency = new Intl.NumberFormat("en-TH", { style:"currency", currency:"THB" });
+  const currency = new Intl.NumberFormat("en-TH", { style:"currency", currency:"THB", currencyDisplay:"narrowSymbol" });
   let records = [];
   let scenarios = {};
   let selectedCase = null;
   let linkedProduct = null;
   let savedProducts = [];
+  let transactionRequest = 0;
   async function api(path, options) {
     const response = await fetch(path, options);
     if (!response.ok) {
@@ -201,13 +212,19 @@
     byId("rows").replaceChildren(...rows);
   }
   byId("filter").onchange = render;
-  byId("registry").onchange = async () => {
+  async function loadTransactions() {
+    const request = ++transactionRequest;
     try {
-      records = await (await api("/v1/demo/transactions?offline=" + (byId("registry").value || "false"))).json();
+      const transactions = await (await api("/v1/demo/transactions?offline=" + (byId("registry").value || "false"))).json();
+      if (request !== transactionRequest) return;
+      records = transactions;
       updateMetrics();
       render();
-    } catch (error) { report("Registry simulation failed", error.message, {}); }
-  };
+    } catch (error) {
+      if (request === transactionRequest) report("Registry simulation failed", error.message, {});
+    }
+  }
+  byId("registry").onchange = loadTransactions;
   byId("run").onclick = async () => {
     const run = byId("run");
     run.disabled = true;
@@ -224,15 +241,7 @@
       run.disabled = false;
     }
   };
-  (async () => {
-    try {
-      records = await (await api("/v1/demo/transactions")).json();
-      updateMetrics();
-      render();
-    } catch (error) {
-      byId("rows").querySelector("td").textContent = error.message;
-    }
-  })();
+  loadTransactions();
   function updateMetrics() {
       byId("metrics").replaceChildren();
       const counts = [["Transactions", records.length], ...statuses.map(status => [
@@ -358,6 +367,7 @@
     button.onclick = () => {
       for (const view of ["seller","shopper","reviewer","agency"]) byId(view + "-view").hidden = view !== button.dataset.view;
       document.querySelectorAll("[data-view]").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
+      if (button.dataset.view === "agency") action(refreshAgency);
     };
   });
   byId("scenario").onchange = fillScenario;
@@ -445,11 +455,57 @@
       byId("queue").append(button);
     }
   });
-  byId("refresh-agency").onclick = () => action(async () => {
+  async function refreshAgency() {
+    byId("agency-products").replaceChildren();
+    byId("agency-marketplace-summary").textContent = "Loading marketplace listings…";
+    byId("agency-summary").textContent = "Loading verification history…";
+    try {
+      await loadAgencyData();
+    } catch (error) {
+      byId("agency-marketplace-summary").textContent = "Agency data could not be loaded.";
+      byId("agency-summary").textContent = error.message;
+      throw error;
+    }
+  }
+  async function loadAgencyData() {
     const aggregate = await (await api("/v1/agency/summary")).json();
+    await refreshProducts();
+    const marketplace = savedProducts.filter(product => product.listing.price != null);
+    const rows = marketplace.map(({id, listing, verification}) => {
+      const row = document.createElement("tr");
+      row.dataset.productId = id;
+      row.dataset.verificationId = verification.id;
+      const product = document.createElement("a");
+      product.href = "/products/" + encodeURIComponent(id);
+      product.textContent = listing.title || listing.product_name;
+      row.insertCell().append(product);
+      row.insertCell().textContent = listing.description || "—";
+      row.insertCell().textContent = listing.category;
+      row.insertCell().textContent = currency.format(listing.price);
+      const stock = row.insertCell();
+      stock.dataset.stock = "";
+      stock.textContent = listing.stock ?? "—";
+      const decision = row.insertCell();
+      const badge = document.createElement("span");
+      badge.className = "badge " + verification.status;
+      badge.dataset.status = verification.status;
+      badge.textContent = verification.status;
+      decision.append(badge, " · " + Math.round(verification.confidence * 100) + "% confidence");
+      const report = document.createElement("button");
+      report.textContent = "Open verification";
+      report.onclick = () => action(async () => {
+        await openProduct(id);
+        byId("selected-summary").scrollIntoView({block:"nearest"});
+      });
+      row.insertCell().append(report);
+      return row;
+    });
+    byId("agency-products").replaceChildren(...rows);
+    byId("agency-marketplace-summary").textContent = `${marketplace.length} saved listings in the marketplace. Reference listings have no verification record.`;
     byId("agency-summary").textContent = JSON.stringify(aggregate, null, 2);
-    feedback("Agency totals reconciled from saved synthetic records.");
-  });
+    feedback("Marketplace listings and verification history loaded.");
+  }
+  byId("refresh-agency").onclick = () => action(refreshAgency);
   for (const decision of ["approve","deny"]) byId(decision).onclick = () => action(async () => {
     const note = byId("review-note").value.trim();
     if (!note) throw new Error("Enter a review note.");

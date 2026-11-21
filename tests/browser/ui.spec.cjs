@@ -8,6 +8,7 @@ test('marketplace and workspace share product edits evidence and reviewer decisi
   const product = await created.json();
   await page.goto(`/products/${product.id}`);
   await expect(page.locator('#product-title .product-verified')).toHaveCount(1);
+  await expect(page.locator('#marketplace-verification-status')).toHaveAttribute('data-status', 'APPROVED');
   await expect(page.locator('#workspace-case-link')).toHaveAttribute('href',`/workspace?product=${product.id}`);
   const workspace = await context.newPage();
   await workspace.goto(await page.locator('#workspace-case-link').getAttribute('href'));
@@ -28,16 +29,64 @@ test('marketplace and workspace share product edits evidence and reviewer decisi
   await workspace.locator('#deny').click();
   await expect(workspace.locator('#selected-summary')).toContainText('DENIED');
   await expect(page.locator('#product-title .product-verified')).toHaveCount(0);
+  await expect(page.locator('#marketplace-verification-status')).toHaveAttribute('data-status', 'DENIED');
+  await expect(page.locator('#marketplace-verification-status')).toContainText('100%');
+  await expect(page.locator('.product-description')).toHaveText(listing.description);
+  await expect(page.locator('.detail-price')).toHaveText('฿199');
+  await expect(page.locator('#product-stock')).toContainText('4');
   const current = await (await request.get(`/v1/products/${product.id}`)).json();
   expect(current.version).toBe(2);
   expect(current.listing.price).toBe('199.00');
   expect(current.verification.status).toBe('DENIED');
+  await expect(page.locator('#marketplace-verification-status')).toHaveAttribute('data-verification-id', current.verification.id);
+  const standalone = await (await request.post('/v1/verifications', {data: {...listing, title: 'Synthetic standalone verification'}})).json();
+  await workspace.getByRole('tab', {name:'Agency', exact:true}).click();
+  const agency = workspace.locator(`#agency-products tr[data-product-id="${product.id}"]`);
+  await expect(agency).toHaveCount(1);
+  await expect(agency).toHaveAttribute('data-verification-id', current.verification.id);
+  await expect(agency).toContainText(listing.title+' edited');
+  await expect(agency).toContainText(listing.description);
+  await expect(agency).toContainText(listing.category);
+  await expect(agency).toContainText('฿199.00');
+  await expect(agency.locator('[data-stock]')).toHaveText('4');
+  await expect(agency.locator('[data-status]')).toHaveText('DENIED');
+  await expect(agency).toContainText('100% confidence');
+  const products = await (await request.get('/v1/products')).json();
+  const priced = products.filter(record => record.listing.price != null).map(record => record.id).sort();
+  const agencyIds = await workspace.locator('#agency-products tr').evaluateAll(rows => rows.map(row => row.dataset.productId).sort());
+  expect(agencyIds).toEqual(priced);
+  await expect(workspace.locator(`#agency-products tr[data-verification-id="${standalone.id}"]`)).toHaveCount(0);
+  await expect(workspace.locator(`#agency-products tr[data-verification-id="${product.verification.id}"]`)).toHaveCount(0);
+  await expect(agency.getByRole('link', {name:listing.title+' edited'})).toHaveAttribute('href', `/products/${product.id}`);
+  await agency.getByRole('button', {name:'Open verification'}).click();
+  await expect(workspace.locator('#selected-case')).toContainText(current.verification.id);
+  expect(await workspace.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(workspace.viewportSize().width + 1);
   await expect(workspace.locator('#workspace-product-link')).toHaveAttribute('href',`/products/${product.id}`);
   await workspace.reload();
   await expect(workspace.locator('#selected-summary')).toContainText('DENIED');
   await expect(workspace.locator('#selected-case')).toContainText(current.verification.id);
   expect((await (await request.get(`/v1/audit/${current.verification.id}`)).json()).valid).toBe(true);
   await workspace.close();
+});
+
+test('workspace ignores a stale online transaction response after enabling an outage', async ({page}) => {
+  let releaseOnline;
+  const holdOnline = new Promise(resolve => { releaseOnline = resolve; });
+  await page.route(/\/v1\/demo\/transactions(?:\?.*)?$/, async route => {
+    if (!route.request().url().includes('offline=true')) await holdOnline;
+    await route.continue();
+  });
+  await page.goto('/workspace');
+  await page.locator('#registry').selectOption('true');
+  try {
+    await expect(page.locator('#metrics .metric').filter({hasText:'Unknown'}).locator('b')).toHaveText('20');
+  } finally {
+    const online = page.waitForResponse(response => response.url().includes('/v1/demo/transactions') && !response.url().includes('offline=true'));
+    releaseOnline();
+    await (await online).finished();
+  }
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect(page.locator('#metrics .metric').filter({hasText:'Unknown'}).locator('b')).toHaveText('20');
 });
 
 test('workspace cannot mutate a stale selected case after a product lookup failure', async ({page, request}) => {
@@ -279,7 +328,7 @@ test('seller View product opens the latest saved customer listing in a new tab',
   const fs=require('node:fs');
   const path=require('node:path');
   const images=[1,2].map(index=>'data:image/webp;base64,'+fs.readFileSync(path.join(__dirname,`../../frontend/assets/category-${index}.webp`)).toString('base64'));
-  const listing={title:`Seller link ${test.info().project.name}`,description:'Saved product description ผลิตภัณฑ์เสริมอาหาร',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'299.00',stock:3,images};
+  const listing={title:`Seller link ${test.info().project.name}-${Date.now()}`,description:'Saved product description ผลิตภัณฑ์เสริมอาหาร',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'299.00',stock:3,images};
   const created=await request.post('/v1/products',{data:listing});
   expect(created.status()).toBe(201);
   const product=await created.json();
@@ -315,7 +364,7 @@ test('seller View product opens the latest saved customer listing in a new tab',
 
 test('seller summaries show media price stock and status with Edit and View product actions',async({page})=>{
   const path=require('node:path');
-  const title=`Seller summary ${test.info().project.name}`;
+  const title=`Seller summary ${test.info().project.name}-${Date.now()}`;
   await page.goto('/seller');
   await page.locator('#listing-title').fill(title);
   await page.locator('#listing-price').fill('249.50');
@@ -363,7 +412,7 @@ test('seller summaries show media price stock and status with Edit and View prod
 test('reviewer summaries open the latest report while keeping prior audits accessible',async({page,request})=>{
   const fs=require('node:fs'); const path=require('node:path');
   const image='data:image/webp;base64,'+fs.readFileSync(path.join(__dirname,'../../frontend/assets/product-neocell.webp')).toString('base64');
-  const listing={title:`Reviewer list ${test.info().project.name}`,description:'Product description ผลิตภัณฑ์เสริมอาหาร',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'249.50',stock:7,images:[image]};
+  const listing={title:`Reviewer list ${test.info().project.name}-${Date.now()}`,description:'Product description ผลิตภัณฑ์เสริมอาหาร',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'249.50',stock:7,images:[image]};
   const created=await request.post('/v1/products',{data:listing});
   expect(created.status()).toBe(201); const first=await created.json();
   await page.goto('/reviewer');
