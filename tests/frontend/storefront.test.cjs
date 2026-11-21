@@ -586,3 +586,35 @@ test('unchanged catalog refresh preserves customer quantity and selected gallery
   assert.equal(p.$('#quantity').value,'3');
   assert.equal(p.$('.product-gallery > img').getAttribute('src'),listing.images[1]);
 });
+
+test('reference brand section uses local artwork and explicit external shop links without verification badges', (t) => {
+  const p=page(t);
+  assert.equal(p.$$('#brand-shops .brand-shop').length,8);
+  for(const link of p.$$('#brand-shops .brand-shop')) {
+    assert.ok(link.getAttribute('href').startsWith('https://shopee.co.th/'));
+    assert.equal(link.target,'_blank');
+    assert.match(link.rel,/noopener/);
+    assert.ok(link.querySelector('img').getAttribute('src').startsWith('/static/assets/brand-'));
+    const asset = link.querySelector('img').getAttribute('src').replace('/static/', '');
+    assert.ok(fs.statSync(path.join(__dirname, '../../frontend', asset)).size > 0);
+    assert.ok(link.querySelector('img').alt);
+    assert.equal(link.querySelector('.product-verified'),null);
+  }
+  assert.ok(p.$('footer .demo-views a[href="/seller"]'));
+  assert.equal(p.$('body > .demo-views'),null);
+});
+
+test('popular product rail opens real local product details and updates language', (t) => {
+  const p=page(t);
+  assert.equal(p.$$('#popular-products .popular-product').length,6);
+  const first=p.$('#popular-products .popular-product');
+  first.click();
+  assert.equal(p.$('#product-dialog').open,true);
+  assert.ok(p.$('#product-title').textContent.length>0);
+  p.$('#product-dialog [data-close]').click();
+  p.$('#language').value='en';
+  p.$('#language').dispatchEvent(new p.window.Event('change'));
+  assert.equal(p.$('#popular-title').textContent,'Popular products');
+  assert.match(p.$('#popular-products').textContent,/sold/);
+  assert.equal(p.$$('#brand-shops .brand-shop').length,8);
+});

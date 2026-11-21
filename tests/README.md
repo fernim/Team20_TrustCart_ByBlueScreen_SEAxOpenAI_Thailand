@@ -34,4 +34,6 @@ The browser suite checks shopper search/language/sorting/cart, native dialog ope
 
 Failure traces are retained under `test-results/`; inspect one with `npx playwright show-trace <trace.zip>`. Generated results are ignored by Git.
 
+Brand-shop regression checks cover eight external reference links, local image files, accessible labels, language updates, and the absence of verification badges. Browser checks load each image at desktop/mobile sizes and save a section screenshot. They do not navigate to or validate the external shops. The showcase is reference artwork, not TrustCart verification or seller endorsement.
+
 These tests cover the implemented UI workflows. They do not establish exhaustive branch coverage, official product certification, live-registry integration, authentication, real checkout, or full accessibility compliance. Browser checks use Chromium only; mobile viewport emulation is not testing on a physical phone.

@@ -90,3 +90,42 @@ test('all pages load local styles, navigate, and fit the viewport', async ({ pag
     await expect(page).toHaveURL(new RegExp(`${target}$`));
   }
 });
+
+test('brand shops load local artwork and remain external references without verification badges', async ({ page }) => {
+  await page.goto('/');
+  const section = page.locator('.brand-showcase');
+  await section.scrollIntoViewIfNeeded();
+  const links = section.locator('#brand-shops .brand-shop');
+  await expect(links).toHaveCount(8);
+  await expect(section.locator('.product-verified')).toHaveCount(0);
+  for (let index = 0; index < 8; index++) {
+    const link = links.nth(index);
+    await link.scrollIntoViewIfNeeded();
+    await expect(link).toHaveAttribute('href', /^https:\/\/shopee\.co\.th\//);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', /noopener/);
+    await expect(link.locator('img')).toHaveAttribute('src', `/static/assets/brand-${index}.webp`);
+    await expect.poll(() => link.locator('img').evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
+  }
+  await page.locator('#language').selectOption('en');
+  await expect(links.first()).toHaveAccessibleName(/View on Shopee/);
+  await expect(links).toHaveCount(8);
+  await page.locator('#brand-shops').evaluate((rail) => { rail.scrollLeft = 0; });
+  await section.screenshot({ path: test.info().outputPath('brand-shops.png') });
+});
+
+test('reference homepage brands and popular products retain working navigation', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#brand-shops .brand-shop')).toHaveCount(8);
+  await expect(page.locator('#popular-products .popular-product')).toHaveCount(6);
+  await expect(page.locator('footer .demo-views a[href="/seller"]')).toHaveCount(1);
+  await expect(page.locator('#brand-shops .product-verified')).toHaveCount(0);
+  await page.locator('#popular-products .popular-product').first().click();
+  await expect(page.locator('#product-dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.locator('#language').selectOption('en');
+  await expect(page.locator('#popular-title')).toHaveText('Popular products');
+  await page.locator('#brand-title').scrollIntoViewIfNeeded();
+  const images = await page.locator('#brand-shops img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0));
+  expect(images).toBe(true);
+});

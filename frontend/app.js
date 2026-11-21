@@ -695,6 +695,41 @@
       }),
     );
   }
+  const popularProducts = [...catalog].filter(product => product.sold > 0)
+    .sort((a, b) => b.sold - a.sold).slice(0, 6);
+  function renderPopular() {
+    $("#popular-products").replaceChildren(...popularProducts.map((product, index) => {
+      const button = element("button", "popular-product");
+      button.dataset.product = product.id;
+      button.append(element("span", "popular-rank", `TOP ${index + 1}`), productImage(product),
+        element("span", "popular-sales", `${t("sold")} ${product.sold.toLocaleString("en-US")}`),
+        element("span", "popular-name", name(product)));
+      return button;
+    }));
+  }
+  const brandShops = [
+    ["MizuMi", "mizumi_officialshop"], ["Dr.PONG", "shop/6583190"],
+    ["Lotus’s", "shop/144046792"], ["Dove", "shop/201488045"],
+    ["Oral-B", "shop/78382981"], ["LION", "lion.official"],
+    ["L’Oréal Paris", "collections/22202126"], ["Skinfier", "shop/1459654235"],
+  ];
+  function renderBrands() {
+    $("#brand-shops").replaceChildren(...brandShops.map(([brand, path], index) => {
+      const link = element("a", "brand-shop");
+      link.href = `https://shopee.co.th/${path}`;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.setAttribute("aria-label", `${brand} · ${t("brandReference")}`);
+      const image = element("img");
+      image.src = `/static/assets/brand-${index}.webp`;
+      image.alt = brand;
+      image.loading = "lazy";
+      image.width = 180;
+      image.height = 216;
+      link.append(image);
+      return link;
+    }));
+  }
   const countdownEnd = Date.now() + (46 * 60 + 48) * 1000;
   function renderCountdown() {
     const seconds = Math.max(0, Math.floor((countdownEnd - Date.now()) / 1000));
@@ -1068,6 +1103,8 @@
     renderProducts();
     renderShortcuts();
     renderDeals();
+    renderBrands();
+    renderPopular();
     renderSlide();
     renderCart();
     if (selectedProduct) renderDetail();
@@ -1077,6 +1114,9 @@
     renderLanguage();
   });
   Object.assign(text.th, {
+    popular: "สินค้ายอดนิยม",
+    brandSubtitle: "แบรนด์ที่น่าสนใจ",
+    brandReference: "ดูบน Shopee ↗",
     accountTitle: "บัญชีผู้ใช้",
     helpTitle: "ศูนย์ช่วยเหลือ",
     downloadTitle: "ใช้งานบนมือถือ",
@@ -1089,6 +1129,9 @@
     sampleTime: "เวลาที่เหลือ",
   });
   Object.assign(text.en, {
+    popular: "Popular products",
+    brandSubtitle: "Featured brands",
+    brandReference: "View on Shopee ↗",
     demo: "TrustCart · Product verification",
     sampleDeals: "Special deals",
     synthetic: "TrustCart",
@@ -1124,6 +1167,8 @@
   renderSlide();
   renderShortcuts();
   renderDeals();
+  renderBrands();
+  renderPopular();
   renderCategories();
   renderProducts();
   let catalogRequest = 0;

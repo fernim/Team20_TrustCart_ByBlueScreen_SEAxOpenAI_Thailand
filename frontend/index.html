@@ -14,13 +14,9 @@
     <link rel="stylesheet" href="/static/marketplace-ui.css" />
     <script defer src="/static/app.js"></script>
   </head>
-  <body>
+  <body class="storefront-page">
     <a class="skip-link" href="#main" data-i18n="skip">ข้ามไปที่เนื้อหาหลัก</a>
-    <nav class="demo-views" aria-label="Views">
-      <span aria-current="page">หน้าลูกค้า / Customer</span
-      ><a id="reviewer-link" href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
-      <a href="/seller">หน้าผู้ขาย / Seller</a>
-    </nav>
+
     <header class="header">
       <div class="container">
         <nav class="utility" aria-label="Utility">
@@ -42,13 +38,13 @@
           </div>
           <div class="utility-right">
             <button data-info="notifications">
-              <span aria-hidden="true">♧</span>
+              <span class="utility-icon icon-bell" aria-hidden="true"></span>
               <span data-i18n="notifications">การแจ้งเตือน</span></button
             ><button data-info="help">
-              <span aria-hidden="true">ⓘ</span>
+              <span class="utility-icon icon-help" aria-hidden="true">?</span>
               <span data-i18n="help">ช่วยเหลือ</span></button
             ><label class="language"
-              ><span aria-hidden="true">◎</span
+              ><span class="utility-icon icon-globe" aria-hidden="true"></span
               ><select id="language" aria-label="Language">
                 <option value="th">ไทย</option>
                 <option value="en">English</option>
@@ -65,7 +61,7 @@
               alt=""
               width="45"
               height="52"
-            /><span>Shopee<small>TrustCart</small></span></a
+            /><span>Shopee</span></a
           >
           <div class="search-area">
             <form id="search-form" role="search">
@@ -177,6 +173,26 @@
           </div>
           <div class="flash-grid" id="flash-products"></div>
         </section>
+        <section class="panel brand-showcase" aria-labelledby="brand-title">
+          <div class="section-heading">
+            <h2 id="brand-title">SHOPEE MALL</h2>
+            <span class="brand-subtitle" data-i18n="brandSubtitle">แบรนด์ที่น่าสนใจ</span>
+            <a class="text-button" href="https://shopee.co.th/mall" target="_blank" rel="noopener noreferrer" data-i18n="brandReference">ดูบน Shopee ↗</a>
+          </div>
+          <div class="brand-layout">
+            <a class="brand-campaign" href="https://shopee.co.th/mall" target="_blank" rel="noopener noreferrer">
+              <img src="/static/assets/brand-banner.webp" alt="แคมเปญ Shopee Mall" loading="lazy" width="390" height="452" />
+            </a>
+            <div id="brand-shops" class="brand-shops"></div>
+          </div>
+        </section>
+        <section class="panel popular" aria-labelledby="popular-title">
+          <div class="section-heading">
+            <h2 id="popular-title" data-i18n="popular">สินค้ายอดนิยม</h2>
+            <a href="#catalog-title" class="text-button" data-i18n="all">ดูทั้งหมด</a>
+          </div>
+          <div class="popular-products" id="popular-products"></div>
+        </section>
         <section class="catalog" aria-labelledby="catalog-title">
           <div class="catalog-title">
             <h2 id="catalog-title" data-i18n="discover">สินค้าแนะนำประจำวัน</h2>
@@ -285,6 +301,11 @@
           Shopee</span
         ><a href="#main" data-i18n="backTop">กลับด้านบน</a>
       </div>
+    <nav class="demo-views" aria-label="Views">
+      <span aria-current="page">หน้าลูกค้า / Customer</span
+      ><a id="reviewer-link" href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
+      <a href="/seller">หน้าผู้ขาย / Seller</a>
+    </nav>
     </footer>
     <dialog id="product-dialog" aria-labelledby="product-title">
       <button class="dialog-close" data-close aria-label="ปิด">×</button>

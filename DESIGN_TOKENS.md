@@ -28,3 +28,14 @@ Roboto files come from Google Fonts, with the SIL Open Font License in `frontend
 Playwright MCP was not exposed to this chat. Local Playwright Chromium captured `artifacts/ui/shopee-reference.png` and customer, seller and reviewer screenshots at widths 1440 and 390. Screenshots were visually inspected for typography, spacing, panel hierarchy and mobile wrapping; the mobile draft button was refined to fill the action panel. All six views reported no document horizontal overflow. Browser interaction checked seller draft saving and keyboard focus. Frontend DOM tests cover the existing shopper, seller and reviewer flows and the shared navigation contract.
 
 Synthetic-registry limitations remain visible in the workspaces. The reviewer stays read-only, and product badges retain the existing eligibility rules. No authentication, evidence workflow or new backend functionality is added.
+
+
+## Homepage reference refresh (21 November 2026)
+
+The public Shopee Thailand homepage was inspected through the browser’s Playwright controls. Playwright MCP is not exposed in this session. At a 1280px viewport, the reference header measured 119px tall and its main banner began at y=149px. The storefront now uses those proportions, keeps the 1200px content width and 2:1 banner split, and presents categories in two rows with 12 columns and ten visible at desktop width. Narrow screens retain horizontal scrolling within each rail.
+
+The customer/reviewer/seller view navigation lives in the customer footer so it does not shift the reference header and banner. Seller and reviewer workspace navigation remains at the top. Keyboard focus, native dialogs, language switching, product creation/editing, current inventory and verification eligibility retain their existing behavior.
+
+A Shopee Mall reference showcase uses nine locally bundled campaign/brand images recorded in `frontend/assets/sources.json`. Its tiles explicitly open the corresponding Shopee pages in a separate tab; these are reference shops, not TrustCart seller endorsements or product verification. A popular-product rail uses the local catalog’s recorded demo sales and opens local product details. It does not assert live weekly sales. Promotions remain illustrative and checkout remains unavailable.
+
+Validation includes DOM component tests and desktop/mobile Playwright flows for navigation, image loading, language changes, product details and layout overflow. The current visual match covers the storefront homepage; authenticated Shopee accounts, checkout and other remote pages are not cloned.
