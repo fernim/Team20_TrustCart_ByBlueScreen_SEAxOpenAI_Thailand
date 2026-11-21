@@ -5,22 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TrustCart · Reviewer</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/tokens.css" />
+    <link rel="stylesheet" href="/static/marketplace-ui.css" />
     <script defer src="/static/verification-view.js"></script>
     <script defer src="/static/reviewer.js"></script>
   </head>
   <body class="reviewer-page">
-    <nav class="demo-views">
+    <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
+    <nav class="demo-views" aria-label="Views">
       <a href="/">หน้าลูกค้า / Customer</a
-      ><span>หน้าผู้ตรวจสอบ / Reviewer</span>
+      ><span aria-current="page">หน้าผู้ตรวจสอบ / Reviewer</span>
       <a href="/seller">หน้าผู้ขาย / Seller</a>
     </nav>
     <header class="reviewer-brandbar">
       <div class="container">
-        <a href="/">▢ Shopee <small>TrustCart</small></a
-        ><span>ศูนย์ตรวจสอบสินค้า</span>
+        <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
+        ><span class="workspace-title">Reviewer Centre <small>ศูนย์ตรวจสอบสินค้า</small></span>
       </div>
     </header>
-    <main class="reviewer-shell">
+    <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#report-lookup" aria-current="location">ค้นหารายงาน</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">READ-ONLY DEMO<br />ทะเบียนจำลอง<br />ไม่มีการอนุมัติโดยผู้ตรวจสอบ</div></aside><main id="main" class="reviewer-shell">
       <header>
         <p class="reviewer-eyebrow">TRUSTCART · REVIEWER</p>
         <h1>รายงานการตรวจสอบสินค้า</h1>
@@ -32,7 +35,7 @@
           <option value="">เลือกสินค้าเพื่อดูผล</option>
         </select>
       </section>
-      <form id="report-lookup">
+      <div class="workspace-notice"><strong>พื้นที่ตรวจสอบแบบอ่านอย่างเดียว</strong><span>แสดงผลจากระบบและประวัติการตรวจสอบ · ใช้ข้อมูลทะเบียนจำลอง</span></div><form id="report-lookup">
         <label for="report-id">รหัสรายงาน</label>
         <div class="reviewer-lookup">
           <input
@@ -52,6 +55,6 @@
       <p id="reviewer-error" role="alert" hidden></p>
       <p id="reviewer-loading" role="status" hidden>กำลังโหลดรายงาน…</p>
       <article id="reviewer-report" aria-live="polite"></article>
-    </main>
+    </main></div>
   </body>
 </html>

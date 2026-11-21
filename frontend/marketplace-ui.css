@@ -1,0 +1,70 @@
+body { font-family: var(--font-sans); font-size: var(--font-size-body); -webkit-font-smoothing: antialiased; }
+textarea { font: inherit; }
+:where(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.demo-views { min-height: 36px; gap: 0; background: #fff; color: var(--text-secondary); }
+.demo-views > * { padding: 0 22px; border-right: 1px solid var(--border-subtle); }
+.demo-views > :last-child { border-right: 0; }
+.demo-views a { text-decoration: none; color: var(--text-secondary); }
+.demo-views a:hover, .demo-views [aria-current] { color: var(--brand-primary); }
+.demo-views [aria-current] { font-weight: 500; }
+.header { background: linear-gradient(0deg, var(--brand-end), var(--brand-primary)); }
+.product-card { border-radius: var(--radius-control); }
+.product-name { line-height: 1.5; }
+.primary, .load-more, input, select, textarea { border-radius: var(--radius-control); }
+.primary { transition: background .16s; }
+.primary:active { transform: translateY(1px); }
+.reviewer-brandbar { background: white; color: var(--text-primary); padding: 16px 32px; border-bottom: 1px solid var(--border-subtle); box-shadow: var(--shadow-panel); }
+.reviewer-brandbar .container { max-width: 1400px; justify-content: flex-start; gap: 26px; margin: auto; }
+.reviewer-brandbar a { display: flex; align-items: center; gap: 7px; color: var(--brand-primary); font-size: 29px; line-height: 1.2; }
+.workspace-logo { width: 31px; height: 35px; filter: invert(43%) sepia(90%) saturate(1932%) hue-rotate(343deg) brightness(96%); }
+.reviewer-brandbar small { color: var(--text-secondary); font-size: 11px; margin-left: 4px; }
+.workspace-title { border-left: 1px solid #ddd; padding-left: 26px; font-size: 19px; }
+.workspace-title small { display: block; margin: 3px 0 0; font-size: 12px; }
+.seller-layout, .reviewer-workspace { max-width: 1440px; margin: auto; display: grid; grid-template-columns: var(--width-sidebar) minmax(0, 1fr); }
+.seller-sidebar, .reviewer-sidebar { background: white; padding: 24px 16px; min-height: calc(100dvh - 115px); border-right: 1px solid var(--border-subtle); }
+.workspace-profile { display: flex; align-items: center; gap: 10px; padding: 0 4px 24px; margin-bottom: 20px; border-bottom: 1px solid var(--border-subtle); }
+.workspace-profile strong { font-size: 14px; font-weight: 500; }
+.workspace-profile small { display: block; color: var(--text-secondary); font-size: 11px; margin-top: 3px; }
+.shop-avatar { width: 38px; height: 38px; display: grid; place-items: center; background: var(--brand-soft); border: 1px solid #ffd7ca; border-radius: 50%; color: var(--brand-primary); font-size: 20px; }
+.seller-sidebar h3, .reviewer-sidebar h3 { font-size: 13px; font-weight: 500; color: #999; padding: 0 12px; }
+.seller-sidebar a, .reviewer-sidebar a { display: block; padding: 11px 12px; font-size: 13px; border-radius: 2px; }
+.seller-sidebar a:hover, .reviewer-sidebar a:hover { color: var(--brand-primary); background: #fafafa; }
+.seller-sidebar [aria-current], .reviewer-sidebar [aria-current] { background: var(--brand-soft); color: var(--brand-primary); }
+.sidebar-note, .seller-sidebar .dialog-note { font-size: 12px; color: #999; line-height: 1.9; margin: 32px 12px; }
+.seller-main, .reviewer-shell { padding: 24px 32px 60px; max-width: 1180px; width: 100%; margin: 0 auto; min-width: 0; }
+.seller-main h1, .reviewer-shell h1 { font-size: var(--font-size-title); font-weight: 500; margin: 8px 0; }
+.seller-breadcrumb { margin-top: 0; }
+.reviewer-eyebrow { font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; }
+.reviewer-shell > header > p:last-child { color: var(--text-secondary); font-size: 13px; }
+.workspace-notice { display: flex; flex-direction: column; gap: 4px; background: #fff8e4; border: 1px solid #f4e6bc; padding: 14px 18px; margin: 20px 0; font-size: 12px; color: #796239; }
+.workspace-notice strong { font-weight: 500; color: #554526; font-size: 14px; }
+.seller-section, #seller-result:not(:empty), #report-lookup, #reviewer-report:not(:empty) { border: 0; border-radius: var(--radius-panel); box-shadow: var(--shadow-panel); padding: 28px 32px; }
+.seller-section h2 { font-size: 18px; font-weight: 500; padding-bottom: 18px; border-bottom: 1px solid #f0f0f0; }
+.section-number { color: var(--brand-primary); font-size: 12px; margin-right: 8px; font-variant-numeric: tabular-nums; }
+.seller-section input, .seller-section textarea, .seller-section select { max-width: 780px; border-color: #ddd; }
+.seller-section input:hover, .seller-section textarea:hover, .seller-section select:hover { border-color: #aaa; }
+.seller-section label { color: #555; font-size: 13px; }
+.seller-actions { background: white; padding: 18px 24px; margin-top: 20px; border-top: 1px solid var(--border-subtle); box-shadow: var(--shadow-panel); }
+#report-lookup > label { font-weight: 500; }
+.reviewer-summary { border: 1px solid var(--border-subtle); font-size: 13px; }
+.reviewer-trace time, #reviewer-report code { font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) {
+ .demo-views > * { padding: 0 8px; font-size: 10px; }
+ .reviewer-brandbar { padding: 14px 12px; }
+ .reviewer-brandbar .container { gap: 16px; }
+ .reviewer-brandbar a { font-size: 24px; }
+ .workspace-title { font-size: 16px; padding-left: 16px; }
+ .workspace-title small { display: block; }
+ .workspace-logo { width: 26px; height: 29px; }
+ .seller-layout, .reviewer-workspace { grid-template-columns: minmax(0,1fr); }
+ .seller-sidebar, .reviewer-sidebar { min-height: 0; display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); overflow-x: auto; }
+ .workspace-profile, .reviewer-sidebar h3, .sidebar-note { display: none; }
+ .seller-sidebar a, .reviewer-sidebar a { white-space: nowrap; padding: 10px 8px; font-size: 12px; }
+ .seller-main, .reviewer-shell { padding: 20px 12px 40px; }
+ .seller-section, #seller-result:not(:empty), #report-lookup, #reviewer-report:not(:empty) { padding: 20px 16px; }
+ .seller-actions { padding: 16px; }
+ .seller-actions > button { width: 100%; max-width: none; }
+}
+@media (max-width: 760px) {
+ .seller-actions .load-more { width: 100%; max-width: none; }
+}

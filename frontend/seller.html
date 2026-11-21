@@ -5,31 +5,34 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>TrustCart · Seller Centre</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/tokens.css" />
+    <link rel="stylesheet" href="/static/marketplace-ui.css" />
     <script defer src="/static/verification-view.js"></script>
     <script defer src="/static/seller.js"></script>
   </head>
   <body class="seller-page">
-    <nav class="demo-views">
-      <a href="/">หน้าลูกค้า / Customer</a><span>หน้าผู้ขาย / Seller</span
+    <a class="skip-link" href="#main">ข้ามไปที่เนื้อหาหลัก</a>
+    <nav class="demo-views" aria-label="Views">
+      <a href="/">หน้าลูกค้า / Customer</a><span aria-current="page">หน้าผู้ขาย / Seller</span
       ><a href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
     </nav>
     <header class="reviewer-brandbar">
       <div class="container">
-        <a href="/">▢ Shopee <small>TrustCart</small></a
-        ><span>Seller Centre · สินค้าของฉัน</span>
+        <a href="/"><img class="workspace-logo" src="/static/assets/bag.svg" alt="" /> Shopee <small>TrustCart · UI demo</small></a
+        ><span class="workspace-title">Seller Centre <small>ศูนย์ผู้ขาย</small></span>
       </div>
     </header>
     <div class="seller-layout">
       <aside class="seller-sidebar">
-        <h3>จัดการสินค้า</h3>
-        <a href="#seller-form">＋ เพิ่มสินค้าใหม่</a
+        <div class="workspace-profile"><span class="shop-avatar">L</span><div><strong>LumaVale</strong><small>ร้านค้าสาธิต · Demo shop</small></div></div><h3>จัดการสินค้า</h3>
+        <a aria-current="location" href="#seller-form">＋ เพิ่มสินค้าใหม่</a
         ><a href="#seller-products">สินค้าของฉัน</a
         ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a>
         <p class="dialog-note">
           TrustCart Seller Centre<br />จัดการข้อมูลสินค้า<br />ดูสถานะการตรวจสอบ
         </p>
       </aside>
-      <main class="seller-main">
+      <main id="main" class="seller-main">
         <p class="seller-breadcrumb">สินค้าของฉัน / เพิ่มสินค้าใหม่</p>
         <h1>เพิ่มสินค้าใหม่</h1>
         <button type="button" id="new-product" class="text-button">
@@ -38,9 +41,9 @@
         <p class="dialog-note">
           บันทึกสินค้าและตรวจสอบก่อนเผยแพร่ · ผลจาก API เดียวกับหน้าผู้ตรวจสอบ
         </p>
-        <form id="seller-form">
+        <div class="workspace-notice"><strong>ตรวจสอบข้อมูลก่อนเผยแพร่</strong><span>ใช้ทะเบียนจำลองสำหรับการสาธิต · ไม่ใช่การรับรองอย่างเป็นทางการ</span></div><form id="seller-form">
           <section class="seller-section">
-            <h2>ข้อมูลทั่วไป</h2>
+            <h2><span class="section-number">01</span> ข้อมูลทั่วไป</h2>
             <label for="listing-title">ชื่อสินค้า <span>*</span></label
             ><input
               id="listing-title"
@@ -58,7 +61,7 @@
             </select>
           </section>
           <section class="seller-section">
-            <h2>ข้อมูลสำหรับตรวจสอบทะเบียน</h2>
+            <h2><span class="section-number">02</span> ข้อมูลสำหรับตรวจสอบทะเบียน</h2>
             <p class="dialog-note">
               กรอกเลขอ้างอิง ชื่อสินค้า และผู้ถือใบอนุญาตให้ตรงกับเอกสาร
             </p>
