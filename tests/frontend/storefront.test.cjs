@@ -21,8 +21,8 @@ function page(t, setup = () => {}, url = "http://localhost/") {
   };
   dom.window.HTMLElement.prototype.scrollIntoView = function () {};
   setup(dom.window);
-  dom.window.eval(
-    fs.readFileSync(path.join(__dirname, "../../frontend/app.js"), "utf8"),
+  for (const file of ["product-detail.js", "app.js"]) dom.window.eval(
+    fs.readFileSync(path.join(__dirname, "../../frontend", file), "utf8"),
   );
   t.after(() => dom.window.close());
   const document = dom.window.document;
@@ -567,6 +567,7 @@ test('unchanged catalog refresh preserves customer quantity and selected gallery
   submit(p,'Gallery product');
   p.$('[data-product="gallery"] .product-open').click();
   p.$('.product-thumbnails button:last-child').click();
+  p.$('.product-thumbnails button:nth-child(2)').click();
   p.$('#quantity').value='3';
   p.window.dispatchEvent(new p.window.Event('focus'));
   await new Promise(r=>setImmediate(r));
@@ -743,4 +744,75 @@ test('medicine category filters saved drugs and labels their product pages', asy
   p.$('#language').value = 'en';
   p.$('#language').dispatchEvent(new p.window.Event('change'));
   assert.match(p.$('.detail-metadata').textContent,/Medicine/);
+});
+
+test('expanded detail shows sample ratings, filterable reviews and related links', t => {
+  const p = page(t, () => {}, 'http://localhost/products/0');
+  assert.ok(p.$('#detail-shop'));
+  assert.match(p.$('#detail-reviews').textContent, /ตัวอย่าง/);
+  assert.equal(p.$$('.review-card').length, 5);
+  assert.match(p.$('.review-average').textContent, /4\.1/);
+  p.$('[data-review-filter="1"]').click();
+  assert.equal(p.$$('.review-card').length, 0);
+  assert.ok(p.$('.reviews-empty'));
+  p.$('[data-review-filter="photos"]').click();
+  assert.equal(p.$$('.review-card').length, 3);
+  p.$('.review-photo').click();
+  assert.equal(p.$('#review-photo-dialog').open, true);
+  p.$('#review-photo-close').click();
+  assert.equal(p.$('#review-photo-dialog').open, false);
+  p.$('[data-review-filter="all"]').click();
+  p.$('[data-review-page="next"]').click();
+  assert.equal(p.$$('.review-card').length, 3);
+  assert.equal(p.$$('#detail-related .product-card').length, 6);
+  assert.equal(p.$('#detail-related [data-product="0"]'),null);
+  assert.ok(p.$('#detail-related .product-title-link').href.includes('/products/'));
+});
+
+test('seller details have honest empty reviews and shipping while keeping latest data', async t => {
+  const listing={title:'Saved listing',category:'drug',price:'100',stock:5,images:['data:image/png;base64,aA==','data:image/png;base64,aQ=='],description:'First line\n<script>literal</script>'};
+  const p=page(t, window=>{window.fetch=async url=>url==='/v1/products'?{ok:true,json:async()=>[{id:'saved-detail',listing,verification:{status:'UNKNOWN'}}]}:{ok:false};},'http://localhost/products/saved-detail');
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$$('.review-card').length,0);
+  assert.match(p.$('#detail-reviews').textContent,/ยังไม่มีรีวิว/);
+  assert.match(p.$('#detail-shop').textContent,/ยังไม่มีข้อมูลร้านค้า/);
+  assert.match(p.$('.detail-shipping').textContent,/ยังไม่ระบุ/);
+  assert.equal(p.$('.product-description script'),null);
+  assert.equal(p.$('#product-page .product-verified'),null);
+  p.$('.product-thumbnails button:nth-child(2)').click();
+  p.$('#quantity').value='3';
+  p.$('#quantity').dispatchEvent(new p.window.Event('input'));
+  p.$('#quantity').focus();
+  listing.price='149';
+  p.window.dispatchEvent(new p.window.Event('focus'));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#quantity').value,'3');
+  assert.equal(p.$('.product-gallery > img').getAttribute('src'), listing.images[1]);
+  assert.equal(p.document.activeElement.id,'quantity');
+  assert.match(p.$('.detail-price').textContent,/149/);
+});
+
+test('review selections survive language changes', t => {
+  const p=page(t,()=>{},'http://localhost/products/14');
+  p.$('[data-review-filter="4"]').click();
+  p.$('#language').value='en';
+  p.$('#language').dispatchEvent(new p.window.Event('change'));
+  assert.equal(p.$('[data-review-filter="4"]').getAttribute('aria-pressed'),'true');
+  assert.equal(p.$$('.review-card').length,2);
+  assert.match(p.$('#detail-reviews').textContent,/Sample reviews/);
+  assert.match(p.$('.detail-specifications').textContent,/DHC/);
+  assert.match(p.$('.detail-specifications').textContent,/40/);
+});
+
+test('related products prioritize the same category and exclude unpriced saved records', async t => {
+  const p=page(t,window=>{window.fetch=async url=>url==='/v1/products'?{ok:true,json:async()=>[
+    {id:'current-drug',listing:{title:'Current',category:'drug',price:'10',stock:1},verification:{status:'UNKNOWN'}},
+    {id:'related-drug',listing:{title:'Related',category:'drug',price:'20',stock:1},verification:{status:'UNKNOWN'}},
+    {id:'unpriced-drug',listing:{title:'Unpriced',category:'drug',price:null,stock:1},verification:{status:'UNKNOWN'}}
+  ]}:{ok:false};},'http://localhost/products/current-drug');
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#detail-related .product-card').dataset.product,'related-drug');
+  assert.equal(p.$('#detail-related [data-product="current-drug"]'),null);
+  assert.equal(p.$('#detail-related [data-product="unpriced-drug"]'),null);
+  assert.equal(p.$('#detail-related .product-verified'),null);
 });

@@ -247,3 +247,76 @@ textarea { font: inherit; }
 /* Keep integration navigation consistent with the shared marketplace theme. */
 .integration-nav { display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 24px;background:var(--brand-soft);color:var(--text-primary);font-size:14px; }
 .integration-nav a { color:var(--brand-primary);text-decoration:underline; }
+
+/* Full product page: shop information, specifications, reviews and discovery. */
+.detail-rating-link { display:flex; align-items:center; gap:12px; width:fit-content; margin:0 0 18px; font-size:14px; color:var(--text-secondary); }
+.detail-rating-link strong { font-size:18px; color:var(--brand-primary); border-bottom:1px solid currentColor; }
+.rating-stars { color:var(--brand-primary); letter-spacing:2px; font-size:18px; }
+.detail-shipping { display:grid; grid-template-columns:90px minmax(0,1fr); gap:16px; padding:20px 0 0; font-size:14px; }
+.detail-shipping dt { color:var(--text-secondary); }
+.detail-shipping dd { margin:0; line-height:1.7; }
+.detail-shipping small { display:block; color:var(--text-secondary); font-size:12px; }
+.detail-section-nav { display:flex; flex-wrap:wrap; gap:0; background:var(--surface); margin-top:20px; border-bottom:1px solid var(--border-subtle); }
+.detail-section-nav a { padding:18px 24px; font-size:15px; color:var(--text-primary); }
+.detail-section-nav a:hover { color:var(--brand-primary); background:var(--brand-soft); }
+.detail-shop { display:flex; align-items:center; gap:20px; padding:24px; margin:20px 0; background:var(--surface); }
+.shop-avatar { display:grid; place-items:center; width:72px; height:72px; border-radius:50%; background:var(--brand-soft); color:var(--brand-primary); font-size:25px; flex-shrink:0; border:1px solid #f6d8cf; }
+.shop-copy h2 { font-size:17px; font-weight:500; margin:0 0 8px; }
+.shop-copy p { font-size:12px; color:var(--text-secondary); margin:0; }
+.shop-facts { display:grid; grid-template-columns:auto auto; gap:12px 28px; border-left:1px solid var(--border-subtle); padding-left:32px; margin:0 0 0 auto; font-size:13px; }
+.shop-facts dt { color:var(--text-secondary); }
+.shop-facts dd { color:var(--brand-primary); margin:0; }
+#detail-information, #detail-reviews, #detail-related { scroll-margin-top:24px; }
+.detail-reviews { padding:24px; background:var(--surface); margin-top:20px; }
+.detail-reviews h2, .detail-related h2 { font-size:20px; font-weight:500; margin:0 0 16px; }
+.review-demo-note { font-size:12px; color:var(--text-secondary); margin-bottom:22px; }
+.review-summary { display:grid; grid-template-columns:155px 200px minmax(0,1fr); align-items:center; gap:28px; background:#fffbf8; border:1px solid #f9ede5; padding:28px; }
+.review-score { color:var(--brand-primary); }
+.review-average { font-size:32px; font-weight:500; }
+.review-score .rating-stars { font-size:24px; margin-top:8px; }
+.rating-distribution-row { display:flex; gap:8px; align-items:center; color:var(--text-secondary); font-size:12px; margin:4px 0; }
+.rating-distribution-row meter { flex:1; min-width:40px; height:12px; }
+.rating-distribution-row meter::-webkit-meter-optimum-value { background:var(--brand-primary); }
+.review-filters { display:flex; flex-wrap:wrap; gap:8px; }
+.review-filters button, .review-pagination button { background:white; border:1px solid var(--border-subtle); padding:8px 16px; min-height:36px; color:var(--text-primary); border-radius:var(--radius-control); }
+.review-filters button[aria-pressed="true"] { border-color:var(--brand-primary); color:var(--brand-primary); }
+.review-card { padding:24px 0 24px 48px; border-bottom:1px solid var(--border-subtle); font-size:14px; position:relative; }
+.review-author { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.review-author strong { font-weight:400; font-size:13px; }
+.review-avatar { position:absolute; left:0; top:24px; display:grid; place-items:center; background:#f1f1f1; color:var(--text-secondary); width:32px; height:32px; border-radius:50%; font-size:11px; }
+.review-date { display:block; color:var(--text-secondary); font-size:12px; margin-top:6px; }
+.review-card p { line-height:1.7; }
+.review-photo { padding:0; border:1px solid var(--border-subtle); background:white; width:80px; height:80px; }
+.review-photo img { width:100%; height:100%; object-fit:contain; }
+.review-pagination { display:flex; gap:20px; justify-content:center; align-items:center; padding-top:24px; font-size:14px; }
+.review-pagination button:disabled { opacity:.4; cursor:default; }
+.reviews-empty { text-align:center; padding:48px 20px; color:var(--text-secondary); }
+.review-photo-dialog { width:min(680px,calc(100% - 32px)); max-height:90dvh; padding:20px; border:0; }
+.review-photo-dialog::backdrop { background:rgb(0 0 0 / 60%); }
+.review-photo-dialog h2 { font-size:16px; font-weight:500; }
+.review-photo-dialog > img { display:block; max-width:100%; max-height:65dvh; margin:auto; object-fit:contain; }
+.review-photo-close { display:block; margin-left:auto; background:white; border:1px solid var(--border-subtle); padding:8px 18px; }
+.detail-related { margin-top:32px; }
+.detail-related h2 { color:var(--text-secondary); font-size:17px; }
+.related-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; }
+.related-grid .product-card { background:var(--surface); }
+@media(max-width:1000px) {
+ .review-summary { grid-template-columns:140px minmax(0,1fr); gap:20px; }
+ .review-filters { grid-column:1 / -1; }
+ .related-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+ .detail-shop { flex-wrap:wrap; padding:18px 14px; gap:14px; }
+ .shop-copy { flex:1; min-width:0; }
+ .shop-facts { width:100%; margin:0; border-left:0; border-top:1px solid var(--border-subtle); padding:16px 0 0; }
+ .detail-section-nav a { padding:14px 12px; font-size:13px; }
+ .detail-shipping { grid-template-columns:72px minmax(0,1fr); gap:12px; }
+ .detail-reviews { padding:20px 14px; }
+ .review-summary { padding:16px; grid-template-columns:105px minmax(0,1fr); gap:14px; }
+ .review-score .rating-stars { font-size:18px; }
+ .review-filters button { min-height:44px; padding:8px 12px; }
+ .review-card { padding-left:42px; }
+ .review-pagination { gap:12px; }
+ .review-pagination button { min-height:44px; }
+ .related-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+}
