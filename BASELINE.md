@@ -7,7 +7,7 @@ TrustCart demonstrates how a marketplace can verify a health-product listing bef
 1. Submit a listing with `POST /v1/verifications`. TrustCart checks the registration reference, product name, licence holder, and category against its synthetic registry.
 2. Retrieve the saved decision with `GET /v1/verifications/{id}` using the URL in the submission response's `Location` header.
 3. Read the status, reason, human review flag, and hash-chained audit trace. Results persist in SQLite across app restarts.
-4. Open `/` for a responsive Shopee-style storefront UI with synthetic catalog data, search, category filters, promotional controls, product details, and a local demo cart. This presentation layer does not show verification verdicts or process orders; the verification API remains separate.
+4. Open `/` for a responsive Shopee-style storefront UI with synthetic catalog data, search, category filters, promotional controls, product details, and a local demo cart. A product-only blue checkmark on Demo Supplement reflects a successful synthetic identity/category check from the API. The explanatory label limits its meaning; the storefront does not process orders.
 
 | Status | Meaning |
 | --- | --- |

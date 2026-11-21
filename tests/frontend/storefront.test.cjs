@@ -187,3 +187,68 @@ test("language changes update navigation, search hints, categories, product deta
   assert.equal(p.document.documentElement.lang, "th");
   assert.equal(p.$("#catalog-title").textContent, "สินค้าแนะนำประจำวัน");
 });
+
+test("product checkmark uses the backend result and never marks an account", async (t) => {
+  const p = page(t, (window) => {
+    window.fetch = async (url, options) => {
+      assert.equal(url, "/v1/verifications");
+      assert.equal(JSON.parse(options.body).registration_reference, "DEMO-001");
+      return {
+        ok: true,
+        json: async () => ({
+          status: "APPROVED",
+          confidence: 1,
+          human_review_required: false,
+          registry_source: "synthetic",
+          chain_hash: "demo-chain",
+        }),
+      };
+    };
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  p.$('[data-category="1"]').click();
+  assert.equal(p.$$(".product-card .product-verified").length, 1);
+  assert.equal(p.$(".utility .product-verified"), null);
+  p.$(".product-card").click();
+  p.$("#explain-verification").click();
+  assert.equal(p.$("#verification-explanation").hidden, false);
+  assert.match(p.$("#verification-explanation").textContent, /จำลอง/);
+});
+
+for (const result of [
+  { status: "UNKNOWN", confidence: 0 },
+  { status: "PENDING", confidence: 0.9 },
+  { status: "DENIED", confidence: 1 },
+  { status: "APPROVED", confidence: 0.74 },
+  { status: "APPROVED", confidence: 1, human_review_required: true },
+]) {
+  test(`no product checkmark for ${JSON.stringify(result)}`, async (t) => {
+    const p = page(t, (window) => {
+      window.fetch = async () => ({
+        ok: true,
+        json: async () => ({
+          human_review_required: false,
+          registry_source: "synthetic",
+          chain_hash: "demo-chain",
+          ...result,
+        }),
+      });
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    p.$("#load-more").click();
+    assert.equal(p.$$(".product-verified").length, 0);
+  });
+}
+
+for (const failure of ["network", "http"]) {
+  test(`no product checkmark on ${failure} failure`, async (t) => {
+    const p = page(t, (window) => {
+      window.fetch = async () => {
+        if (failure === "network") throw new Error("offline");
+        return { ok: false };
+      };
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(p.$$(".product-verified").length, 0);
+  });
+}

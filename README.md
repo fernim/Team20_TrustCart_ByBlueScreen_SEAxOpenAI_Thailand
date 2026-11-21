@@ -54,7 +54,7 @@ The homepage recreates the visual structure of [Shopee Thailand](https://shopee.
 - Cycle banners, save a sample voucher, open product details, choose quantities, and add/remove items in a demo cart. The cart and voucher reset on page reload.
 - Utility links explain prototype limitations. Accounts, seller portals, payment, checkout, shipping, and social connections are not implemented.
 
-All 24 catalog entries, prices, sales counts, and offers are illustrative. The UI does not display verification verdicts or call the registry; the existing verification API remains separate. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
+All 24 catalog entries, prices, sales counts, and offers are illustrative. The Demo Supplement listing requests a check from the existing verification API. A blue checkmark appears beside that product name only when the backend approves the synthetic identity/category check with confidence at least 0.75 and no human review required. Its expandable explanation states the limited scope; it never verifies a seller account. Other statuses and failed requests show no checkmark. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
 
 ## Tests
 

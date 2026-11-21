@@ -1223,3 +1223,41 @@ dialog h2 {
     transition: none !important;
   }
 }
+
+/* Product-level registration check: never used on seller or account controls. */
+.product-verified {
+  display: inline-flex;
+  vertical-align: -3px;
+  color: #1688ed;
+}
+.product-verified svg {
+  width: 19px;
+  height: 19px;
+  fill: currentColor;
+}
+.product-verified .verified-tick {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#product-title .product-verified svg {
+  width: 23px;
+  height: 23px;
+}
+.verification-label {
+  display: block;
+  color: #0874c8;
+  padding: 6px 0;
+  text-align: left;
+  text-decoration: underline;
+  font-size: 13px;
+}
+.verification-explanation {
+  background: #eef7ff;
+  border-left: 3px solid #1688ed;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}

@@ -1,6 +1,6 @@
 "use strict";
 
-// The catalog is synthetic presentation data, never registry facts or verification results.
+// Catalog claims are synthetic. Only the backend can supply a verification result.
 (() => {
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -197,6 +197,52 @@
     limit: 12,
     sort: "recommended",
   };
+  // This listing uses the existing synthetic fixture; no registry record is invented here.
+  const checkedProduct = catalog[14];
+  checkedProduct.th = "Demo Supplement · ผลิตภัณฑ์จำลอง";
+  checkedProduct.en = "Demo Supplement · sample product";
+  let productVerification = null;
+  function hasProductVerification(product) {
+    return (
+      product.id === checkedProduct.id &&
+      productVerification?.status === "APPROVED" &&
+      Number.isFinite(productVerification.confidence) &&
+      productVerification.confidence >= 0.75 &&
+      productVerification.human_review_required === false &&
+      productVerification.registry_source === "synthetic" &&
+      typeof productVerification.chain_hash === "string" &&
+      productVerification.chain_hash.length > 0
+    );
+  }
+  function verificationLabel() {
+    return state.language === "th"
+      ? "ทะเบียนตรงกัน · จำลอง"
+      : "Registration matched · demo";
+  }
+  function verificationExplanation() {
+    return state.language === "th"
+      ? "ตรวจสอบเฉพาะสินค้ารายการนี้: ชื่อสินค้า ผู้ถือใบอนุญาต และหมวดหมู่ตรงกับทะเบียนจำลองที่มีสถานะใช้งาน ไม่ใช่การยืนยันบัญชีผู้ขาย ไม่ใช่การรับรองจาก อย. และไม่ใช่การรับรองความปลอดภัยหรือประสิทธิภาพของสินค้า"
+      : "This listing only: product name, licence holder and category match an active synthetic registration. This does not verify the seller account, represent Thai FDA certification, or establish product safety or effectiveness.";
+  }
+  function productCheckmark() {
+    const badge = element("span", "product-verified");
+    badge.setAttribute("aria-label", verificationLabel());
+    badge.title = verificationLabel();
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("aria-hidden", "true");
+    const seal = document.createElementNS(icon.namespaceURI, "path");
+    seal.setAttribute(
+      "d",
+      "m12 1 3 2 3.6.4.9 3.5L22 10l-1 3.4.2 3.6-3.3 1.5-2.3 2.8-3.6-.5-3.4 1.1-2.6-2.6-3.5-1L2 14.6 1 11l2.4-2.8.8-3.5L7.8 4Z",
+    );
+    const check = document.createElementNS(icon.namespaceURI, "path");
+    check.setAttribute("d", "m7 12 3 3 7-7");
+    check.setAttribute("class", "verified-tick");
+    icon.append(seal, check);
+    badge.append(icon);
+    return badge;
+  }
   const text = {
     th: {
       results: "รายการ",
@@ -247,7 +293,10 @@
   }
   function productImage(product) {
     const img = element("img");
-    img.src = image(product.category);
+    img.src =
+      product.id === checkedProduct.id
+        ? "/static/assets/demo-supplement.svg"
+        : image(product.category);
     img.alt = name(product);
     img.loading = "lazy";
     img.width = 200;
@@ -269,10 +318,11 @@
       ),
     );
     const copy = element("div", "product-copy");
-    copy.append(
-      element("h3", "product-name", name(product)),
-      element("span", "shipping-tag", t("shipping")),
-    );
+    const productName = element("h3", "product-name", name(product));
+    if (hasProductVerification(product)) {
+      productName.prepend(productCheckmark(), document.createTextNode(" "));
+    }
+    copy.append(productName, element("span", "shipping-tag", t("shipping")));
     const bottom = element("div", "product-bottom");
     bottom.append(
       element("span", "price", price(product.price)),
@@ -296,6 +346,11 @@
             .toLocaleLowerCase()
             .includes(query)),
     );
+    if (state.sort === "recommended") {
+      const demoIndex = products.indexOf(checkedProduct);
+      if (demoIndex > 1)
+        products.splice(1, 0, products.splice(demoIndex, 1)[0]);
+    }
     if (state.sort === "price-low") products.sort((a, b) => a.price - b.price);
     if (state.sort === "price-high") products.sort((a, b) => b.price - a.price);
     return products;
@@ -624,6 +679,8 @@
     const details = element("div");
     const heading = element("h2", "", name(product));
     heading.id = "product-title";
+    if (hasProductVerification(product))
+      heading.prepend(productCheckmark(), document.createTextNode(" "));
     const amount = element("div", "detail-price", price(product.price));
     const quantity = element("div", "quantity");
     const label = element("label", "", t("quantity"));
@@ -659,11 +716,42 @@
     });
     details.append(
       heading,
-      element("div", "detail-note", t("sampleProduct")),
+      element(
+        "div",
+        "detail-note",
+        hasProductVerification(product)
+          ? state.language === "th"
+            ? "สินค้าจำลอง · ตรวจเฉพาะทะเบียนและหมวดหมู่"
+            : "Synthetic product · identity and category check only"
+          : t("sampleProduct"),
+      ),
       amount,
       quantity,
       add,
     );
+    if (hasProductVerification(product)) {
+      const explain = element(
+        "button",
+        "verification-label",
+        verificationLabel(),
+      );
+      explain.id = "explain-verification";
+      explain.setAttribute("aria-expanded", "false");
+      explain.setAttribute("aria-controls", "verification-explanation");
+      const explanation = element(
+        "p",
+        "verification-explanation",
+        verificationExplanation(),
+      );
+      explanation.id = "verification-explanation";
+      explanation.hidden = true;
+      explain.addEventListener("click", () => {
+        explanation.hidden = !explanation.hidden;
+        explain.setAttribute("aria-expanded", String(!explanation.hidden));
+      });
+      details.insertBefore(explain, amount);
+      details.insertBefore(explanation, amount);
+    }
     layout.append(productImage(product), details);
     $("#product-detail").replaceChildren(layout);
   }
@@ -848,4 +936,27 @@
   renderDeals();
   renderCategories();
   renderProducts();
+  async function loadProductVerification() {
+    if (typeof window.fetch !== "function") return;
+    try {
+      const response = await window.fetch("/v1/verifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registration_reference: "DEMO-001",
+          product_name: "Demo Supplement",
+          license_holder: "Demo Brand",
+          category: "supplement",
+        }),
+      });
+      if (!response.ok) return;
+      productVerification = await response.json();
+      renderProducts();
+      if (selectedProduct?.id === checkedProduct.id) renderDetail();
+    } catch (_) {
+      // An unavailable or malformed response cannot produce a checkmark.
+      productVerification = null;
+    }
+  }
+  loadProductVerification();
 })();
