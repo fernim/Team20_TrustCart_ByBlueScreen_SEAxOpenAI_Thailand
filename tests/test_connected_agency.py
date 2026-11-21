@@ -114,3 +114,20 @@ def test_start_review_rejects_waiting_completed_and_superseded(connected):
     client.put('/v1/seller/products/' + product['id'], json={**product['listing'], 'expected_version': 1})
     login(client, password, 'reviewer')
     assert client.post('/v1/reviewer/submissions/' + result['id'] + '/start-review', json={'chain_hash': result['chain_hash']}).status_code == 409
+
+
+def test_agency_dashboard_is_role_protected_in_both_entrypoints(connected, tmp_path, monkeypatch):
+    from app import create_demo_app
+    from fastapi.testclient import TestClient
+    client, password = connected
+    assert client.get('/agency', follow_redirects=False).status_code == 303
+    login(client, password, 'buyer')
+    assert client.get('/agency').status_code == 403
+    login(client, password, 'reviewer')
+    response = client.get('/agency')
+    assert response.status_code == 200 and 'agency.js' in response.text
+    monkeypatch.setenv('TRUSTCART_REVIEWER_PASSWORD', password)
+    with TestClient(create_demo_app(tmp_path / 'agency-hosted.sqlite3')) as hosted:
+        assert hosted.get('/agency', follow_redirects=False).status_code == 303
+        login(hosted, password, 'reviewer')
+        assert hosted.get('/agency').status_code == 200

@@ -58,7 +58,7 @@ async def access_guard(request, call_next):
     if not public_read and not login:
         user = principal(request)
         if not user:
-            if path in ("/seller", "/reviewer", "/workspace"):
+            if path in ("/seller", "/reviewer", "/workspace", "/agency") or path.startswith("/agency/"):
                 return RedirectResponse("/login", status_code=303)
             return JSONResponse({"detail": "Sign in required"}, status_code=401)
         role = (
@@ -67,8 +67,8 @@ async def access_guard(request, call_next):
             else (
                 "reviewer"
                 if path
-                in ("/reviewer", "/workspace", "/docs", "/redoc", "/openapi.json")
-                or path.startswith(("/v1/reviewer/", "/demo/"))
+                in ("/reviewer", "/workspace", "/docs", "/redoc", "/openapi.json", "/agency")
+                or path.startswith(("/v1/reviewer/", "/demo/", "/agency/"))
                 else None
             )
         )

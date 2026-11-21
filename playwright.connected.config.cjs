@@ -9,7 +9,7 @@ for (const role of ["BUYER", "SELLER1", "SELLER2", "REVIEWER"]) {
 }
 module.exports = defineConfig({
   testDir: "./tests/browser",
-  testMatch: ["connected.spec.cjs", "ui.spec.cjs", "hosted.spec.cjs"],
+  testMatch: ["connected.spec.cjs", "ui.spec.cjs", "hosted.spec.cjs", "agency.spec.cjs"],
   workers: 1,
   reporter: "list",
   use: {

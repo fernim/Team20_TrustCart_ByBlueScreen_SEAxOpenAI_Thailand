@@ -69,6 +69,10 @@ def create_app(database: Path) -> FastAPI:
     def seller_page():
         return FileResponse(frontend / "seller.html")
 
+    @service.get("/agency", include_in_schema=False)
+    def agency_page():
+        return FileResponse(frontend / "agency.html")
+
     @service.get("/reviewer", include_in_schema=False)
     def reviewer_page():
         return FileResponse(frontend / "reviewer.html")

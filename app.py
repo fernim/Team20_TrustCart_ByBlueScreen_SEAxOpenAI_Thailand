@@ -97,7 +97,7 @@ def create_demo_app(database: Path):
     async def password_gate(request: Request, call_next):
         # The connected storefront uses role sessions. Retain Basic only for legacy tools.
         path = request.url.path
-        if request.cookies.get("trustcart_session") or path in ("/", "/login", "/seller", "/reviewer") or path.startswith(("/static/", "/products/", "/v1/auth/", "/v1/catalog/", "/v1/seller/", "/v1/reviewer/", "/v1/documents/")):
+        if request.cookies.get("trustcart_session") or path in ("/", "/login", "/seller", "/reviewer", "/agency") or path.startswith(("/agency/", "/static/", "/products/", "/v1/auth/", "/v1/catalog/", "/v1/seller/", "/v1/reviewer/", "/v1/documents/")):
             return await call_next(request)
         password = os.environ.get("TRUSTCART_DEMO_PASSWORD")
         if not password:

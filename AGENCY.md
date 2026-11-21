@@ -19,3 +19,9 @@ Work queues: To review (`REVIEWER_REQUIRED`, `UNAVAILABLE`); In progress (`AI_CH
 `POST /v1/reviewer/submissions/{id}/start-review` accepts the current `chain_hash`. Only current cases in `REVIEWER_REQUIRED` or `UNAVAILABLE` can enter `IN_REVIEW`. The reviewer identity and supplied hash are appended through `Trace.add`; status, confidence and recorded rule results do not change. Stale hashes, invalid audits, completed/waiting cases and superseded products are rejected. Staff may use the existing decision endpoint after starting review.
 
 การเริ่มตรวจต้องใช้ `chain_hash` ล่าสุด และใช้ได้เฉพาะคำขอปัจจุบันที่รอเจ้าหน้าที่หรือยังตรวจไม่ได้ ระบบบันทึกผู้ตรวจและ hash ในประวัติ และเปลี่ยนเฉพาะกลุ่มงานเป็น `IN_REVIEW` โดยไม่เปลี่ยนผลตรวจ ความมั่นใจ หรือผลกฎ hash เก่า ประวัติไม่ถูกต้อง งานที่ยังรอเอกสาร งานเสร็จแล้ว และฉบับเก่าจะถูกปฏิเสธ หลังเริ่มตรวจใช้ endpoint ตัดสินใจเดิมได้
+
+## Dashboard / แดชบอร์ด
+
+`/agency` is protected by the existing reviewer role in local and hosted entrypoints. The Thai-first dashboard remembers a Thai/English preference, defaults to To review, preserves filters in its URL and refreshes the queue every ten seconds while visible. Marketplace and verification result are independent filters. The Agency page has no cross-role demo tabs. Loading, empty and failed refresh states are explicit; failed requests hide stale results.
+
+หน้า `/agency` ใช้สิทธิ์ reviewer ทั้งการรันในเครื่องและ entrypoint สำหรับโฮสต์ เริ่มต้นเป็นภาษาไทยและจำภาษาที่เลือก กรองกลุ่มงาน Marketplace และผลตรวจแยกกัน เก็บตัวกรองใน URL และรีเฟรชทุกสิบวินาทีเมื่อเปิดหน้านี้อยู่ ไม่มีแท็บสลับบทบาทบนหน้า Agency และแสดงสถานะกำลังโหลด ไม่มีข้อมูล หรือโหลดล้มเหลวอย่างชัดเจน
