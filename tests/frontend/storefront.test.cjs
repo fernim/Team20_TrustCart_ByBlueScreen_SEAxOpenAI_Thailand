@@ -58,7 +58,7 @@ test("search finds matching demo products, handles no matches, and can reset", (
 
 test("category selection combines with search and all-categories clears the selection", (t) => {
   const p = page(t);
-  assert.equal(p.$$(".category").length, 24);
+  assert.equal(p.$$(".category").length, 25);
   p.$('[data-category="10"]').click();
   assert.equal(
     p.$('[data-category="10"]').getAttribute("aria-pressed"),
@@ -723,4 +723,23 @@ test('market supplement references use matching real photos without borrowing sy
     assert.equal(card.querySelector('.product-verified'),null);
   }
   assert.match(p.$('[data-product="14"]').textContent,/DHC/);
+});
+
+test('medicine category filters saved drugs and labels their product pages', async t => {
+  const p = page(t, window => {
+    window.fetch = async url => url === '/v1/products' ? {ok:true,json:async()=>[
+      {id:'medicine',listing:{title:'Medicine listing',category:'drug',price:'100',stock:3},verification:{status:'UNKNOWN'}}
+    ]} : {ok:false};
+  });
+  await new Promise(r=>setImmediate(r));
+  const category = p.$$('.category').find(button => button.textContent === 'ยา');
+  assert.ok(category);
+  category.click();
+  assert.equal(p.$$('.product-card').length,1);
+  p.$('.product-title-link').click();
+  assert.match(p.$('.detail-metadata').textContent,/ยา/);
+  assert.equal(p.$('#product-page .product-verified'),null);
+  p.$('#language').value = 'en';
+  p.$('#language').dispatchEvent(new p.window.Event('change'));
+  assert.match(p.$('.detail-metadata').textContent,/Medicine/);
 });

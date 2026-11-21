@@ -308,3 +308,26 @@ test('reviewer summaries open the latest report while keeping prior audits acces
   await expect(page.locator('.reviewer-trace')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width+1);
 });
+
+test('medicine category persists from seller to customer filter and detail', async ({page}) => {
+  await page.goto('/seller');
+  await page.locator('#listing-category').selectOption('drug');
+  const title = `Medicine category ${test.info().project.name}`;
+  await page.locator('#listing-title').fill(title);
+  await page.locator('#listing-price').fill('100');
+  const savedResponse = page.waitForResponse(response => response.url().endsWith('/v1/products') && response.request().method() === 'POST');
+  await page.locator('#seller-form button[type="submit"]').click();
+  const saved = await (await savedResponse).json();
+  expect(saved.listing.category).toBe('drug');
+  // A supplement registry cannot certify a drug listing.
+  expect(saved.verification.status).toBe('DENIED');
+  await page.goto('/');
+  await page.locator('.category').filter({hasText:/^ยา$/}).click();
+  const card = page.locator(`[data-product="${saved.id}"]`);
+  await expect(card).toBeVisible();
+  await expect(card.locator('.product-verified')).toHaveCount(0);
+  await card.locator('.product-title-link').click();
+  await expect(page.locator('.detail-metadata')).toHaveText('ยา');
+  await page.locator('#language').selectOption('en');
+  await expect(page.locator('.detail-metadata')).toHaveText('Medicine');
+});

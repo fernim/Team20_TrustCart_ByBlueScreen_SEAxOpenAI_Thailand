@@ -29,7 +29,9 @@
     ["เครื่องเขียน หนังสือ และงานอดิเรก", "Books & stationery"],
     ["ตั๋วและบัตรกำนัล", "Tickets & vouchers"],
     ["ช้อปปี้เพย์ใกล้ตัว", "Nearby deals"],
+    ["ยา", "Medicine"],
   ];
+  const medicineCategory = categories.length - 1;
   const catalog = [
     [
       "หูฟังไร้สาย แบบครอบหู สีดำ",
@@ -364,7 +366,7 @@
       : "฿" + value.toLocaleString("en-US");
   const findProduct = (id) =>
     catalog.find((product) => String(product.id) === String(id));
-  const image = (category) => `/static/assets/category-${category}.webp`;
+  const image = (category) => `/static/assets/category-${category === medicineCategory ? 1 : category}.webp`;
   function element(tag, className, content) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -1337,7 +1339,9 @@
               ? 1
               : listing.category === "cosmetic"
                 ? 0
-                : 9,
+                : listing.category === "drug"
+                  ? medicineCategory
+                  : 9,
           price: listing.price == null ? null : Number(listing.price),
           stock: listing.stock ?? null,
           images: listing.images || [],
