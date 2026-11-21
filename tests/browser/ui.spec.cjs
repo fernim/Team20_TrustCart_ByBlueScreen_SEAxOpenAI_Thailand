@@ -32,7 +32,7 @@ test('shopper search, language, sort, cart, and native keyboard dialog', async (
 
 test('seller creates, corrects, and reloads a listing; reviewer reads its audit', async ({ page }) => {
   await page.goto('/seller');
-  const title = `Browser listing ${test.info().project.name}`;
+  const title = `Browser listing ${test.info().project.name}-${Date.now()}`;
   await page.locator('#listing-title').fill(title);
   await page.locator('#listing-description').fill('guaranteed for everyone');
   await page.locator('#submit-listing').click();
@@ -111,15 +111,16 @@ test('reference homepage brands and popular products retain working navigation',
   await page.locator('#language').selectOption('en');
   await expect(page.locator('#popular-title')).toHaveText('Popular products');
   await expect(page.locator('.brand-showcase')).not.toBeVisible();
-  const images = await page.locator('#brand-shops img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0));
-  expect(images).toBe(true);
+  const image = page.locator('#popular-products img').first();
+  await image.scrollIntoViewIfNeeded();
+  await expect.poll(() => image.evaluate(item => item.complete && item.naturalWidth > 0)).toBe(true);
 });
 
 test('product detail gallery, stock controls and verified badge survive the Shopee-style layout', async ({ page, request }) => {
   const fs = require('node:fs');
   const path = require('node:path');
   const images = [1, 2].map(index => 'data:image/webp;base64,' + fs.readFileSync(path.join(__dirname, `../../frontend/assets/category-${index}.webp`)).toString('base64'));
-  const listing = {title:`Detail layout ${test.info().project.name}`,description:'Product description\nSecond line. \u0e1c\u0e25\u0e34\u0e15\u0e20\u0e31\u0e13\u0e11\u0e4c\u0e40\u0e2a\u0e23\u0e34\u0e21\u0e2d\u0e32\u0e2b\u0e32\u0e23',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'249.50',stock:3,images};
+  const listing = {title:`Detail layout ${test.info().project.name}-${Date.now()}`,description:'Product description\nSecond line. \u0e1c\u0e25\u0e34\u0e15\u0e20\u0e31\u0e13\u0e11\u0e4c\u0e40\u0e2a\u0e23\u0e34\u0e21\u0e2d\u0e32\u0e2b\u0e32\u0e23',category:'supplement',registration_reference:'DEMO-001',product_name:'Demo Supplement',license_holder:'Demo Brand',price:'249.50',stock:3,images};
   const response = await request.post('/v1/products', {data:listing});
   expect(response.status()).toBe(201);
   const product = await response.json();

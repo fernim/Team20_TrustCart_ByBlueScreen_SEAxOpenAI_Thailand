@@ -52,7 +52,7 @@ TrustCart checks a listing **before publication** through an API. The design rul
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 105 tests for the demo workflow, API compatibility, dataset invariants, and agency aggregation.
+- **Test results.** `pytest` passes 108 tests for the demo workflow, API compatibility, dataset invariants, agency aggregation, and database adapter behavior. Shared PostgreSQL connectivity still requires hosted verification.
 
 ## Run locally
 
@@ -192,4 +192,14 @@ Product edits use optimistic version checks and atomically create fresh verifica
 
 Local checks include pytest, npm test and npm run test:browser. Install Node dependencies with npm ci.
 
-Frontend integration validation: 105 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed locally. GitHub CI runs both the API and frontend suites.
+## Shared production storage
+
+Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
+
+PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
+
+Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
+
+Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
+
+Local validation: 108 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.

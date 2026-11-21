@@ -1,5 +1,5 @@
 import json
-import sqlite3
+from .. import database as store
 from contextlib import closing
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("/v1/review-queue", tags=["Reviewer"])
 def queue(request: Request):
-    with closing(sqlite3.connect(request.app.state.database)) as connection:
+    with closing(store.connect(request.app.state.database)) as connection:
         results = [json.loads(row[0]) for row in connection.execute("SELECT result FROM verifications")]
     pending = [dict(result, risk=risk(result), audit=audit(result)) for result in results if result["human_review_required"]]
     return sorted(pending, key=lambda result: (-result["risk"]["score"], result["id"]))

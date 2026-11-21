@@ -1,5 +1,5 @@
 import json
-import sqlite3
+from .. import database as store
 from contextlib import closing
 from collections import Counter
 from fastapi import APIRouter, Request
@@ -12,7 +12,7 @@ def agency_summary(request: Request):
     """Aggregate stored synthetic decisions without seller identities or document contents."""
     statuses, categories, days, failed_rules, phrases = (Counter() for _ in range(5))
     valid = silent = total = 0
-    with closing(sqlite3.connect(request.app.state.database)) as connection:
+    with closing(store.connect(request.app.state.database)) as connection:
         for raw_result, raw_listing in connection.execute("SELECT result, listing FROM verifications"):
             result = json.loads(raw_result)
             listing = json.loads(raw_listing) if raw_listing else {}
