@@ -17,7 +17,9 @@ RISK_POLICY_HASH = hashlib.sha256(_POLICY_BYTES).hexdigest()
 
 
 class Revision(BaseModel):
-    chain_hash: str = Field(min_length=64, max_length=64)
+    chain_hash: str = Field(
+        min_length=64, max_length=64, description="The latest chain_hash returned for this verification."
+    )
 
 
 class Review(Revision):

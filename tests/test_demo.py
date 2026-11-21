@@ -71,3 +71,25 @@ def test_grouped_api_routers_are_registered_behind_demo_gate(tmp_path, monkeypat
                 assert method.lower() in paths[path]
                 url = path.replace("{verification_id}", "00000000-0000-0000-0000-000000000000")
                 assert client.request(method, url).status_code == 401
+
+
+def test_openapi_documents_the_verification_and_review_workflow(tmp_path, monkeypatch):
+    monkeypatch.setenv("TRUSTCART_DEMO_PASSWORD", "test-only")
+    with TestClient(create_demo_app(tmp_path / "demo.sqlite3")) as client:
+        schema = client.get("/openapi.json", auth=("demo", "test-only")).raise_for_status().json()
+    paths = schema["paths"]
+    verification = "/v1/verifications/{verification_id}"
+    submission = paths["/v1/verifications"]["post"]
+    assert submission["responses"]["201"]["headers"]["Location"]["schema"]["type"] == "string"
+
+    upload = paths[f"{verification}/evidence"]["post"]
+    assert {"200", "404", "409", "413", "422"} <= upload["responses"].keys()
+    body = upload["requestBody"]["content"]["multipart/form-data"]["schema"]
+    evidence = schema["components"]["schemas"][body["$ref"].rsplit("/", 1)[-1]]
+    for field in ("registration_reference", "product_name", "license_holder"):
+        assert evidence["properties"][field]["minLength"] == 1
+    for field in ("label", "certificate"):
+        assert "2 MiB" in evidence["properties"][field]["description"]
+    for action in ("recheck", "review"):
+        assert {"200", "404", "409", "422"} <= paths[f"{verification}/{action}"]["post"]["responses"].keys()
+    assert "latest" in schema["components"]["schemas"]["Revision"]["properties"]["chain_hash"]["description"]

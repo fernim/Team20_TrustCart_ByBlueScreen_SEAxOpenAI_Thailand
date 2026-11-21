@@ -12,7 +12,7 @@ The core synthetic demo is implemented. The app includes PENDING mismatch handli
 
 Optional OpenAI extraction is implemented behind explicit data-transfer approval and environment credentials. It remains disabled on the hosted demo. Marketplace OAuth is roadmap work. Hosted SQLite is temporary. Product evidence checks compare declared fields and file hashes; document authenticity and OCR require further integration.
 
-Validation: 41 tests pass on the integrated API, including skipped category checks, blank evidence declarations, badge fallback for invalid audits, and migration of saved listing snapshots and evidence. The original workflow integration reported browser and hosted checks for the L1 loop, reviewer decisions, audit verification, and outage handling.
+Validation: 42 tests pass on the integrated API, including the generated OpenAPI workflow, skipped category checks, blank evidence declarations, badge fallback for invalid audits, and migration of saved listing snapshots and evidence. The original workflow integration reported browser and hosted checks for the L1 loop, reviewer decisions, audit verification, and outage handling.
 
 ---
 

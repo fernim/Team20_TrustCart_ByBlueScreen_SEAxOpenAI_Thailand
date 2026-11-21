@@ -52,7 +52,7 @@ TrustCart checks a listing **before publication** through an API. The design rul
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
 - **Visible log.** Commits made through Codex carry the `[codex]` tag. Through the consolidated API integration, 7 of 9 committed revisions carry the `[codex]` tag.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 41 tests for the demo workflow and API compatibility.
+- **Test results.** `pytest` passes 42 tests for the demo workflow and API compatibility.
 
 ## Run locally
 
@@ -79,14 +79,14 @@ $submission = Invoke-WebRequest -Method Post `
 Invoke-RestMethod -Uri ('http://127.0.0.1:8000' + $submission.Headers.Location)
 ```
 
-| Status | Meaning in the baseline |
+| Status | Meaning in the synthetic demo |
 | --- | --- |
-| `APPROVED` | The synthetic fixture is active and its product, licence holder, and category match. |
+| `APPROVED` | The applicable synthetic checks pass, confidence is at least 0.75, and no conflict requires review. |
 | `PENDING` | Evidence or reviewer action is required, including unresolved identity or permit conflicts. |
 | `DENIED` | A conclusive check failed or a reviewer confirmed denial. |
 | `UNKNOWN` | The reference is missing, the category is unmapped, or the registry is unavailable. The response flags the case for human review. |
 
-The API covers R-01 registration identity and the registry category match from R-02. Each decision step contributes to the SHA-256 trace. SQLite preserves results across app restarts. Confidence is `1.0` for a conclusive fixture check and `0.0` when the result is unknown.
+The API checks registration identity, registered category, advertising claims, submitted permits, and declared seller evidence when applicable. Each decision step contributes to the SHA-256 trace. Local SQLite preserves results across app restarts.
 
 ## Marketplace service roadmap
 
@@ -130,6 +130,13 @@ The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer work
 
 FastAPI registers four routers from `backend/app/api/`: `verifications.py` for listing submission and retrieval, `seller.py` for evidence, rechecks, and copy suggestions, `reviewer.py` for the queue and decisions, and `reports.py` for reports, badges, comparison, and audit checks. The API entry point is `backend.app.main:app`. The password-protected local demo uses `app:app`.
 
+### Try the L1 workflow in Swagger
+
+1. Sign in and open `/docs`. Run `GET /v1/demo/scenarios` and copy the `L1` object into `POST /v1/verifications`. The API returns `201` with an ID, a `Location` header, and a `PENDING` result.
+2. Send `multipart/form-data` to the verification's evidence endpoint. Include `label` and `certificate` as synthetic files, the declared `registration_reference`, `product_name`, and `license_holder`, and the verification's current `chain_hash`.
+3. Recheck with JSON `{"chain_hash":"<hash returned by the evidence upload>"}`. To record the demo denial, call the review endpoint with `decision: "deny"`, a note, and the hash returned by recheck.
+4. Fetch the report and audit using the same verification ID. If a mutation returns `409` for a stale hash, reload the verification and use the latest hash. An invalid audit also returns `409` and blocks further mutations.
+
 | Method | Path | Purpose |
 | --- | --- | --- |
 | POST | /v1/verifications | Submit listing |
@@ -155,4 +162,4 @@ The extraction client uses OpenAI structured output and drops every phrase absen
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 41 tests pass, including Thai false-positive regressions, grounded extraction, the L1 loop, stale hashes, evidence validation and retries, legacy database migration, tamper detection, and the password gate for the API routers. Risk weights are illustrative and need calibration.
+Validation: 42 tests pass, including the documented OpenAPI workflow, grounded extraction, the L1 loop, stale hashes, evidence validation and retries, legacy database migration, tamper detection, and the password gate for the API routers. Risk weights are illustrative and need calibration.
