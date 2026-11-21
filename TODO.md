@@ -44,7 +44,7 @@ Closed: 13-digit format check (`verification.py:178`), the ลดน้ำหน
 
 - [x] **Standards certificate (B8).** Optional comma-separated `standards` declarations persist with uploaded evidence. E11 (ISO 9001 alone) fails R-05 and routes to review; E10 (ISO 22000), E9 (GMP), and ISO 9001 plus ISO 22000 pass when identity matches. Four regression cases cover upload, restart/recheck, audit integrity, and outage. This compares declared standards, not document authenticity.
 - [x] **Duplicate evidence hash (B9).** Upload checks both file digests against other verifications and records `duplicate_evidence` through `Trace.add`. An otherwise approvable case becomes PENDING/0.60 with human review, including on recheck; UNKNOWN and conclusive DENIED states are preserved. Three tests cover both file kinds, same-case reuse, unique uploads, stale hashes, restart/recheck, audit, and outage.
-- [ ] **R-02 category claims (B10).** Move the 4 hardcoded phrases in `verification.py:106` to `claim_rules.json`, then compare claims with the registered category.
+- [x] **R-02 category claims (B10).** The four phrases now live under `claim_rules.json` → `category_claims`. R-02 selects them by registered category and records matched policy phrases in its trace. Nine tests cover positive/negative copy, case-insensitive matching, configurable categories, seller-category mismatch, and outage.
 
 ### Roadmap (label it in the slides if it is not built)
 

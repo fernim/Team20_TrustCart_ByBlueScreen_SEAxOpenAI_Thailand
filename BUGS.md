@@ -13,7 +13,7 @@ Found while reviewing commit `31ef16b`. Each item says how it was confirmed.
 | B7 | Medium | Open |
 | B8 | Medium | Fixed |
 | B9 | Medium | Fixed |
-| B10 | Low | Open |
+| B10 | Low | Fixed |
 | B11 | Low | Open (Roadmap) |
 | B12 | High | Fixed |
 
@@ -132,6 +132,8 @@ B1 uses configurable Thai claim phrases with positive and negative regression te
 **Issue:** this repeats the pattern that B1 fixed for R-03. The check also applies only to supplements and does not compare claims with the registered category.
 
 **Fix:** move the phrases to `claim_rules.json` (for example `category_claims` by category) and add positive and negative tests.
+
+**Resolution evidence (B10):** `tests/test_category_claims.py` first failed five configuration/category cases, then passed all nine tests. R-02 reads the four phrases from `category_claims` using the registry category, supports configured categories without code changes, preserves ordinary copy, and never approves an outage.
 
 ## B11. No MoPH 448 ingredient-ceiling check (Low; Roadmap)
 

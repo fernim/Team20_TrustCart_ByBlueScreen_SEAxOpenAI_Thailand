@@ -12,7 +12,7 @@ from typing_extensions import Annotated
 
 from . import registry
 from .llm import extract_claims
-from .rules import advertising_claims
+from .rules import RULES, advertising_claims
 from .claims import ClaimFinding, find_overclaims
 from .media import validate_images
 
@@ -103,13 +103,15 @@ def evaluate_rules(
         "registration_category_mismatch": "fail",
     }.get(reason, "skip")
     text = listing.title + "\n" + listing.description
-    category_claim = record is not None and record.category == "supplement" and any(
-        phrase in text.casefold() for phrase in ("ยารักษา", "ขาวถาวร", "treats hypertension", "cures adhd"))
-    if category_claim:
+    registered_category = record.category.casefold() if record is not None else None
+    category_claims = [phrase for phrase in RULES["category_claims"].get(registered_category, [])
+                       if phrase.casefold() in text.casefold()]
+    if category_claims:
         category_result = "fail"
         if status == Status.APPROVED:
             status, reason = Status.DENIED, "category_claim_mismatch"
-    add("R-02", category_result, "Registered category check", "ตรวจสอบประเภทผลิตภัณฑ์")
+    add("R-02", category_result, "Registered category check", "ตรวจสอบประเภทผลิตภัณฑ์",
+        {"registered_category": registered_category, "category_claims": category_claims})
     if listing.title or listing.description:
         matches, missing = advertising_claims(listing.title, listing.description, listing.category.casefold())
         overclaims = find_overclaims(listing.title, listing.description)

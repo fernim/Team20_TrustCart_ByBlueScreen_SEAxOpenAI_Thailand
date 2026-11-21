@@ -32,5 +32,8 @@
     "เพิ่มกล้ามทันที"
   ],
   "english_pattern": "\\b(?:treat(?:s|ing)?|cure(?:s)?|prevent(?:s|ing)?|reverse(?:s)?)\\b",
-  "supplement_term": "ผลิตภัณฑ์เสริมอาหาร"
+  "supplement_term": "ผลิตภัณฑ์เสริมอาหาร",
+  "category_claims": {
+    "supplement": ["ยารักษา", "ขาวถาวร", "treats hypertension", "cures adhd"]
+  }
 }
