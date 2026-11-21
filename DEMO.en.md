@@ -1,87 +1,38 @@
-# TrustCart — Demo Script & Judge Test Cases (English)
+# TrustCart — three-role demo
 
-**One line to remember:** A real registration number is not a real product.
+The core story is **seller evidence → AI readiness → deterministic checks → reviewer when uncertain → a product tick for the buyer**. A registration number alone does not prove a physical product is genuine. The registry and subscription are synthetic; this is an independent Shopee-style demonstration, not official Shopee or Thai FDA certification.
 
-Every team will build "check the FDA number + check the ad wording". TrustCart is different because it checks **who the number belongs to (R-01)**,
-has an **AI agent that asks the seller for evidence by itself**, keeps a **record that proves it was not altered (hash chain)**, and ships as an **APIaaS plug-in for Shopee**.
+## Prepare
 
-Live: https://trustcart-bluescreen.vercel.app (login required; the password is in the Vercel Environment Variables)
-All data is **synthetic** · results are not a Thai FDA certification · the integration concept has no official affiliation with Shopee
+1. Install dependencies and start the app using README instructions. Set the four role password environment variables before starting; obtain credentials from the presenter, never from source files.
+2. Open `/login` in separate browser profiles for `seller1`, `seller2` and `reviewer`. The public storefront needs no login; a `buyer` account is also available.
+3. Use **Replay** for a deterministic offline presentation. **Live** sends submitted documents to OpenAI only when configured. A live outage must show `UNKNOWN`, never a replay approval.
+4. Use a disposable demo database. Products and document history persist; there is no destructive reset button in this flow.
 
-## Before going on stage (2 minutes)
-1. Open the site in an incognito window → log in
-2. Press ↺ (reset) to restore the starting data
-3. Check that the registry button is 🟢 and the language is the one you will present in
-4. Afterwards: press 🚪 to log out (the session also expires after 8 hours)
+## Show a passing product
 
-## Statuses
-| Status | Meaning |
-|---|---|
-| Approved | Passes every required rule |
-| Pending | Waiting for evidence · waiting for a copy fix · waiting for a reviewer |
-| Denied | A key rule failed (number not found or revoked, prohibited claim, or confirmed by a reviewer) |
-| Unknown | The system could not check (registry not responding); this does not mean the product failed |
+1. As seller1, activate **TrustCart Verification · ฿299/month**. Explain that activation is simulated, unlimited for the month, and collects no payment.
+2. In Synthetic demonstration examples, choose **Matching supplement** and **Load example listing**. Save the product. Its images, price and stock are already visible at **View product**, with no badge yet.
+3. Choose **Verify this product**. The stepper stops at **Documents** and identifies missing evidence. Choose **Upload selected example documents**; this uploads the matching synthetic label, registration certificate and advertising permit and explicitly selects Replay.
+4. Choose **Start check**. The result becomes `APPROVED`. Open View product; click its blue tick. Buyers see only a short status, not evidence or the audit trace.
+5. Edit and save the title, price or stock. The same customer URL shows the new values and loses the tick. A new verification is needed; old submissions stay in history.
 
-> Number belongs to another product → **Pending (evidence requested) first**, then Denied once evidence or a reviewer confirms it. This is fair to sellers who mistyped a number, and it shows the agent loop.
+## Show human review and resubmission
 
-Rules: R-01 Registration identity · R-02 Product category · R-03 Advertising claims · R-04 Advertising permit · R-05 Seller evidence
+1. Load **Unclear document**, save, request verification, upload its example documents and run Replay. The result is `PENDING` / **Reviewer required** because the label is unclear and extraction confidence is below 0.75.
+2. As reviewer, filter by **TrustCart Demo Shop** and **Requires my action**. Open the report. Inspect the listing snapshot, private originals, AI fields/quotations, R-01–R-05 and expandable audit history.
+3. Enter an actionable reason and choose **Request documents**. The seller sees **Seller action** with those instructions. No customer badge appears.
+4. As seller, choose **Resubmit**, upload clearer or additional documents and run another assessment. Submission history preserves both revisions. Replay only accepts its original exact fixtures; altered evidence should use Live or be inspected by a reviewer after an unavailable/uncertain result.
+5. To demonstrate human approval, inspect each required original, tick its inspection checkbox, enter the identity fields read from the documents, and provide a reason. Approve reruns deterministic rules. A prohibited claim, unsupported registry, stale hash or superseded listing cannot be approved.
 
-## Demo flow, 3–4 minutes
-| # | Tab | Action | What the judges see |
-|---|---|---|---|
-| 1 | Shopper | Open L1 "Turmeric reverses diabetes" | Card **13-1-02954-5-0088 ≠ OfficeCare** + R-01…R-04 table + highlighted prohibited words |
-| 2 | Shopper | Open the agent trace | Extract text → registry lookup → rules → decision → risk score, each with a hash |
-| 3 | Top bar | Press English / ภาษาไทย | The whole page switches language with no leftover words from the other language |
-| 4 | Seller | Submit evidence for L1 | R-05 fails → Pending · waiting for a reviewer (confidence 0.6) |
-| 5 | Seller | L4 "Use suggested copy" | Denied → **Approved** immediately (in both languages) |
-| 6 | Shopper | L7 OceanHealth Outlet | R-04 advertising permit conflict → Pending · reviewer |
-| 7 | Top bar | Switch registry 🟢 → 🔴 | Every listing becomes **Unknown**; nothing passes silently (switch back to 🟢) |
-| 8 | Reviewer | Look back at L1 | **Risk score breakdown** by factor + every step recorded |
-| 9 | Reviewer | ⛔ → 🔐 → 🧪 → 🔐 | ✔ valid → **✘ tampering detected at step 6** |
-| 10 | API plug-in | ▶ Call the real API | JSON matching the Tech document + revenue table (APIaaS for Shopee) |
-| 11 | `/docs` | Swagger | Full `/v1` API |
+## Show denial and separation
 
-## Risk score (orders reviewer work only; never changes the verdict)
-Policy `backend/data/risk_policy.json` (RISK-v1; its version and hash are recorded in every report):
-not found / revoked +100 · high-risk claim group +25 per group · number belongs to another product +30 · registry not responding +40 ·
-conflicting permit +20 · shop open less than 60 days +10 · sales +1 per 500 units (max 20) · Approved = 0
-Tiers: ≥80 high · 30–79 medium · <30 low. **The weights are assumptions and must be calibrated against real Thai FDA and platform data.**
+- Choose **Prohibited claim**, save and run its matching replay documents. It becomes `DENIED`; the report identifies the prohibited phrase. It remains a normal customer product without a tick.
+- Sign in as seller2. Seller1's listings and documents are inaccessible. Publish a normal product without activating a plan: it is publicly visible without verification.
+- Choose Live without configured provider access to demonstrate `UNKNOWN` and a retry/reviewer path. Do not describe this as a product failure or silently switch to Replay.
 
-| Listing | Score | Breakdown |
-|---|---|---|
-| L5 Liver Detox (number not found) | 160 | 100 + 50 + 10 |
-| L3 FastFirm (revoked) | 136 | 100 + 25 + 10 + 1 |
-| L1 Turmeric (borrowed number) | 119 | 75 + 30 + 10 + 4 |
-| L4 SlimDee | 60 | 50 + 10 |
-| L7 conflicting permit | 31 | 20 + 10 + 1 |
-| L2, L6 | 0 | Approved |
+## Scope
 
-## Test-case matrix (`pytest -q` → 20 passed)
-| Case | Listing | Expected | Test |
-|---|---|---|---|
-| Clean product | L2, L6 | Approved | `test_clean_listings_approved` |
-| Registration number mismatch | L1 | Pending(evidence) | `test_borrowed_number_pending_evidence` |
-| Evidence does not match | L1 + evidence | Pending(human) | `test_mismatched_evidence_escalates_to_human` |
-| Ad copy fails → fixed and passes | L4 | Denied → Approved | `test_prohibited_claim_denied_then_fix_approved` |
-| Conflicting data | L7 | Pending(human), R-04 FAIL | `test_conflicting_permit_goes_to_human` |
-| Registry unavailable | All | Unknown | `test_registry_outage_is_unknown_never_approved` |
-| Revoked / not found | L3, L5 | Denied | `test_revoked_and_unknown_number_denied` |
-| AI extracts hidden claims + guard against invented text | API | AI may only add phrases that really appear | `test_ai_extraction_...`, `test_llm_grounding_guard_...` |
-| Risk ordering + score breakdown | queue | Correct order, sums match, no double counting | `test_queue_is_risk_ranked` |
-| Log tampering detected | any | chain broken | `test_tamper_detected` |
-| No language mixing | All | EN has no Thai / TH has no English | `test_no_language_mixing_in_reports` |
-| Password + logout | gate | 401 → 200 → 401 | `test_password_gate` |
-| API matches the Tech document | API | Complete shape | `test_response_matches_doc_shape` |
-| OAuth 2.0 + scope + caller in the log | API | 401/403/200 by permission | `test_oauth_client_credentials_flow_and_audit` |
-| Forged / expired token | API | 401 | `test_oauth_rejects_tampered_and_expired_tokens` |
+Private evidence supports PDF, PNG, JPEG and WebP up to 2 MiB each, five active files, and ten unencrypted PDF pages. Text-PDF quotations are checked against document text. Image-only/scanned documents require visual reviewer confirmation. Supplements are the first automatic path; other categories require manual review. Checkout, real billing, OAuth, live government registries and the agency workspace are not part of this demo.
 
-## Questions judges are likely to ask
-- **"Does the AI decide?"** → No. The AI only extracts text, and can only add phrases that literally appear in the listing; the rules engine decides.
-- **"What if the Thai FDA API is down?"** → Unknown + sent to a reviewer (demo step 7).
-- **"Where does the risk score come from?"** → An explainable additive formula, version RISK-v1, kept in a config file and written to the trace every time; used only to order work.
-- **"Why would Shopee buy it?"** → It checks at listing time instead of removing after publication (Thai FDA closed 121,494 illegal ads; Lazada removed 9,454 listings).
-- **"Can it use real data?"** → It uses a mock registry today; the Thai FDA announced connecting its database to platforms through an API (9 Oct 2025). What we ask for is a sandbox.
-
-## Limitations
-Mock registry · legal wording must be checked with the Thai FDA · risk weights are not yet calibrated on real data · data is kept in memory (resets when the server restarts) ·
-user-typed text is translated automatically only when `OPENAI_API_KEY` is set · not medical advice
+Run `.venv/bin/python -m pytest -q`, `npm test`, and `npm run test:browser` before presenting. On Windows use `.venv/Scripts/python`. This change does not deploy or validate a hosted environment.

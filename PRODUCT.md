@@ -4,13 +4,17 @@
 **Hook:** เลข อย. จริง ≠ สินค้าจริง (a real registration number is not a verified product).
 **Built by:** Team BlueScreen for the Sea × OpenAI Regional Codex Hackathon Thailand, 21 November 2026.
 
+## Delivered demo and remaining scope
+
+The connected three-role workflow is implemented locally. Registry data and subscriptions are synthetic; replay and live document assessment are distinct modes. Live provider and hosted PostgreSQL validation are separate operational checks. The agency workspace, real billing and marketplace OAuth remain future work. See README and DEMO.en.md for the supported workflow. Older sections below also describe the broader target.
+
 ## What is TrustCart?
 
-TrustCart is an AI verification agent offered as an API (APIaaS) that marketplaces plug into their listing flow. It checks health and supplement listings at the moment a seller publishes them.
+TrustCart is an AI verification agent offered as an API (APIaaS) that marketplaces plug into their listing flow. It checks health and supplement listings when a seller requests verification; normal publication remains available without a badge.
 
-- **For shoppers:** a Trust Badge and a report on the product page that say whether the listing passed, and why.
-- **For sellers:** a check before publishing, a request for the exact documents needed, and compliant copy suggestions.
-- **For reviewers:** a queue ranked by risk, with each verdict traceable to its rules, evidence and time.
+- **For shoppers:** a clickable product tick only after a current passing check; a short status explanation, with no private report.
+- **For sellers:** shop-owned listings, a demo ฿299/month unlimited verification plan, required private documents per submission, visible blockers and resubmission after review.
+- **For reviewers:** a cross-shop queue filtered by stage and required action, original documents, AI readiness findings, and audited decisions.
 
 What it checks, as five deterministic rules:
 
@@ -28,8 +32,8 @@ Results are Approved, Pending, Denied or Unknown. Unknown means the system could
 
 | User | Need | What TrustCart gives |
 |---|---|---|
-| Thai online shoppers buying supplements from unfamiliar sellers | Know whether a listing is genuine before paying | A clear badge and reasons inside the listing |
-| Small and medium sellers | Know what a compliant listing needs before a takedown | Pre-publication check, evidence request, safe copy |
+| Thai online shoppers buying supplements from unfamiliar sellers | Know whether a listing is genuine before paying | A badge and short status on passing listings |
+| Small and medium sellers | Know what a compliant listing needs before a takedown | Optional verification, evidence requests and resubmission |
 | Marketplace trust and safety teams, Thai FDA officers | Act on thousands of listings with evidence | Risk-ranked queue and a tamper-evident audit trail |
 | Marketplaces (Shopee first) | Fewer takedowns and complaints without building a rule engine | A plug-in verification API |
 

@@ -60,3 +60,14 @@ Product pages retain the Shopee-style two-column purchase area, followed by sect
 `product-detail.js` owns presentation-only review fixtures and per-product filter/page state. Catalog reviews, shop data and shipping examples are explicitly labeled samples; saved seller products show honest empty or unavailable states. Review photos are labeled illustrations. Sample ratings never influence verification. Specifications use only known catalog attributes or saved stock. Names, descriptions and comments render as text.
 
 Reviews show five items per page, star/photo filters, accessible photo dialogs and persistent selections across language changes. Product refreshes preserve gallery choice, bounded quantity, and control focus. Related cards use the normal product URLs and existing badge eligibility. No API, schema, checkout, messaging or review-submission behavior is added.
+
+## Connected verification components
+
+`frontend/workflow.css` extends the shared tokens for the authenticated seller and reviewer pages. `session.js` renders role-aware account navigation; `workflow.js` renders the shared report safely with text nodes.
+
+- The submission stepper separates Documents, AI readiness, Policy checks, Reviewer and Result. Only the current stage uses the orange highlight and `aria-current="step"`; prior stages are neutral, not misleading green approvals.
+- R-01–R-05 appear separately with passed, failed, not-required or not-checked labels. Blockers include the next actor and an actionable instruction. Unavailable checks never use a success color.
+- Product rows show image, price, stock and status with explicit Edit / View product or Open report / View product actions. Reviewer filters wrap into a single column on mobile.
+- Buyer cards and product pages show a clickable product tick only for `badge_eligible`. No account gets a verification tick. Private documents, findings and hashes never render in the buyer view.
+- Private document links and listing snapshots are available to the owning seller and reviewer. Only reviewers receive the expanded audit control. Decision forms require a reason; approval additionally requires original-document inspection confirmations.
+- Live versus Replay is visible beside each result. Demo plan activation explicitly states that no payment is taken. Preserve visible synthetic-registry context without making the customer popup a technical report.
