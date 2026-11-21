@@ -1,0 +1,166 @@
+"use strict";
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const ids = [
+    "listing-title",
+    "listing-description",
+    "listing-category",
+    "registration-reference",
+    "registered-name",
+    "license-holder",
+  ];
+  let version = 0;
+  let dirty = false;
+  let reports = [];
+  try {
+    const saved = JSON.parse(
+      sessionStorage.getItem("trustcart-demo-reports") || "[]",
+    );
+    if (Array.isArray(saved)) reports = saved;
+  } catch (_) {}
+  const payload = () => ({
+    title: $("#listing-title").value.trim(),
+    description: $("#listing-description").value,
+    category: $("#listing-category").value,
+    registration_reference: $("#registration-reference").value.trim(),
+    product_name: $("#registered-name").value.trim(),
+    license_holder: $("#license-holder").value.trim(),
+  });
+  function fill(data) {
+    const values = [
+      data.title,
+      data.description,
+      data.category,
+      data.registration_reference,
+      data.product_name,
+      data.license_holder,
+    ];
+    ids.forEach((id, i) => {
+      if (typeof values[i] === "string") $("#" + id).value = values[i];
+    });
+  }
+  function feedback(text) {
+    $("#seller-feedback").textContent = text;
+  }
+  function renderReports() {
+    $("#seller-product-list").replaceChildren();
+    if (!reports.length) {
+      $("#seller-product-list").textContent = "ยังไม่มีรายการที่ตรวจสอบ";
+      return;
+    }
+    for (const entry of reports) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "seller-product-row";
+      button.textContent = `${entry.title || entry.id} · ${entry.status || "UNKNOWN"}`;
+      button.addEventListener("click", async () => {
+        if (
+          dirty &&
+          !window.confirm(
+            "มีข้อมูลที่ยังไม่ได้ตรวจสอบ ต้องการเปลี่ยนรายการหรือไม่?",
+          )
+        )
+          return;
+        const request = ++version;
+        $("#seller-result").replaceChildren();
+        feedback("กำลังโหลดผลตรวจ…");
+        try {
+          const response = await fetch(
+            `/v1/verifications/${encodeURIComponent(entry.id)}`,
+          );
+          if (!response.ok) throw Error();
+          const result = await response.json();
+          if (request !== version) return;
+          if (result.id !== entry.id) throw Error();
+          if (result.listing) fill(result.listing);
+          else
+            fill({
+              title: result.listing_title || "",
+              description: "",
+              category: "other",
+              registration_reference: "",
+              product_name: "",
+              license_holder: "",
+            });
+          dirty = false;
+          window.TrustCartVerification.render($("#seller-result"), result, {
+            audit: false,
+          });
+          feedback("แสดงผลตรวจที่บันทึกไว้");
+        } catch (_) {
+          if (request === version)
+            feedback("ไม่สามารถโหลดผลตรวจได้ กรุณาลองใหม่");
+        }
+      });
+      $("#seller-product-list").append(button);
+    }
+  }
+  $("#seller-form").addEventListener("input", () => {
+    dirty = true;
+    version++;
+    $("#seller-result").replaceChildren();
+    feedback("ข้อมูลมีการแก้ไข ต้องส่งตรวจใหม่ก่อนยืนยันสถานะ");
+  });
+  $("#save-draft").addEventListener("click", () => {
+    try {
+      localStorage.setItem("trustcart-seller-draft", JSON.stringify(payload()));
+      feedback("บันทึกแบบร่างในเครื่องแล้ว ยังไม่ได้ตรวจสอบ");
+    } catch (_) {
+      feedback("ไม่สามารถบันทึกแบบร่างในเครื่องได้");
+    }
+  });
+  $("#seller-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!$("#seller-form").reportValidity()) return;
+    const listing = payload();
+    const request = ++version;
+    $("#seller-result").replaceChildren();
+    $("#submit-listing").disabled = true;
+    feedback("กำลังตรวจสอบสินค้า…");
+    try {
+      const response = await fetch("/v1/verifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(listing),
+      });
+      if (!response.ok) throw Error();
+      const result = await response.json();
+      if (request !== version) return;
+      if (!result || typeof result.id !== "string") throw Error();
+      dirty = false;
+      window.TrustCartVerification.render($("#seller-result"), result, {
+        audit: false,
+      });
+      reports = [
+        { id: result.id, title: listing.title, status: result.status },
+        ...reports,
+      ].slice(0, 30);
+      try {
+        sessionStorage.setItem(
+          "trustcart-demo-reports",
+          JSON.stringify(reports),
+        );
+      } catch (_) {}
+      renderReports();
+      feedback("บันทึกผลตรวจแล้ว ดูสถานะและขั้นตอนที่ต้องแก้ไขด้านล่าง");
+    } catch (_) {
+      if (request === version) {
+        $("#seller-result").replaceChildren();
+        feedback("ไม่สามารถตรวจสอบได้ ไม่ได้ยืนยันสถานะผ่าน กรุณาลองใหม่");
+      }
+    } finally {
+      $("#submit-listing").disabled = false;
+    }
+  });
+  try {
+    const draft = JSON.parse(
+      localStorage.getItem("trustcart-seller-draft") || "null",
+    );
+    if (draft && typeof draft === "object") {
+      fill(draft);
+      dirty = true;
+      feedback("โหลดแบบร่างในเครื่องแล้ว ต้องส่งตรวจใหม่");
+    }
+  } catch (_) {}
+  renderReports();
+})();

@@ -31,6 +31,12 @@ function reviewer(t, fetch) {
   );
   dom.window.fetch = fetch;
   dom.window.eval(
+    fs.readFileSync(
+      path.join(__dirname, "../../frontend/verification-view.js"),
+      "utf8",
+    ),
+  );
+  dom.window.eval(
     fs.readFileSync(path.join(__dirname, "../../frontend/reviewer.js"), "utf8"),
   );
   t.after(() => dom.window.close());

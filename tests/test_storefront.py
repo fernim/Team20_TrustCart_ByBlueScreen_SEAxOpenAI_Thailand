@@ -48,3 +48,12 @@ def test_reviewer_has_its_own_page_and_can_retrieve_a_stored_report(tmp_path):
         stored = client.get(submission.headers['location']).json()
         assert stored['trace']
         assert stored['chain_hash'] == submission.json()['chain_hash']
+
+
+def test_seller_page_and_listing_snapshot_roundtrip(tmp_path):
+    payload = {'registration_reference':'DEMO-001','product_name':'Vitamin C Supplement','license_holder':'LumaVale Demo','category':'supplement','title':'LumaVale Vitamin C','description':'Synthetic listing.'}
+    with TestClient(create_app(tmp_path/'seller.sqlite3')) as client:
+        assert client.get('/seller').status_code == 200
+        result = client.post('/v1/verifications',json=payload)
+        assert result.json()['listing'] == payload
+        assert client.get(result.headers['location']).json()['listing'] == payload

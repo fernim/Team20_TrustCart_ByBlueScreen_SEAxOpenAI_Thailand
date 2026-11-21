@@ -924,6 +924,10 @@
   });
   $$("[data-info]").forEach((button) =>
     button.addEventListener("click", () => {
+      if (button.dataset.info === "seller") {
+        window.location.assign("/seller");
+        return;
+      }
       if (button.dataset.info === "cart") {
         showCart();
         return;

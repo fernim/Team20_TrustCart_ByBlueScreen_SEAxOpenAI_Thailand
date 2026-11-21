@@ -1580,3 +1580,132 @@ dialog h2 {
     display: none;
   }
 }
+
+.seller-layout {
+  max-width: 1400px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+.seller-sidebar {
+  background: white;
+  min-height: 100vh;
+  padding: 30px 20px;
+}
+.seller-sidebar h3 {
+  font-size: 16px;
+}
+.seller-sidebar a {
+  display: block;
+  padding: 12px 0;
+  color: #555;
+}
+.seller-sidebar a:hover {
+  color: var(--brand-primary);
+}
+.seller-main {
+  padding: 24px 32px 60px;
+  max-width: 1100px;
+  min-width: 0;
+}
+.seller-main h1 {
+  margin: 10px 0;
+  font-size: 27px;
+}
+.seller-breadcrumb {
+  font-size: 12px;
+  color: #888;
+}
+.seller-section,
+#seller-result:not(:empty) {
+  background: white;
+  padding: 24px;
+  margin-top: 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+.seller-section h2 {
+  font-size: 20px;
+  margin: 0 0 20px;
+}
+.seller-section label {
+  display: block;
+  margin: 18px 0 8px;
+  font-size: 14px;
+}
+.seller-section label span {
+  color: var(--brand-primary);
+}
+.seller-section input,
+.seller-section textarea,
+.seller-section select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  background: white;
+}
+.seller-section textarea {
+  resize: vertical;
+}
+.seller-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+}
+.seller-actions .load-more {
+  margin: 0;
+  width: auto;
+  padding: 12px 22px;
+}
+.seller-product-row {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+.seller-product-row:hover {
+  color: var(--brand-primary);
+}
+#seller-feedback {
+  padding: 12px 0;
+  color: #77503b;
+}
+#seller-result {
+  overflow-wrap: anywhere;
+}
+#seller-result code {
+  display: block;
+  padding: 8px;
+  background: #f6f9fc;
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .seller-layout {
+    grid-template-columns: 1fr;
+  }
+  .seller-sidebar {
+    min-height: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    padding: 12px;
+  }
+  .seller-sidebar h3,
+  .seller-sidebar p {
+    display: none;
+  }
+  .seller-main {
+    padding: 16px 12px 40px;
+  }
+  .seller-section,
+  #seller-result:not(:empty) {
+    padding: 16px;
+  }
+  .seller-actions {
+    flex-wrap: wrap;
+  }
+}

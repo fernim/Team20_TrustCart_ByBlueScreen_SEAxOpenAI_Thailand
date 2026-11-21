@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustCart · Seller Centre demo</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script defer src="/static/verification-view.js"></script>
+    <script defer src="/static/seller.js"></script>
+  </head>
+  <body class="seller-page">
+    <nav class="demo-views">
+      <a href="/">หน้าลูกค้า / Customer</a><span>หน้าผู้ขาย / Seller</span
+      ><a href="/reviewer">หน้าผู้ตรวจสอบ / Reviewer</a>
+    </nav>
+    <header class="reviewer-brandbar">
+      <div class="container">
+        <a href="/">▢ Shopee <small>TrustCart demo</small></a
+        ><span>Seller Centre · สินค้าของฉัน</span>
+      </div>
+    </header>
+    <div class="seller-layout">
+      <aside class="seller-sidebar">
+        <h3>จัดการสินค้า</h3>
+        <a href="#seller-form">＋ เพิ่มสินค้าใหม่</a
+        ><a href="#seller-products">สินค้าของฉัน</a
+        ><a href="#seller-result">ความคืบหน้าการตรวจสอบ</a>
+        <p class="dialog-note">
+          ต้นแบบในเครื่อง<br />ไม่มีการเผยแพร่ไปยัง Shopee<br />ยังไม่มีระบบบัญชีผู้ขาย
+        </p>
+      </aside>
+      <main class="seller-main">
+        <p class="seller-breadcrumb">สินค้าของฉัน / เพิ่มสินค้าใหม่</p>
+        <h1>เพิ่มสินค้าใหม่</h1>
+        <p class="dialog-note">
+          บันทึกข้อมูลจำลองและตรวจสอบก่อนเผยแพร่ · ผลจาก API
+          เดียวกับหน้าผู้ตรวจสอบ
+        </p>
+        <form id="seller-form">
+          <section class="seller-section">
+            <h2>ข้อมูลทั่วไป</h2>
+            <label for="listing-title">ชื่อสินค้า <span>*</span></label
+            ><input
+              id="listing-title"
+              required
+              maxlength="1000"
+              value="ลูมาเวล วิตามินซี · แบรนด์สมมติ"
+            /><label for="listing-description">รายละเอียดสินค้า</label
+            ><textarea id="listing-description" rows="6" maxlength="6000">
+แบรนด์สมมติ · ผลิตภัณฑ์จำลอง</textarea
+            ><label for="listing-category">หมวดหมู่ <span>*</span></label
+            ><select id="listing-category">
+              <option value="supplement">ผลิตภัณฑ์เสริมอาหาร</option>
+              <option value="cosmetic">เครื่องสำอาง</option>
+              <option value="other">หมวดหมู่อื่น / ยังไม่รองรับ</option>
+            </select>
+          </section>
+          <section class="seller-section">
+            <h2>ข้อมูลสำหรับตรวจสอบทะเบียน</h2>
+            <p class="dialog-note">
+              ค่าเริ่มต้นเป็นข้อมูลจำลอง DEMO-001 เท่านั้น ไม่ใช่ทะเบียนจริง
+            </p>
+            <label for="registration-reference"
+              >เลขอ้างอิงทะเบียน <span>*</span></label
+            ><input
+              id="registration-reference"
+              value="DEMO-001"
+              required
+              maxlength="200"
+            /><label for="registered-name"
+              >ชื่อสินค้าตามทะเบียน <span>*</span></label
+            ><input
+              id="registered-name"
+              value="Vitamin C Supplement"
+              required
+              maxlength="200"
+            /><label for="license-holder">ผู้ถือใบอนุญาต <span>*</span></label
+            ><input
+              id="license-holder"
+              value="LumaVale Demo"
+              required
+              maxlength="200"
+            />
+          </section>
+          <div class="seller-actions">
+            <button id="save-draft" type="button" class="load-more">
+              บันทึกแบบร่างในเครื่อง</button
+            ><button id="submit-listing" class="primary" type="submit">
+              บันทึกและตรวจสอบสินค้า
+            </button>
+          </div>
+        </form>
+        <p id="seller-feedback" role="status" aria-live="polite"></p>
+        <section id="seller-products" class="seller-section">
+          <h2>สินค้าของฉัน</h2>
+          <p class="dialog-note">
+            รายงานในรอบการใช้งานนี้ รวมรายการจากหน้าลูกค้า
+            เลือกเพื่อดูสถานะล่าสุด
+          </p>
+          <div id="seller-product-list"></div>
+        </section>
+        <article id="seller-result" aria-live="polite"></article>
+      </main>
+    </div>
+  </body>
+</html>

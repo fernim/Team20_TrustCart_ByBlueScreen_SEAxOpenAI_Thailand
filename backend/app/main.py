@@ -70,6 +70,7 @@ class Verification(BaseModel):
     human_review_required: bool
     trace: list[TraceEntry]
     chain_hash: str
+    listing: Optional[Listing] = None
     listing_title: str = ""
     claim_findings: list[ClaimFinding] = Field(default_factory=list)
 
@@ -131,6 +132,10 @@ def create_app(database: Path) -> FastAPI:
     def storefront() -> FileResponse:
         return FileResponse(FRONTEND / "index.html")
 
+    @service.get("/seller", include_in_schema=False)
+    def seller() -> FileResponse:
+        return FileResponse(FRONTEND / "seller.html")
+
     @service.get("/reviewer", include_in_schema=False)
     def reviewer() -> FileResponse:
         return FileResponse(FRONTEND / "reviewer.html")
@@ -147,7 +152,7 @@ def create_app(database: Path) -> FastAPI:
             id=uuid4(), status=status, reason=reason, confidence=confidence,
             human_review_required=human_review_required, trace=trace.entries,
             chain_hash=trace.entries[-1].chain_hash,
-            listing_title=listing.title or listing.product_name, claim_findings=findings,
+            listing=listing, listing_title=listing.title or listing.product_name, claim_findings=findings,
         )
         with closing(sqlite3.connect(database)) as connection, connection:
             connection.execute(
