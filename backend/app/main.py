@@ -1,4 +1,4 @@
-import sqlite3
+from . import database as store
 import mimetypes
 from contextlib import asynccontextmanager, closing
 from pathlib import Path
@@ -24,7 +24,7 @@ from .workflow import initialize_store
 def create_app(database: Path) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        with closing(sqlite3.connect(database)) as connection, connection:
+        with closing(store.connect(database)) as connection, connection:
             connection.execute("BEGIN IMMEDIATE")
             initialize_store(connection)
             connection.execute("CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, version INTEGER NOT NULL, result TEXT NOT NULL)")

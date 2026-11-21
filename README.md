@@ -58,6 +58,11 @@ POST /v1/verifications  ──>  Registry adapter (synthetic in demo)
 | Regulatory reviewer or other authorized human reviewer        | Inspect evidence, resolve escalations, and retain decision history    | **Reviewer dashboard + tamper-evident trace**        |
 
 **Who might pay?** The commercial hypotheses are (1) marketplaces or seller platforms paying for API usage / enterprise integration, and (2) brands or agencies paying for a hosted review workflow. **Neither willingness to pay nor customer ROI has been validated.** We are not asserting that a large marketplace would outsource functionality it can build internally.
+- **`AGENTS.md` first.** It gives Codex the stack, run and test commands, eight safety rules, and the status policy, so every task starts from the same constraints.
+- **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
+- **Visible log.** Commits made through Codex carry the `[codex]` tag. Inspect current Codex task history with git log --oneline --grep="[codex]" --fixed-strings.
+- **Human review.** Team members review every diff that touches rules, safety, or data handling.
+- **Test results.** `pytest` passes 108 tests for the demo workflow, API compatibility, dataset invariants, agency aggregation, and database adapter behavior. Shared PostgreSQL connectivity still requires hosted verification.
 
 ## Verification workflow and safety states
 
@@ -221,3 +226,14 @@ The team states that the hackathon repository was started on **21 November 2026*
 - [Thai FDA — platform screening and enforcement update (2026)](https://dis.fda.moph.go.th/detail-newsUpdate?id=3498)
 - [Thai FDA Food Division — advertising criteria (2026)](https://food.fda.moph.go.th/food-law/announ-fda-ads69)
 - [Product brief](PRODUCT.md) · [Implementation details](IMPLEMENTATION.md) · [Demo guide](DEMO.md) · [Developer/agent instructions](AGENTS.md)
+## Shared production storage
+
+Configure TRUSTCART_DATABASE_URL with a PostgreSQL connection string in the Vercel project environment to enable durable shared storage. The database role needs permission to create the dedicated trustcart schema and its tables. The first startup creates verifications, products, evidence and reviews with indexes. These are additive changes isolated from public-schema tables.
+
+PostgreSQL mutations lock the selected verification or product row before validating its revision. Evidence hashes, review history and product versions remain in the same transaction as the updated decision. A configured but unavailable database fails the request instead of falling back to temporary local data.
+
+Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
+
+Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
+
+Local validation: 108 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.

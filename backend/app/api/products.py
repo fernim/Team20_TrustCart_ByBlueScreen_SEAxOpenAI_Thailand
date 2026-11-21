@@ -1,6 +1,6 @@
 import hashlib
 import json
-import sqlite3
+from .. import database as store
 from contextlib import closing
 from uuid import UUID, uuid4
 
@@ -26,7 +26,7 @@ class Product(BaseModel):
 
 
 def save_product(listing, product_id, request, expected_version=None):
-    with closing(sqlite3.connect(request.app.state.database, timeout=20)) as connection, connection:
+    with closing(store.connect(request.app.state.database, timeout=20)) as connection, connection:
         connection.execute("BEGIN IMMEDIATE")
         row = connection.execute("SELECT version FROM products WHERE id=?", (str(product_id),)).fetchone()
         if expected_version is not None:
@@ -83,14 +83,14 @@ def update_product(product_id: UUID, update: ProductUpdate, request: Request):
 @router.get("/v1/products", response_model=list[Product])
 def list_products(request: Request, response: Response):
     response.headers["Cache-Control"] = "no-store"
-    with closing(sqlite3.connect(request.app.state.database)) as connection:
+    with closing(store.connect(request.app.state.database)) as connection:
         return [current_product(connection, row[0]) for row in connection.execute("SELECT result FROM products ORDER BY rowid DESC").fetchall()]
 
 
 @router.get("/v1/products/{product_id}", response_model=Product)
 def get_product(product_id: UUID, request: Request, response: Response):
     response.headers["Cache-Control"] = "no-store"
-    with closing(sqlite3.connect(request.app.state.database)) as connection:
+    with closing(store.connect(request.app.state.database)) as connection:
         row = connection.execute("SELECT result FROM products WHERE id=?", (str(product_id),)).fetchone()
         if row is None:
             raise HTTPException(404, "Product not found")

@@ -3,7 +3,7 @@ import binascii
 import os
 import tempfile
 import json
-import sqlite3
+from backend.app import database as store
 from contextlib import closing
 from hmac import compare_digest
 from pathlib import Path
@@ -137,7 +137,7 @@ def create_demo_app(database: Path):
     @service.post("/demo/tamper/{verification_id}", tags=["Demo"])
     def tamper(verification_id: UUID, revision: Revision):
         """Intentionally corrupt a synthetic trace to demonstrate audit detection."""
-        with closing(sqlite3.connect(database, timeout=20)) as connection, connection:
+        with closing(store.connect(database, timeout=20)) as connection, connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute("SELECT result FROM verifications WHERE id=?", (str(verification_id),)).fetchone()
             if row is None:
