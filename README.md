@@ -120,6 +120,12 @@ Python 3.9-compatible commands are provided in the repo's development instructio
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt
 .venv/Scripts/python -m uvicorn backend.app.main:app --port 8000
+The 27 catalog entries use reference photographs and illustrative prices, sales counts and offers. Real supplement reference names/photos (DHC, NeoCell and Deva C) do not inherit approval from the synthetic registry fixture. Saved seller products can receive a blue checkmark only when their backend result qualifies. Customers can click a blue “ตรวจทะเบียนแล้ว” / “Registration checked” badge only when the product passes verification. Non-passing listings remain normal product cards with no status badge. The popup shows only the short status and the synthetic-data label; detailed reasons and traces remain in the reviewer view. Unknown or failed requests never produce a verified badge. The separate `/reviewer` page loads a stored report by its ID and displays status, reason, confidence, human-review routing, registry source, timestamped trace entries, and expandable previous/current hashes plus the final chain hash. A selector lists reports from the current browser session. Clicking a customer status badge also points the Reviewer link at that product’s report; the lookup also accepts an ID from the API. The view displays recorded hashes without independently validating their integrity. This read-only local reviewer demo has no authentication or authorization; it must not be treated as a protected reviewer portal. The registration check does not establish authenticity or verify a seller account. Denied, unknown, pending, low-confidence and failed-request products have no status badge. It is an independent TrustCart demo, not an official Shopee website. Reference images are stored locally with provenance in `frontend/assets/sources.json`; imagery and marks remain owned by their respective owners.
+
+Three overclaim fixtures use the matching NeoCell, Deva C and DHC reference photos with deliberately unsupported test copy. Their descriptions identify the text as example copy requiring correction; it is not quoted from the photographed manufacturers or source sellers. A limited deterministic R-03 policy detects fixed-time appearance promises, instant-effect promises, and universal result guarantees in Thai and English. The three listings are submitted to the existing API and receive `DENIED` with `advertising_overclaim`; exact matched phrases, their title/description source, and bilingual reasons are persisted in `claim_findings` and the hash-chained trace. They use the existing synthetic reference as a borrowed-reference scenario; no new registration record is invented. R-03 rejection does not establish their identity. Samples are deterministic for repeatable demos and tests.
+
+```powershell
+.venv/Scripts/python -m uvicorn app:app --port 8000
 ```
 
 **macOS / Linux**
@@ -214,10 +220,14 @@ A credible commercial case needs a pilot with an authorized data source and real
 4. **Expansion:** additional health-product categories and jurisdictions only after local rules, data access, and product-market fit are validated.
 
 ## Responsible AI and provenance
+Two normal, unverified reference listings now use short title excerpts from Shopee (Neocell Super Collagen + C and Deva C Vitamin C). Their descriptions are explicitly labeled summaries of visible pack-size information, because full seller descriptions could not be retrieved. Source links are available in product details. They carry no verified badge. Three additional, explicitly labeled copy-correction examples reuse matching market photos with test overclaims; those phrases are not attributed to the source sellers.
+
+## Frontend integration
 
 TrustCart is built around **explicit uncertainty**, not a promise of autonomous certification. The default demo is deterministic; optional LLM claim extraction is source-grounded, gated by external-transfer approval, and never allowed to change status directly. Reviewers can inspect rule outcomes, hashes, and decision history.
 
 The team states that the hackathon repository was started on **21 November 2026**; the current README records first commit `1d8b004` at 10:44 Thailand time. It also identifies an **earlier personal prototype** (`zhunbeiboshi-del/TrustCart-BlueScreen`) and pre-event planning documents. **The team should verify and disclose the provenance of any code reused from that prototype** rather than treating all preparation as newly built competition work. Codex-assisted work is documented via `AGENTS.md`, tests, and `[codex]`-marked commits; verify the final commit/test counts on the submission revision.
+Product edits use optimistic version checks and atomically create fresh verification history in SQLite. The current released identity policy, required supplement term, UNKNOWN outage handling, and hash-based reviewer actions remain in effect. Frontend fixtures and tests use the released registry identity. The storefront, seller and reviewer retain the Shopee-style orange theme, compact controls and reference campaign imagery. Backend integration does not replace the visual theme.
 
 ## References
 
@@ -234,6 +244,17 @@ PostgreSQL mutations lock the selected verification or product row before valida
 
 Without this variable, the app uses its existing SQLite database. Local SQLite records and schema migrations remain supported. Moving to PostgreSQL starts a shared database; existing instance-local Vercel records are not automatically imported.
 
+Customers see saved seller products ahead of the example catalog. The catalog refreshes on load, focus, visibility restoration, cross-tab update notifications, and every five seconds while visible. Only APPROVED results with confidence at least 0.75, no human-review requirement and an audit hash receive a clickable badge. Denied/unconfirmed listings are normal cards. Refresh failures remove seller-product badges until a fresh result is available. Edits update the same product card; drafts remain private to the browser until submitted. Prices are required for all new and edited product API requests. Legacy records without prices remain editable by sellers but are excluded from the customer catalog until priced. Shop recommendation labels are omitted because no shop-level recommendation data exists.
+
+Seller product records survive restarts and are reloaded from the database, while prior verification reports remain accessible in Reviewer. The deployed workspace uses the shared demo password gate; per-seller tenant ownership remains unimplemented.
+
+
+The seller list displays each saved product’s image, price, stock and verification status with separate **Edit** and **View product** actions. It refreshes saved summaries on focus without replacing unsaved form edits. Missing images use a neutral placeholder; prices and stock are never invented for older records. Market image provenance is recorded in `frontend/assets/sources.json`; these photos are reference artwork, not product certification.
+
 Hosted browser tests reproduce missing products and reports when Vercel requests reach different temporary SQLite instances. The PostgreSQL adapter requires the team's connection configuration and hosted verification before this persistence issue can be marked resolved. Unit tests isolate external database and AI configuration.
 
-Local validation: 108 Python tests, 94 Node component tests, and 14 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
+Latest merged local validation: 111 Python tests, 107 Node component tests, and 22 desktop/mobile browser tests passed. These checks use isolated SQLite data and a fake PostgreSQL client. The latest hosted desktop/mobile run against the existing SQLite deployment passed 16 checks and failed 4 saved-product continuity checks. PostgreSQL deployment and hosted retesting remain pending. GitHub CI runs both the API and frontend suites.
+
+The reviewer product list shows saved images, prices, stock and latest verification statuses. Open report loads the corresponding detailed audit while historical reports remain accessible. Product details have direct `/products/{id}` URLs.
+
+The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.

@@ -24,12 +24,22 @@
         ><span class="workspace-title">Reviewer Centre <small>ศูนย์ตรวจสอบสินค้า</small></span>
       </div>
     </header>
-    <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#report-lookup" aria-current="location">ค้นหารายงาน</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">READ-ONLY DEMO<br />ทะเบียนจำลอง<br />ไม่มีการอนุมัติโดยผู้ตรวจสอบ</div></aside><main id="main" class="reviewer-shell">
+    <div class="reviewer-workspace"><aside class="reviewer-sidebar"><div class="workspace-profile"><span class="shop-avatar">T</span><div><strong>TrustCart</strong><small>Review workspace</small></div></div><h3>การตรวจสอบ</h3><a href="#reviewer-products" aria-current="location">สินค้าล่าสุด</a><a href="#report-lookup">ค้นหารายงาน</a><a href="#reviewer-report">ผลการตรวจสอบ</a><div class="sidebar-note">READ-ONLY DEMO<br />ทะเบียนจำลอง<br />ไม่มีการอนุมัติโดยผู้ตรวจสอบ</div></aside><main id="main" class="reviewer-shell">
       <header>
         <p class="reviewer-eyebrow">TRUSTCART · REVIEWER</p>
         <h1>รายงานการตรวจสอบสินค้า</h1>
         <p>ตรวจสอบสถานะสินค้าและดูรายการที่ต้องแก้ไข</p>
       </header>
+      <section id="reviewer-products" class="seller-section" aria-labelledby="reviewer-products-title">
+        <h2 id="reviewer-products-title">สินค้าล่าสุด</h2>
+        <p class="dialog-note">ข้อมูลสินค้าที่บันทึกและผลตรวจล่าสุด · เปิดรายงานเพื่อดูเหตุผลและประวัติการตรวจสอบ</p>
+        <p id="reviewer-products-loading" role="status" hidden>กำลังโหลดสินค้า…</p>
+        <div id="reviewer-products-error" role="alert" hidden>
+          <p>ไม่สามารถโหลดรายการสินค้าล่าสุดได้</p>
+          <button id="retry-reviewer-products" class="text-button" type="button">ลองอีกครั้ง</button>
+        </div>
+        <div id="reviewer-product-list" aria-live="polite"></div>
+      </section>
       <section id="demo-reports" hidden>
         <label for="demo-report-select">รายงานสินค้าในรอบนี้</label>
         <select id="demo-report-select">

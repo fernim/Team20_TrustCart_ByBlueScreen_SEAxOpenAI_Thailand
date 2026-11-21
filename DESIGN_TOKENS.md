@@ -40,17 +40,25 @@ A Shopee Mall reference showcase uses nine locally bundled campaign/brand images
 
 Validation includes DOM component tests and desktop/mobile Playwright flows for navigation, image loading, language changes, product details and layout overflow. The current visual match covers the storefront homepage; authenticated Shopee accounts, checkout and other remote pages are not cloned.
 
-## Product detail view
+## Product detail pages
 
-The product dialog follows the public Shopee product-page layout observed at `https://shopee.co.th/product/38793442/783511072`: breadcrumb, large left gallery, right purchase panel with title, price and quantity, then separate specification and description sections. This reference informs layout only; registry details, ratings, shipping promises and medical copy are not imported.
+Products have shareable `/products/{id}` URLs for both numeric demo IDs and stable seller product UUIDs. FastAPI serves the storefront shell for direct visits and reloads. The client resolves the selected listing, updates the document title, and renders a full page under the shared header. Product images, titles, flash-sale entries and popular-product entries are actual links that support native new-tab and copy-link actions. Normal clicks use browser history navigation, preserving the local cart and catalog filters; Back/Forward and the breadcrumb return to the appropriate view. Header search returns to catalog results.
 
-The dialog is capped at 1200px with a 450px gallery column and collapses to one column at 760px. Price uses a pale surface and orange 32px type (28px on mobile). Thumbnail buttons expose their selected state and an image counter. Plus/minus controls and direct entry retain stock and cart limits. Zero or missing seller stock disables quantity controls and adding to cart. The outlined add-to-cart action is paired with a solid “View cart” action, which opens the existing cart without placing an order.
+The detail page follows the public Shopee layout observed at `https://shopee.co.th/product/38793442/783511072`: breadcrumb, large left gallery, right purchase panel with title, price and quantity, then separate specification and description sections. Layout reference only: registry details, ratings, shipping promises and medical copy are not imported.
+
+The content is capped at 1200px with a 450px gallery column and collapses to one column at 760px. Price uses a pale surface and orange 32px type (28px on mobile). Thumbnail buttons expose their selected state and an image counter. Plus/minus controls and direct entry retain stock and cart limits. Zero or missing seller stock disables quantity controls and adding to cart. Adding a product stays on its detail page. “View cart” opens the existing cart without placing an order. Full browser reloads reset this in-memory demo cart.
 
 Saved product images, prices, stock and descriptions remain the source of the rendered listing. Only qualifying passing products have the clickable blue product badge; its popup remains a short customer status. The reviewer retains the detailed report and audit trace. Source-listing links remain in descriptions for the existing reference products. Seller descriptions preserve line breaks and render as plain text.
+
+Direct seller URLs show a loading state until saved listings arrive. Missing/deleted products show a not-found state; connection failures without a loaded product show a retry action. These states never show a verified badge. Existing loaded product pages continue polling for saved changes and remove badges when current verification cannot be confirmed.
+
+Validation covers direct URLs and reloads, browser Back/Forward, header search, missing/deleted listings, failure/retry, bounded quantity controls, thumbnail switching, badge eligibility and popup, inventory edits, cart navigation, language switching, native popup dismissal/focus, and desktop/mobile overflow.
 
 Validation covers bounded plus/minus controls, thumbnail switching, badge eligibility and popup, stock edits, cart handoff, language switching, native dialog dismissal/focus, and desktop/mobile dialog overflow.
 
 
 ## TrustCart integration update
 
-The integrated application uses TrustCart branding, a teal palette, shield/check logo, independent verification hero, and rounded panels. The copied promotion and brand showcase sections are hidden in the live storefront. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.
+The integrated application retains the Shopee-style orange gradient, shopping-bag mark, campaign hero, brand showcase and compact panels. Shared design tokens live in frontend/tokens.css and integration overrides live in frontend/marketplace-ui.css. Historical reference measurements above describe the earlier branch state.
+
+The shared visual theme remains Shopee-style after backend merges: orange tokens, compact corners, campaign imagery and consistent seller/reviewer controls. Evidence workspace and API links remain available.
