@@ -366,7 +366,9 @@
       : "฿" + value.toLocaleString("en-US");
   const findProduct = (id) =>
     catalog.find((product) => String(product.id) === String(id));
-  const image = (category) => `/static/assets/category-${category === medicineCategory ? 1 : category}.webp`;
+  const image = (category) => category === medicineCategory
+    ? "/static/assets/demo-supplement.png"
+    : `/static/assets/category-${category}.webp`;
   function element(tag, className, content) {
     const node = document.createElement(tag);
     if (className) node.className = className;

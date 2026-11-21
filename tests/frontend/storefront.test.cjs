@@ -734,6 +734,7 @@ test('medicine category filters saved drugs and labels their product pages', asy
   await new Promise(r=>setImmediate(r));
   const category = p.$$('.category').find(button => button.textContent === 'ยา');
   assert.ok(category);
+  assert.equal(category.querySelector("img").getAttribute("src"), "/static/assets/demo-supplement.png");
   category.click();
   assert.equal(p.$$('.product-card').length,1);
   p.$('.product-title-link').click();
