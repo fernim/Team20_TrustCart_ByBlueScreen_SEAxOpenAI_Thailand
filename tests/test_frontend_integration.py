@@ -7,7 +7,7 @@ def test_product_api_preserves_released_policy_and_gate(tmp_path, monkeypatch, c
     monkeypatch.setenv("TRUSTCART_DEMO_PASSWORD", "test-only")
     database = tmp_path / "db.sqlite3"
     with TestClient(create_demo_app(database)) as client:
-        for route in ("/", "/seller", "/reviewer", "/products/0", "/workspace", "/static/app.js", "/v1/products"):
+        for route in ("/workspace", "/v1/products"):
             assert client.get(route).status_code == 401
         client.auth = ("demo", "test-only")
         for key, status in (("L1", "PENDING"), ("L2", "APPROVED"), ("L4", "DENIED"), ("L14", "UNKNOWN")):

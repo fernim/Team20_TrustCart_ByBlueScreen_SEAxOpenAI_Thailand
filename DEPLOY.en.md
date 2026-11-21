@@ -1,5 +1,7 @@
 # TrustCart — Reproduce & Deploy Guide (English)
 
+> Current checkout: the public storefront no longer uses the shared demo password. Configure TRUSTCART_BUYER_PASSWORD, TRUSTCART_SELLER1_PASSWORD, TRUSTCART_SELLER2_PASSWORD and TRUSTCART_REVIEWER_PASSWORD for role login. New verification requires private document storage and additive tc_* tables; use persistent PostgreSQL for a shared deployment. OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true enable Live document checks; Replay remains explicit. This role-workflow change has not been deployed. Older shared-gate instructions below apply only to the legacy diagnostic surface; see README for the current contract.
+
 Every step to rebuild the project on your machine, test it, and deploy it to Vercel
 (including the problems we actually hit during deployment and how we fixed them).
 

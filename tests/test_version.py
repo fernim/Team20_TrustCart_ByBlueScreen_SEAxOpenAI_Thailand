@@ -18,7 +18,8 @@ def test_version_is_public_and_returns_only_commit(tmp_path, monkeypatch, commit
         assert response.status_code == 200
         assert response.json() == {"commit": commit or "local"}
         blocked = 401 if configured_password else 503
-        for route in ("/", "/docs", "/openapi.json", "/v1/products", "/version/private"):
+        assert client.get("/").status_code == 200
+        for route in ("/docs", "/openapi.json", "/v1/products", "/version/private"):
             assert client.get(route).status_code == blocked
         assert client.post("/version").status_code == blocked
         if configured_password:

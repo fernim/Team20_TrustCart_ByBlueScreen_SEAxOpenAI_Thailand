@@ -258,6 +258,7 @@
   const productVerifications = new Map();
   function hasProductVerification(product) {
     const productVerification = productVerifications.get(product.id);
+    if (product.sellerProduct && typeof product.badgeEligible === "boolean") return product.badgeEligible && productVerification?.status === "APPROVED";
     return (
       !product.overclaim && !product.realReference &&
       productVerification?.status === "APPROVED" &&
@@ -1294,7 +1295,7 @@
     brandReference: "View on Shopee ↗",
     demo: "TrustCart · Product verification",
     sampleDeals: "Special deals",
-    synthetic: "TrustCart",
+    synthetic: "Synthetic registry demo · not official certification",
     homeTitle: "Shop online with TrustCart",
     claim: "Save voucher",
     claimed: "Voucher saved",
@@ -1338,7 +1339,7 @@
     const previousVerified = selectedProduct && hasProductVerification(selectedProduct);
     const previousResult = selectedProduct && productVerifications.get(selectedProduct.id);
     try {
-      const response = await window.fetch("/v1/products", {
+      const response = await window.fetch("/v1/catalog/products", {
         cache: "no-store",
       });
       if (!response.ok) throw Error();
@@ -1352,8 +1353,7 @@
           record &&
           typeof record.id === "string" &&
           record.listing &&
-          record.listing.price != null && Number.isFinite(Number(record.listing.price)) && Number(record.listing.price) >= 0 &&
-          record.verification,
+          record.listing.price != null && Number.isFinite(Number(record.listing.price)) && Number(record.listing.price) >= 0,
       );
       for (let index = catalog.length - 1; index >= 0; index--)
         if (catalog[index].sellerProduct) {
@@ -1365,6 +1365,7 @@
         catalog.push({
           id: record.id,
           sellerProduct: true,
+          badgeEligible: record.badge_eligible,
           th: listing.title || listing.product_name,
           en: listing.title || listing.product_name,
           descriptionTh: listing.description,
@@ -1389,7 +1390,7 @@
       if (request !== catalogRequest) return;
       catalogFailed = true;
       for (const product of catalog)
-        if (product.sellerProduct) productVerifications.delete(product.id);
+        if (product.sellerProduct) { productVerifications.delete(product.id); product.badgeEligible = false; }
     }
     renderProducts();
     renderCart();
@@ -1434,7 +1435,7 @@
     }
   }
   async function loadProductVerification(product) {
-    if (typeof window.fetch !== "function" || (product.realReference && !product.overclaim)) return;
+    if (window.TrustCartSession || typeof window.fetch !== "function" || (product.realReference && !product.overclaim)) return;
     try {
       const response = await window.fetch("/v1/verifications", {
         method: "POST",

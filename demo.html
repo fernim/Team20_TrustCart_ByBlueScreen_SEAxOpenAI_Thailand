@@ -177,8 +177,13 @@
   let linkedProduct = null;
   let savedProducts = [];
   let transactionRequest = 0;
-  async function api(path, options) {
-    const response = await fetch(path, options);
+  async function api(path, options = {}) {
+    const headers = {...options.headers};
+    if (options.method && options.method !== 'GET') {
+      const session = await (await fetch('/v1/auth/me', {cache:'no-store'})).json();
+      headers['X-CSRF-Token'] = session.csrf_token || '';
+    }
+    const response = await fetch(path, {...options, headers});
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(typeof error.detail === "string" ? error.detail : "Request failed (" + response.status + ")");

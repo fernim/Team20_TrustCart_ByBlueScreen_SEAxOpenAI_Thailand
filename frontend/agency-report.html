@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustCart · Product report</title>
+    <meta
+      name="description"
+      content="Agency workspace for marketplace product verification"
+    />
+    <link rel="icon" href="/static/assets/bag.svg" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/tokens.css" />
+    <link rel="stylesheet" href="/static/agency.css" />
+    <script defer src="/static/session.js"></script>
+    <script defer src="/static/agency-common.js"></script>
+    <script defer src="/static/agency-report.js"></script>
+  </head>
+  <body class="agency-page">
+    <a class="skip-link" href="#main" data-i18n="skip">ข้ามไปที่เนื้อหาหลัก</a>
+    <header class="agency-header">
+      <a class="agency-brand" href="/agency"
+        ><span class="agency-monogram" aria-hidden="true">T</span
+        ><span
+          >TrustCart<small data-i18n="workspace">พื้นที่งานเจ้าหน้าที่</small></span
+        ></a
+      >
+      <div class="agency-header-tools">
+        <label
+          ><span class="sr-only" data-i18n="language">ภาษา</span
+          ><select id="agency-language">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+          </select></label
+        ><span id="agency-account"></span
+        ><button id="agency-signout" data-i18n="signout">ออกจากระบบ</button>
+      </div>
+    </header>
+
+    <main id="main" class="agency-report-main">
+      <a
+        id="back-to-queue"
+        class="agency-back"
+        href="/agency"
+        data-i18n="back"
+      ></a>
+      <div class="agency-heading">
+        <div>
+          <p class="agency-eyebrow" data-i18n="report"></p>
+          <h1 id="case-title"></h1>
+          <p id="case-reference"></p>
+        </div>
+        <button
+          id="refresh-report"
+          class="agency-secondary"
+          data-i18n="refresh"
+        ></button>
+      </div>
+      <p
+        id="report-loading"
+        class="agency-loading"
+        role="status"
+        data-i18n="report_loading"
+        hidden
+      ></p>
+      <div
+        id="report-error"
+        class="agency-report-error"
+        role="alert"
+        hidden
+      ></div>
+      <p id="report-feedback" class="agency-notice" role="status" hidden></p>
+      <p
+        id="report-historical"
+        class="agency-notice"
+        data-i18n="historical"
+        hidden
+      ></p>
+      <div id="case-content" hidden>
+        <div class="agency-report-columns">
+          <div class="agency-report-evidence">
+            <section class="agency-report-panel">
+              <h2 data-i18n="overview"></h2>
+              <div id="case-overview"></div>
+            </section>
+            <section class="agency-report-panel">
+              <h2 data-i18n="documents"></h2>
+              <div id="case-documents"></div>
+            </section>
+            <section class="agency-report-panel">
+              <h2 data-i18n="checks"></h2>
+              <div id="case-checks"></div>
+            </section>
+            <section class="agency-report-panel">
+              <h2 data-i18n="findings"></h2>
+              <div id="case-findings"></div>
+            </section>
+            <section class="agency-report-panel">
+              <h2 data-i18n="history"></h2>
+              <div id="case-history"></div>
+              <details id="case-audit">
+                <summary data-i18n="history"></summary>
+                <p id="audit-validity"></p>
+                <pre id="audit-trace"></pre>
+              </details>
+            </section>
+          </div>
+          <aside class="agency-decision-column">
+            <section class="agency-report-panel agency-decision-panel">
+              <h2 data-i18n="decision"></h2>
+              <p id="case-next-action" class="agency-next-action"></p>
+              <button
+                id="start-review"
+                class="primary"
+                data-i18n="start"
+                hidden
+              ></button>
+              <p id="decision-readonly" data-i18n="read_only" hidden></p>
+              <form id="decision-form" hidden>
+                <p class="agency-muted" data-i18n="action_help"></p>
+                <div id="confirm-documents"></div>
+                <label
+                  for="confirm-product_name"
+                  data-i18n="product_name"
+                ></label
+                ><input id="confirm-product_name" maxlength="200" /><label
+                  for="confirm-registration_reference"
+                  data-i18n="registration_reference"
+                ></label
+                ><input
+                  id="confirm-registration_reference"
+                  maxlength="200"
+                /><label
+                  for="confirm-license_holder"
+                  data-i18n="license_holder"
+                ></label
+                ><input id="confirm-license_holder" maxlength="200" /><label
+                  for="review-note"
+                  data-i18n="reason"
+                ></label
+                ><textarea
+                  id="review-note"
+                  required
+                  minlength="3"
+                  maxlength="2000"
+                  rows="4"
+                ></textarea>
+                <div class="agency-decision-actions">
+                  <button
+                    type="submit"
+                    value="approve"
+                    class="primary"
+                    data-i18n="approve"
+                  ></button
+                  ><button
+                    type="submit"
+                    value="request_documents"
+                    class="agency-secondary"
+                    data-i18n="request"
+                  ></button
+                  ><button
+                    type="submit"
+                    value="deny"
+                    class="agency-deny"
+                    data-i18n="deny"
+                  ></button>
+                </div>
+              </form>
+            </section>
+            <p class="agency-disclaimer" data-i18n="demo"></p>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

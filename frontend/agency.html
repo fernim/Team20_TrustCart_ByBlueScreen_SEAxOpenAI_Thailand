@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrustCart · Agency</title>
+    <meta
+      name="description"
+      content="Agency workspace for marketplace product verification"
+    />
+    <link rel="icon" href="/static/assets/bag.svg" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/tokens.css" />
+    <link rel="stylesheet" href="/static/agency.css" />
+    <script defer src="/static/session.js"></script>
+    <script defer src="/static/agency-common.js"></script>
+    <script defer src="/static/agency.js"></script>
+  </head>
+  <body class="agency-page">
+    <a class="skip-link" href="#main" data-i18n="skip">ข้ามไปที่เนื้อหาหลัก</a>
+    <header class="agency-header">
+      <a class="agency-brand" href="/agency"
+        ><span class="agency-monogram" aria-hidden="true">T</span
+        ><span
+          >TrustCart<small data-i18n="workspace">พื้นที่งานเจ้าหน้าที่</small></span
+        ></a
+      >
+      <div class="agency-header-tools">
+        <label
+          ><span class="sr-only" data-i18n="language">ภาษา</span
+          ><select id="agency-language">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+          </select></label
+        ><span id="agency-account"></span
+        ><button id="agency-signout" data-i18n="signout">ออกจากระบบ</button>
+      </div>
+    </header>
+    <div class="agency-layout">
+      <aside class="agency-sidebar">
+        <p class="agency-nav-label" data-i18n="queues">กลุ่มงาน</p>
+        <nav id="work-queues" aria-label="Work queues" data-aria="queues">
+          <button data-queue="all">
+            <span data-i18n="all"></span><span data-count="all">—</span></button
+          ><button data-queue="to_review">
+            <span data-i18n="to_review"></span
+            ><span data-count="to_review">—</span></button
+          ><button data-queue="in_progress">
+            <span data-i18n="in_progress"></span
+            ><span data-count="in_progress">—</span></button
+          ><button data-queue="waiting_documents">
+            <span data-i18n="waiting_documents"></span
+            ><span data-count="waiting_documents">—</span></button
+          ><button data-queue="seller_correction">
+            <span data-i18n="seller_correction"></span
+            ><span data-count="seller_correction">—</span></button
+          ><button data-queue="completed">
+            <span data-i18n="completed"></span
+            ><span data-count="completed">—</span>
+          </button>
+        </nav>
+        <div class="agency-sidebar-note">
+          <span class="agency-live-dot"></span
+          ><strong data-i18n="local"></strong>
+          <p data-i18n="demo"></p>
+        </div>
+      </aside>
+      <main id="main" class="agency-main">
+        <div class="agency-breadcrumb">
+          TrustCart <span>/</span> <span data-i18n="dashboard"></span>
+        </div>
+        <div class="agency-heading">
+          <div>
+            <p class="agency-eyebrow" data-i18n="workspace"></p>
+            <h1 data-i18n="title"></h1>
+            <p data-i18n="subtitle"></p>
+          </div>
+          <button
+            id="refresh-queue"
+            class="agency-secondary"
+            data-i18n="refresh"
+          ></button>
+        </div>
+        <div class="agency-metrics">
+          <div>
+            <span data-i18n="all"></span><strong data-count="all">—</strong>
+          </div>
+          <div>
+            <span data-i18n="to_review"></span
+            ><strong data-count="to_review">—</strong>
+          </div>
+          <div>
+            <span data-i18n="waiting_documents"></span
+            ><strong data-count="waiting_documents">—</strong>
+          </div>
+          <div>
+            <span data-i18n="completed"></span
+            ><strong data-count="completed">—</strong>
+          </div>
+        </div>
+        <section class="agency-queue-panel" aria-labelledby="queue-title">
+          <div class="agency-panel-head">
+            <h2 id="queue-title"></h2>
+            <span class="agency-muted" data-i18n="auto_refresh"></span>
+          </div>
+          <div class="agency-marketplaces" role="group" data-aria="sources">
+            <button data-marketplace="" data-i18n="all_sources"></button
+            ><button data-marketplace="shopee">
+              <span class="marketplace-dot shopee"></span>Shopee</button
+            ><button data-marketplace="lazada">
+              <span class="marketplace-dot lazada"></span>Lazada
+            </button>
+          </div>
+          <form id="queue-filters" class="agency-filterbar">
+            <label class="agency-search"
+              ><span class="sr-only" data-i18n="search"></span
+              ><input
+                id="queue-search"
+                type="search"
+                maxlength="200"
+                data-placeholder="search" /><button
+                type="submit"
+                data-i18n="search_button"
+              ></button></label
+            ><label class="agency-result-filter"
+              ><span data-i18n="result"></span
+              ><select id="filter-result">
+                <option value="" data-i18n="all_results"></option>
+                <option value="APPROVED" data-i18n="APPROVED"></option>
+                <option value="PENDING" data-i18n="PENDING"></option>
+                <option value="DENIED" data-i18n="DENIED"></option>
+                <option
+                  value="UNKNOWN"
+                  data-i18n="UNKNOWN"
+                ></option></select></label
+            ><button
+              type="button"
+              id="clear-filters"
+              class="agency-text"
+              data-i18n="reset"
+            ></button>
+          </form>
+          <p
+            id="queue-loading"
+            class="agency-loading"
+            role="status"
+            data-i18n="loading"
+            hidden
+          ></p>
+          <div id="queue-error" class="agency-state" role="alert" hidden>
+            <p data-i18n="error"></p>
+            <button
+              id="retry-queue"
+              class="agency-secondary"
+              data-i18n="retry"
+            ></button>
+          </div>
+          <div id="queue-empty" class="agency-state" hidden>
+            <span class="empty-symbol" aria-hidden="true">≡</span>
+            <h3 data-i18n="empty"></h3>
+            <p id="queue-empty-hint"></p>
+          </div>
+          <div class="agency-table-wrap">
+            <table class="agency-table">
+              <thead>
+                <tr>
+                  <th data-i18n="product"></th>
+                  <th data-i18n="marketplace"></th>
+                  <th data-i18n="stage"></th>
+                  <th data-i18n="result"></th>
+                  <th data-i18n="updated"></th>
+                  <th><span class="sr-only" data-i18n="open"></span></th>
+                </tr>
+              </thead>
+              <tbody id="queue-body"></tbody>
+            </table>
+          </div>
+          <p
+            id="queue-summary"
+            class="agency-table-footer"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
+        <p class="agency-disclaimer" data-i18n="demo"></p>
+      </main>
+    </div>
+  </body>
+</html>

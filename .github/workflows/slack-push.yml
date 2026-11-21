@@ -1,0 +1,19 @@
+name: Slack branch push status
+on:
+  push:
+    branches: ['**']
+permissions:
+  contents: read
+jobs:
+  notify:
+    if: github.event.deleted == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Notify TrustCart Slack channel
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python3 scripts/slack_push.py
