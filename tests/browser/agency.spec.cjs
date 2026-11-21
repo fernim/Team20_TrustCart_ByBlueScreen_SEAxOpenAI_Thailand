@@ -151,6 +151,9 @@ test("Agency report approves inspected evidence and synchronizes seller and shop
   await page.locator("button[value=approve]").click();
   await expect(page.locator("#report-feedback")).toContainText("Saved");
   await expect(page.locator("#case-overview")).toContainText("Approved");
+  await expect(page.locator("#decision-replay-detail")).toContainText("Reviewer approved");
+  await page.locator("#decision-replay-steps").getByRole("button", { name: "Listing submitted" }).click();
+  await expect(page.locator("#decision-replay-detail")).toContainText("Listing submitted");
   await expect(page.locator("#decision-form")).toBeHidden();
   await page.locator("#back-to-queue").click();
   await expect(page).toHaveURL(/marketplace=shopee/);

@@ -10,6 +10,8 @@ The design rule is **AI extracts and suggests; deterministic rules decide; human
 
 **Current scope:** registry records and replay documents are synthetic. Seller-entered products and uploaded documents are persisted application data; some storefront content is static reference artwork or explicitly labeled sample content. The app has no live Thai FDA, Shopee or Lazada feed and is not affiliated with those organizations. A badge is not official certification, document authentication, or proof of physical authenticity.
 
+[Decision replay demo and marketplace pilot](docs/DECISION_REPLAY.md)
+
 ## Implementation audit
 
 Reviewed against the source and local tests on **21 November 2026**, starting from commit `bbb9e04`. This README describes implemented behavior. [PRODUCT.md](PRODUCT.md), [REGISTRATION.md](REGISTRATION.md), and older deployment/demo documents also contain targets and historical descriptions; do not treat those as proof of a live deployment.

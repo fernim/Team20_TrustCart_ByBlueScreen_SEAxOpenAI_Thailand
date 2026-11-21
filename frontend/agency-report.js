@@ -15,7 +15,70 @@ window.TrustCartAgencyReport = (() => {
     blocked = false,
     authorized = false,
     errorKey = null,
-    feedbackKey = null;
+    feedbackKey = null,
+    replayIndex = null;
+  const milestones = {
+    submission_snapshot: "replay_submitted",
+    document_uploaded: "replay_uploaded",
+    document_assessment: "replay_assessed",
+    assessment_unavailable: "replay_unavailable",
+    review_started: "replay_review",
+    submission_superseded: "replay_superseded",
+  };
+  function replayLabel(event) {
+    if (event.step !== "human_review")
+      return Object.hasOwn(milestones, event.step) ? milestones[event.step] : null;
+    let decision;
+    try {
+      decision = JSON.parse(event.outcome)?.decision;
+    } catch (_) {
+      return "replay_review_recorded";
+    }
+    if (decision === "approve") return "replay_approved";
+    if (decision === "deny") return "replay_denied";
+    if (decision === "request_documents") return "replay_requested";
+    return "replay_review_recorded";
+  }
+  function renderReplay(report) {
+    const list = $("#decision-replay-steps"),
+      detail = $("#decision-replay-detail"),
+      unavailable = $("#decision-replay-unavailable"),
+      result = $("#decision-replay-result"),
+      valid = report.audit?.valid === true,
+      steps = valid
+        ? report.trace.map((entry) => ({ key: replayLabel(entry), at: entry.at })).filter((entry) => entry.key)
+        : [];
+    list.replaceChildren();
+    detail.replaceChildren();
+    result.replaceChildren();
+    detail.hidden = !steps.length;
+    unavailable.hidden = Boolean(steps.length);
+    unavailable.textContent = ui.t(valid ? "replay_empty" : "replay_withheld");
+    if (!steps.length) return;
+    const status = ui.node("strong", ui.t(report.status), "agency-status");
+    status.dataset.status = report.status;
+    result.append(status);
+    const buttons = steps.map((step, index) => {
+      const item = ui.node("li");
+      const button = ui.node("button", ui.t(step.key));
+      button.type = "button";
+      button.onclick = () => select(index);
+      item.append(button);
+      list.append(item);
+      return button;
+    });
+    function select(index) {
+      replayIndex = index;
+      buttons.forEach((button, i) =>
+        button.setAttribute("aria-pressed", String(index === i)),
+      );
+      const event = steps[index];
+      const time = ui.node("time", ui.date(event.at));
+      if (event.at && Number.isFinite(Date.parse(event.at))) time.dateTime = event.at;
+      detail.replaceChildren(ui.node("strong", ui.t(event.key)), time);
+    }
+    select(Math.min(replayIndex ?? steps.length - 1, steps.length - 1));
+  }
   const fieldNames = [
     "product_name",
     "registration_reference",
@@ -54,6 +117,7 @@ window.TrustCartAgencyReport = (() => {
   function render() {
     if (!selected) return;
     const r = selected;
+    renderReplay(r);
     $("#case-title").textContent = r.listing_title;
     $("#case-reference").textContent =
       `${r.marketplace === "shopee" ? "Shopee" : r.marketplace === "lazada" ? "Lazada" : r.marketplace} · ${r.shop_name} · ${ui.t("revision")} ${r.revision}`;
@@ -281,6 +345,7 @@ window.TrustCartAgencyReport = (() => {
       const r = await (await api.api(base)).json();
       const history = await (await api.api(base + "/history")).json();
       selected = r;
+      replayIndex = null;
       revisions = history;
       blocked = false;
       resetInputs();
@@ -312,6 +377,7 @@ window.TrustCartAgencyReport = (() => {
       const latest = await (await api.api(base)).json();
       const history = await (await api.api(base + "/history")).json();
       selected = latest;
+      replayIndex = null;
       revisions = history;
       resetInputs();
       render();
