@@ -1710,3 +1710,14 @@ dialog h2 {
   }
 }
 .seller-catalog-product .discount { display:none; }
+
+/* Seller media and customer gallery share the marketplace spacing and borders. */
+.image-previews, .product-thumbnails { display:flex; flex-wrap:wrap; gap:var(--space-3); margin:var(--space-3) 0; }
+.image-previews > div { display:grid; gap:6px; width:112px; }
+.image-previews img { width:112px; height:112px; object-fit:contain; border:1px solid var(--border-subtle); background:var(--canvas); }
+.image-previews button, .product-thumbnails button { border:1px solid var(--border-subtle); background:var(--surface); padding:6px; cursor:pointer; }
+.product-gallery { min-width:0; }
+.product-gallery > img { width:100%; height:320px; object-fit:contain; background:var(--canvas); }
+.product-thumbnails img { width:60px; height:60px; object-fit:contain; }
+.product-thumbnails button[aria-pressed="true"] { border-color:var(--brand-primary); }
+.product-stock { color:var(--text-secondary); font-size:var(--font-size-body); }

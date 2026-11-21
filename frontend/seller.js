@@ -9,6 +9,72 @@
     "registered-name",
     "license-holder",
   ];
+  let images = [];
+  let imageRequest = 0;
+  let readingImages = false;
+  let saving = false;
+  function markDirty() {
+    dirty = true;
+    version++;
+    $("#seller-result").replaceChildren();
+    feedback("ข้อมูลมีการแก้ไข ต้องส่งตรวจใหม่ก่อนยืนยันสถานะ");
+  }
+  function renderImages() {
+    $("#image-previews").replaceChildren();
+    images.forEach((src, index) => {
+      const frame = document.createElement("div");
+      const image = document.createElement("img");
+      image.src = src;
+      image.alt = `รูปสินค้า ${index + 1}`;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = `ลบรูป ${index + 1}`;
+      remove.disabled = saving || readingImages;
+      remove.addEventListener("click", () => {
+        if (saving || readingImages) return;
+        images.splice(index, 1);
+        renderImages();
+        markDirty();
+      });
+      frame.append(image, remove);
+      $("#image-previews").append(frame);
+    });
+  }
+  $("#listing-images").addEventListener("change", async (event) => {
+    const request = ++imageRequest;
+    const files = [...event.target.files];
+    readingImages = false;
+    $("#submit-listing").disabled = saving;
+    renderImages();
+    markDirty();
+    if (files.length + images.length > 5 || files.some(file =>
+      !["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024)) {
+      feedback("เลือกรูป PNG, JPEG หรือ WebP ไม่เกิน 5 รูป และ 2 MB ต่อรูป");
+      event.target.value = "";
+      return;
+    }
+    readingImages = true;
+    $("#submit-listing").disabled = true;
+    renderImages();
+    try {
+      const added = await Promise.all(files.map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      })));
+      if (request === imageRequest) images.push(...added);
+    } catch (_) {
+      if (request === imageRequest) feedback("ไม่สามารถอ่านรูปได้ กรุณาเลือกรูปอีกครั้ง");
+    } finally {
+      if (request === imageRequest) {
+        readingImages = false;
+        $("#submit-listing").disabled = saving;
+        event.target.value = "";
+        renderImages();
+      }
+    }
+  });
   let version = 0;
   let dirty = false;
   let reports = [];
@@ -20,6 +86,9 @@
     if (Array.isArray(saved)) reports = saved;
   } catch (_) {}
   const payload = () => ({
+    images: [...images],
+    price: $("#listing-price").value,
+    stock: Number($("#listing-stock").value),
     title: $("#listing-title").value.trim(),
     description: $("#listing-description").value,
     category: $("#listing-category").value,
@@ -28,6 +97,14 @@
     license_holder: $("#license-holder").value.trim(),
   });
   function fill(data) {
+    imageRequest++;
+    readingImages = false;
+    $("#submit-listing").disabled = saving;
+    images = Array.isArray(data.images) ? [...data.images] : [];
+    $("#listing-images").value = "";
+    $("#listing-price").value = data.price ?? "";
+    $("#listing-stock").value = data.stock ?? "";
+    renderImages();
     const values = [
       data.title,
       data.description,
@@ -55,6 +132,7 @@
       button.className = "seller-product-row";
       button.textContent = `${entry.title || entry.id} · ${entry.status || "UNKNOWN"}`;
       button.addEventListener("click", async () => {
+        if (saving) return;
         if (
           dirty &&
           !window.confirm(
@@ -102,13 +180,9 @@
       $("#seller-product-list").append(button);
     }
   }
-  $("#seller-form").addEventListener("input", () => {
-    dirty = true;
-    version++;
-    $("#seller-result").replaceChildren();
-    feedback("ข้อมูลมีการแก้ไข ต้องส่งตรวจใหม่ก่อนยืนยันสถานะ");
-  });
+  $("#seller-form").addEventListener("input", markDirty);
   $("#save-draft").addEventListener("click", () => {
+    if (readingImages) { feedback("กำลังอ่านรูป กรุณารอสักครู่"); return; }
     try {
       localStorage.setItem("trustcart-seller-draft", JSON.stringify(payload()));
       feedback("บันทึกแบบร่างในเครื่องแล้ว ยังไม่ได้ตรวจสอบ");
@@ -118,7 +192,9 @@
   });
   $("#seller-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!$("#seller-form").reportValidity()) return;
+    if (saving || readingImages || !$("#seller-form").reportValidity()) return;
+    saving = true;
+    renderImages();
     const listing = payload();
     const request = ++version;
     $("#seller-result").replaceChildren();
@@ -146,6 +222,7 @@
       );
       if (!response.ok) {
         if (response.status === 409) throw new Error("conflict");
+        if (response.status === 422) throw new Error("invalid");
         throw Error();
       }
       const record = await response.json();
@@ -184,10 +261,14 @@
         feedback(
           error.message === "conflict"
             ? "สินค้านี้ถูกแก้ไขแล้ว โหลดรายการล่าสุดก่อนบันทึกอีกครั้ง"
-            : "ไม่สามารถตรวจสอบได้ ไม่ได้ยืนยันสถานะผ่าน กรุณาลองใหม่",
+            : error.message === "invalid"
+              ? "ข้อมูลไม่ถูกต้อง ตรวจสอบรูปสินค้า ราคา และจำนวนคงเหลือ แล้วลองใหม่"
+              : "ไม่สามารถตรวจสอบได้ ไม่ได้ยืนยันสถานะผ่าน กรุณาลองใหม่",
         );
       }
     } finally {
+      saving = false;
+      renderImages();
       $("#submit-listing").disabled = false;
       document
         .querySelectorAll(
@@ -218,6 +299,11 @@
     dirty = false;
     version++;
     $("#seller-form").reset();
+    imageRequest++;
+    readingImages = false;
+    images = [];
+    $("#submit-listing").disabled = false;
+    renderImages();
     $("#seller-result").replaceChildren();
     feedback("เพิ่มสินค้าใหม่");
   });

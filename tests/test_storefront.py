@@ -55,5 +55,5 @@ def test_seller_page_and_listing_snapshot_roundtrip(tmp_path):
     with TestClient(create_app(tmp_path/'seller.sqlite3')) as client:
         assert client.get('/seller').status_code == 200
         result = client.post('/v1/verifications',json=payload)
-        assert result.json()['listing'] == payload
-        assert client.get(result.headers['location']).json()['listing'] == payload
+        assert result.json()['listing'] == {**payload, 'images': [], 'price': None, 'stock': None}
+        assert client.get(result.headers['location']).json()['listing'] == {**payload, 'images': [], 'price': None, 'stock': None}

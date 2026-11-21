@@ -44,6 +44,10 @@
         <div class="workspace-notice"><strong>ตรวจสอบข้อมูลก่อนเผยแพร่</strong><span>ใช้ทะเบียนจำลองสำหรับการสาธิต · ไม่ใช่การรับรองอย่างเป็นทางการ</span></div><form id="seller-form">
           <section class="seller-section">
             <h2><span class="section-number">01</span> ข้อมูลทั่วไป</h2>
+            <label for="listing-images">รูปสินค้า</label>
+            <input id="listing-images" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-describedby="image-help" />
+            <p id="image-help" class="dialog-note">สูงสุด 5 รูป · PNG, JPEG, WebP · ไม่เกิน 2 MB ต่อรูป · รูปแรกเป็นรูปหลัก</p>
+            <div id="image-previews" class="image-previews" aria-live="polite"></div>
             <label for="listing-title">ชื่อสินค้า <span>*</span></label
             ><input
               id="listing-title"
@@ -86,6 +90,13 @@
               required
               maxlength="200"
             />
+          </section>
+          <section class="seller-section">
+            <h2><span class="section-number">03</span> ข้อมูลการขาย</h2>
+            <label for="listing-price">ราคา (บาท) <span>*</span></label>
+            <input id="listing-price" type="number" min="0" max="99999999.99" step="0.01" value="199" required />
+            <label for="listing-stock">จำนวนสินค้าคงเหลือ <span>*</span></label>
+            <input id="listing-stock" type="number" min="0" max="10000000" step="1" value="0" required />
           </section>
           <div class="seller-actions">
             <button id="save-draft" type="button" class="load-more">

@@ -546,3 +546,43 @@ test('seller catalog storage refresh removes deleted listings and closes their d
   assert.equal(p.$('[data-product="seller-storage"]'), null);
   assert.equal(p.$('#product-dialog').open, false);
 });
+
+test('customer sees seller images price and stock, caps cart and refreshes edited stock', async (t) => {
+  const images=['data:image/png;base64,aA==','data:image/png;base64,aQ=='];
+  const listing={title:'Media product',description:'Tablets',category:'supplement',images,price:'299.50',stock:2};
+  const p=page(t,w=>{w.fetch=async()=>({ok:true,json:async()=>[{id:'media',listing,verification:{status:'DENIED'}}]});});
+  await new Promise(r=>setImmediate(r));
+  submit(p,'Media product');
+  assert.equal(p.$('[data-product="media"] img').getAttribute('src'),images[0]);
+  p.$('[data-product="media"] .product-open').click();
+  assert.match(p.$('#product-detail').textContent,/299.5/);
+  assert.match(p.$('#product-stock').textContent,/2/);
+  assert.equal(p.$('#quantity').max,'2');
+  p.$('.product-gallery button:last-child').click();
+  assert.equal(p.$('.product-gallery > img').getAttribute('src'),images[1]);
+  p.$('#quantity').value='3'; p.$('#add-to-cart').click();
+  assert.equal(p.$('#cart-count').textContent,'0');
+  p.$('#quantity').value='2'; p.$('#add-to-cart').click();
+  assert.equal(p.$('#cart-count').textContent,'2');
+  listing.stock=0; listing.price='199.00'; listing.images=[];
+  p.window.dispatchEvent(new p.window.Event('focus'));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#cart-count').textContent,'0');
+  p.$('[data-product="media"] .product-open').click();
+  assert.equal(p.$('#add-to-cart').disabled,true);
+  assert.match(p.$('#product-stock').textContent,/หมด|Out of stock/);
+});
+
+test('unchanged catalog refresh preserves customer quantity and selected gallery image', async (t) => {
+  const listing={title:'Gallery product',category:'supplement',price:'10',stock:5,images:['data:image/png;base64,aA==','data:image/png;base64,aQ==']};
+  const p=page(t,w=>{w.fetch=async()=>({ok:true,json:async()=>[{id:'gallery',listing,verification:{status:'DENIED'}}]});});
+  await new Promise(r=>setImmediate(r));
+  submit(p,'Gallery product');
+  p.$('[data-product="gallery"] .product-open').click();
+  p.$('.product-thumbnails button:last-child').click();
+  p.$('#quantity').value='3';
+  p.window.dispatchEvent(new p.window.Event('focus'));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#quantity').value,'3');
+  assert.equal(p.$('.product-gallery > img').getAttribute('src'),listing.images[1]);
+});

@@ -363,12 +363,12 @@
   }
   function productImage(product) {
     const img = element("img");
-    img.src =
+    img.src = product.images?.[0] || (
       product.id === checkedProduct.id ||
       product.overclaim ||
       product.sellerProduct
         ? "/static/assets/demo-supplement.svg"
-        : image(product.category);
+        : image(product.category));
     img.alt = name(product);
     img.loading = "lazy";
     img.width = 200;
@@ -786,6 +786,13 @@
     if (hasProductVerification(product))
       heading.prepend(productCheckmark(product), document.createTextNode(" "));
     const amount = element("div", "detail-price", price(product.price));
+    const limit = product.sellerProduct ? Math.min(99, product.stock || 0) : 99;
+    const stock = element("p", "product-stock");
+    stock.id = "product-stock";
+    if (product.sellerProduct) stock.textContent = product.stock == null
+      ? (state.language === "th" ? "ยังไม่ระบุจำนวนคงเหลือ" : "Stock not provided")
+      : product.stock === 0 ? (state.language === "th" ? "สินค้าหมด" : "Out of stock")
+      : (state.language === "th" ? `มีสินค้าทั้งหมด ${product.stock} ชิ้น` : `${product.stock} in stock`);
     const quantity = element("div", "quantity");
     const label = element("label", "", t("quantity"));
     label.htmlFor = "quantity";
@@ -794,23 +801,26 @@
       id: "quantity",
       type: "number",
       min: "1",
-      max: "99",
+      max: String(limit),
       step: "1",
       value: "1",
     });
     quantity.append(label, input);
     const add = element("button", "primary", t("add"));
-    add.disabled = product.price === null;
+    add.disabled = product.price === null || limit === 0;
+    input.disabled = limit === 0;
     add.id = "add-to-cart";
     add.addEventListener("click", () => {
       const quantity = Number(input.value);
       if (
         !Number.isInteger(quantity) ||
         quantity < 1 ||
-        quantity > 99 ||
-        (cart.get(product.id) || 0) + quantity > 99
+        quantity > limit ||
+        (cart.get(product.id) || 0) + quantity > limit
       ) {
-        toast(t("quantityError"));
+        toast(product.sellerProduct
+          ? (state.language === "th" ? `จำนวนรวมในตะกร้าต้องไม่เกิน ${limit} ชิ้น` : `Cart quantity must not exceed ${limit}`)
+          : t("quantityError"));
         input.focus();
         return;
       }
@@ -819,7 +829,7 @@
       $("#product-dialog").close();
       toast(t("added"));
     });
-    details.append(heading, amount, quantity, add);
+    details.append(heading, amount, stock, quantity, add);
     if (product.overclaim) {
       const description = element(
         "p",
@@ -857,10 +867,39 @@
       );
       details.insertBefore(source, amount);
     }
-    layout.append(productImage(product), details);
+    const gallery = element("div", "product-gallery");
+    const mainImage = productImage(product);
+    gallery.append(mainImage);
+    if (product.images?.length > 1) {
+      const thumbnails = element("div", "product-thumbnails");
+      product.images.forEach((src, index) => {
+        const button = element("button");
+        button.type = "button";
+        button.setAttribute("aria-label", `${name(product)} · ${index + 1}`);
+        button.setAttribute("aria-pressed", String(index === 0));
+        const thumbnail = productImage(product);
+        thumbnail.src = src;
+        button.append(thumbnail);
+        button.addEventListener("click", () => {
+          mainImage.src = src;
+          thumbnails.querySelectorAll("button").forEach(node => node.setAttribute("aria-pressed", String(node === button)));
+        });
+        thumbnails.append(button);
+      });
+      gallery.append(thumbnails);
+    }
+    layout.append(gallery, details);
     $("#product-detail").replaceChildren(layout);
   }
   function renderCart() {
+    let adjusted = false;
+    for (const [id, quantity] of cart) {
+      const product = findProduct(id);
+      const limit = product?.sellerProduct ? Math.min(99, product.stock || 0) : 99;
+      if (!product || product.price === null || limit === 0) { cart.delete(id); adjusted = true; }
+      else if (quantity > limit) { cart.set(id, limit); adjusted = true; }
+    }
+    if (adjusted) toast(state.language === "th" ? "ปรับตะกร้าตามจำนวนสินค้าคงเหลือล่าสุดแล้ว" : "Cart updated to match current stock");
     const count = [...cart.values()].reduce(
       (sum, quantity) => sum + quantity,
       0,
@@ -1091,6 +1130,8 @@
   async function refreshSellerProducts() {
     if (typeof window.fetch !== "function") return;
     const request = ++catalogRequest;
+    const previousDetail = selectedProduct && JSON.stringify(selectedProduct);
+    const previousVerified = selectedProduct && hasProductVerification(selectedProduct);
     try {
       const response = await window.fetch("/v1/products", {
         cache: "no-store",
@@ -1126,7 +1167,9 @@
               : listing.category === "cosmetic"
                 ? 0
                 : 9,
-          price: null,
+          price: listing.price == null ? null : Number(listing.price),
+          stock: listing.stock ?? null,
+          images: listing.images || [],
           original: 0,
           sold: 0,
         });
@@ -1138,11 +1181,12 @@
         if (product.sellerProduct) productVerifications.delete(product.id);
     }
     renderProducts();
+    renderCart();
     if (selectedProduct?.sellerProduct) {
       const latest = findProduct(selectedProduct.id);
       if (latest) {
         selectedProduct = latest;
-        renderDetail();
+        if (JSON.stringify(latest) !== previousDetail || hasProductVerification(latest) !== previousVerified) renderDetail();
       } else $("#product-dialog").close();
     }
   }

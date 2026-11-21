@@ -248,3 +248,48 @@ test('seller ignores a late submitted report after the form changes', async (t) 
   assert.equal(p.$('#seller-result').textContent, '');
   assert.match(p.$('#seller-feedback').textContent, /ต้องส่งตรวจใหม่/);
 });
+
+test('seller saves images price and stock and restores them for editing', async (t) => {
+  let saved;
+  const p = seller(t, async (url, options) => {
+    if (!options?.body) return {ok:true, json:async()=>[]};
+    saved = JSON.parse(options.body);
+    return {ok:true,json:async()=>({id:'media-product',version:1,listing:saved,verification:{...result,listing:saved}})};
+  });
+  p.$('#listing-price').value = '299.50';
+  p.$('#listing-stock').value = '7';
+  const file = new p.dom.window.File(['local image'], 'product.png', {type:'image/png'});
+  Object.defineProperty(p.$('#listing-images'), 'files', {value:[file]});
+  p.$('#listing-images').dispatchEvent(new p.dom.window.Event('change', {bubbles:true}));
+  await new Promise(r=>setTimeout(r,30));
+  assert.equal(p.$('#image-previews img').src, 'data:image/png;base64,bG9jYWwgaW1hZ2U=');
+  await p.submit();
+  assert.equal(saved.price,'299.50');
+  assert.equal(saved.stock,7);
+  assert.equal(saved.images.length,1);
+  p.$('#image-previews button').click();
+  assert.equal(p.$('#image-previews img'),null);
+  assert.equal(p.$('#seller-result').textContent,'');
+  await p.submit();
+  assert.deepEqual(saved.images,[]);
+});
+
+test('seller restores media draft and rejects unsupported files without losing images', async (t) => {
+  let writes=0;
+  const original='data:image/png;base64,bG9jYWwgaW1hZ2U=';
+  const p=seller(t,async(url,options)=>{ if(options?.body) writes++; return {ok:true,json:async()=>[]}; },w=>{
+    w.localStorage.setItem('trustcart-seller-draft',JSON.stringify({images:[original],price:'120.50',stock:4}));
+  });
+  assert.equal(p.$('#listing-price').value,'120.50');
+  assert.equal(p.$('#listing-stock').value,'4');
+  assert.equal(p.$('#image-previews img').getAttribute('src'),original);
+  Object.defineProperty(p.$('#listing-images'),'files',{value:[new p.dom.window.File(['<svg/>'],'bad.svg',{type:'image/svg+xml'})]});
+  p.$('#listing-images').dispatchEvent(new p.dom.window.Event('change',{bubbles:true}));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(p.$('#image-previews img').getAttribute('src'),original);
+  assert.match(p.$('#seller-feedback').textContent,/PNG/);
+  assert.equal(p.$('#submit-listing').disabled,false);
+  assert.equal(writes,0);
+  p.$('#save-draft').click();
+  assert.deepEqual(JSON.parse(p.dom.window.localStorage.getItem('trustcart-seller-draft')).images,[original]);
+});

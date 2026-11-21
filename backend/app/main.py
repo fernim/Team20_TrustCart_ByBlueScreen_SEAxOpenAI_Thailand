@@ -4,6 +4,7 @@ import sqlite3
 from contextlib import asynccontextmanager, closing
 from datetime import datetime, timezone
 from enum import Enum
+from decimal import Decimal
 from pathlib import Path
 from typing import Optional, Tuple
 from uuid import UUID, uuid4
@@ -11,11 +12,12 @@ from uuid import UUID, uuid4
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 from typing_extensions import Annotated
 
 from . import registry
 from .claims import ClaimFinding, find_overclaims
+from .media import validate_images
 
 
 ListingText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -30,6 +32,14 @@ class Listing(BaseModel):
     category: ListingText
     title: Annotated[str, StringConstraints(max_length=1000)] = ""
     description: Annotated[str, StringConstraints(max_length=6000)] = ""
+    images: list[str] = Field(default_factory=list, max_length=5)
+    price: Optional[Decimal] = Field(default=None, ge=0, max_digits=10, decimal_places=2)
+    stock: Optional[Annotated[int, Field(strict=True, ge=0, le=10000000)]] = None
+
+    @field_validator("images")
+    @classmethod
+    def valid_images(cls, value):
+        return validate_images(value)
 
 
 class Status(str, Enum):
@@ -131,6 +141,7 @@ def build_verification(listing: Listing, product_id: Optional[str] = None, versi
     trace = Trace()
     if product_id is not None:
         trace.add("product_revision", json.dumps({"product_id": product_id, "version": version}, sort_keys=True))
+    trace.add("listing_snapshot", hashlib.sha256(listing.model_dump_json().encode("utf-8")).hexdigest())
     status, reason, findings = evaluate(listing, trace)
     confidence = 0.0 if status == Status.UNKNOWN else 1.0
     human_review_required = confidence < 0.75
