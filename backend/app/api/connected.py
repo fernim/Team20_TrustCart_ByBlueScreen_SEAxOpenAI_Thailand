@@ -139,6 +139,7 @@ def create_product(listing: SaleListing, request: Request):
     product = dict(
         id=str(uuid4()),
         version=1,
+        marketplace="shopee",
         listing=listing.model_dump(mode="json"),
         verification=None,
     )

@@ -20,7 +20,7 @@ from .verification import (
 )
 from .workflow import initialize_store
 from . import security, connected_store
-from .api import connected, submissions, documents, assessment
+from .api import connected, submissions, documents, assessment, agency_queue
 
 
 def create_app(database: Path) -> FastAPI:
@@ -37,6 +37,7 @@ def create_app(database: Path) -> FastAPI:
     service.middleware("http")(security.access_guard)
     service.include_router(security.router)
     service.include_router(connected.router)
+    service.include_router(agency_queue.router)
     service.include_router(submissions.router)
     service.include_router(documents.router)
     service.include_router(assessment.router)

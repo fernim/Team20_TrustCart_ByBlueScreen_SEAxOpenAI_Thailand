@@ -61,6 +61,14 @@ def initialize(connection):
     )
 
 
+    # Additive JSON migration: preserve product versions and verification snapshots.
+    for product_id, raw in connection.execute("SELECT id,result FROM products").fetchall():
+        product = json.loads(raw)
+        if "marketplace" not in product:
+            product["marketplace"] = "shopee"
+            connection.execute("UPDATE products SET result=? WHERE id=?", (json.dumps(product), product_id))
+
+
 def read_product(connection, product_id, shop_id=None):
     from fastapi import HTTPException
 
