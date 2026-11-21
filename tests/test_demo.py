@@ -1,3 +1,5 @@
+from importlib import import_module
+
 from fastapi.testclient import TestClient
 
 from app import create_demo_app
@@ -35,3 +37,37 @@ def test_demo_fails_closed_without_password(tmp_path, monkeypatch):
     monkeypatch.delenv("TRUSTCART_DEMO_PASSWORD", raising=False)
     with TestClient(create_demo_app(tmp_path / "demo.sqlite3")) as client:
         assert client.get("/v1/demo/transactions").status_code == 503
+
+
+def test_grouped_api_routers_are_registered_behind_demo_gate(tmp_path, monkeypatch):
+    monkeypatch.setenv("TRUSTCART_DEMO_PASSWORD", "test-only")
+    expected = {
+        "verifications": {
+            ("POST", "/v1/verifications"),
+            ("GET", "/v1/verifications/{verification_id}"),
+        },
+        "seller": {
+            ("POST", "/v1/verifications/{verification_id}/evidence"),
+            ("POST", "/v1/verifications/{verification_id}/recheck"),
+            ("POST", "/v1/listings/suggest-copy"),
+        },
+        "reviewer": {
+            ("GET", "/v1/review-queue"),
+            ("POST", "/v1/verifications/{verification_id}/review"),
+        },
+        "reports": {
+            ("GET", "/v1/audit/{verification_id}"),
+            ("GET", "/v1/reports/{verification_id}"),
+            ("GET", "/v1/widgets/{verification_id}"),
+            ("POST", "/v1/products/compare"),
+        },
+    }
+    with TestClient(create_demo_app(tmp_path / "demo.sqlite3")) as client:
+        paths = client.get("/openapi.json", auth=("demo", "test-only")).json()["paths"]
+        for module, operations in expected.items():
+            router = import_module(f"backend.app.api.{module}").router
+            assert {(method, route.path) for route in router.routes for method in route.methods} == operations
+            for method, path in operations:
+                assert method.lower() in paths[path]
+                url = path.replace("{verification_id}", "00000000-0000-0000-0000-000000000000")
+                assert client.request(method, url).status_code == 401

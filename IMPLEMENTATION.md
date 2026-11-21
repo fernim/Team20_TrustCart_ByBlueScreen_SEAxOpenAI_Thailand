@@ -12,7 +12,7 @@ The core synthetic demo is implemented. The app includes PENDING mismatch handli
 
 Optional OpenAI extraction is implemented behind explicit data-transfer approval and environment credentials. It remains disabled on the hosted demo. Marketplace OAuth is roadmap work. Hosted SQLite is temporary. Product evidence checks compare declared fields and file hashes; document authenticity and OCR require further integration.
 
-Validation: 32 tests pass. Local browser verification completed L1 submission, evidence, recheck, reviewer denial, valid audit, and deliberate tamper detection. The deployed Vercel API also passed the same full workflow, stale-hash rejection, reports, widget, outage, docs, and password checks.
+Validation: 41 tests pass on the integrated API, including skipped category checks, blank evidence declarations, badge fallback for invalid audits, and migration of saved listing snapshots and evidence. The original workflow integration reported browser and hosted checks for the L1 loop, reviewer decisions, audit verification, and outage handling.
 
 ---
 
@@ -125,12 +125,14 @@ Rules for every task (from `AGENTS.md`): write the failing test first, change on
 
 | Member | Paths | Tasks |
 | --- | --- | --- |
-| Thomaz | `backend/app/main.py`, `llm.py`, `registry.py` | T1, T3, T6, T7, T8 |
+| Thomaz | `backend/app/api/verifications.py`, `backend/app/api/seller.py`, `backend/app/verification.py`, `backend/app/llm.py`, `backend/app/registry.py` | T1, T3, T6, T7, T8 |
 | Ju | `backend/data/`, `backend/app/rules.py` | T2, T4, T5 (rule wording) |
-| Big | `backend/app/audit.py`, `tests/` | T9, T10, test coverage |
-| Fen | `demo.html`, `app.py`, deck | T11, T12, pitch |
+| Big | `backend/app/api/reviewer.py`, audit helpers in `backend/app/workflow.py`, `tests/` | T9, T10, test coverage |
+| Fen | `backend/app/api/reports.py`, `demo.html`, `app.py`, deck | T11, T12, pitch |
 
 Work on short-lived branches and merge into `main` often. Only one person edits `main.py` at a time.
+
+`main.py` registers the verification, seller, reviewer, and reports routers from `backend/app/api/`. Coordinate changes to shared SQLite, scoring, and audit helpers in `backend/app/workflow.py` across their callers.
 
 ---
 

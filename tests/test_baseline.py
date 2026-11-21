@@ -8,16 +8,16 @@ from backend.app.main import create_app
 
 
 @pytest.mark.parametrize(
-    "reference,product,category,status",
+    "reference,product,category,status,category_result",
     [
-        ("DEMO-001", "Demo Supplement", "supplement", "APPROVED"),
-        ("DEMO-001", "Different Product", "supplement", "PENDING"),
-        ("DEMO-001", "Demo Supplement", "other", "UNKNOWN"),
-        ("DEMO-001", "Demo Supplement", "cosmetic", "DENIED"),
-        ("MISSING", "Demo Supplement", "supplement", "UNKNOWN"),
+        ("DEMO-001", "Demo Supplement", "supplement", "APPROVED", "pass"),
+        ("DEMO-001", "Different Product", "supplement", "PENDING", "skip"),
+        ("DEMO-001", "Demo Supplement", "other", "UNKNOWN", "skip"),
+        ("DEMO-001", "Demo Supplement", "cosmetic", "DENIED", "fail"),
+        ("MISSING", "Demo Supplement", "supplement", "UNKNOWN", "skip"),
     ],
 )
-def test_submit_and_retrieve(tmp_path, reference, product, category, status):
+def test_submit_and_retrieve(tmp_path, reference, product, category, status, category_result):
     database = tmp_path / "trustcart.sqlite3"
     payload = {
         "registration_reference": reference,
@@ -32,6 +32,10 @@ def test_submit_and_retrieve(tmp_path, reference, product, category, status):
         assert result["status"] == status
         assert result["registry_source"] == "synthetic"
         assert result["human_review_required"] == (status in {"UNKNOWN", "PENDING"})
+        rule = next(rule for rule in result["rule_results"] if rule["rule"] == "R-02")
+        category_trace = next(entry for entry in result["trace"] if entry["step"] == "R-02")
+        assert rule["result"] == category_result
+        assert json.loads(category_trace["outcome"]) == rule
         previous_hash = None
         for entry in result["trace"]:
             event = {key: value for key, value in entry.items() if key != "chain_hash"}
@@ -71,3 +75,4 @@ def test_inactive_registration_is_denied(tmp_path, monkeypatch):
     with TestClient(create_app(tmp_path / "db.sqlite3")) as client:
         result = client.post("/v1/verifications", json={"registration_reference": "DEMO-001", "product_name": "Demo Supplement", "license_holder": "Demo Brand", "category": "supplement"}).json()
         assert result["status"] == "DENIED"
+        assert next(rule for rule in result["rule_results"] if rule["rule"] == "R-02")["result"] == "skip"

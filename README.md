@@ -27,14 +27,14 @@ TrustCart checks a listing **before publication** through an API. The design rul
 
 ## Declarations (what was built during the hackathon)
 
-**Built on 21 November 2026, on site, in this repository.** The first commit, `1d8b004`, was made at 10:44 +07:00, after hacking started at 10:25. `git log` shows the full timeline.
+**Built on 21 November 2026, on site, in this repository.** The first commit, `1d8b004`, was made at 10:44 +07:00, after hacking started at 10:25. The repository history records the baseline and the final API integration.
 
 | Built today | Files |
 | --- | --- |
-| Verification API, synthetic registry adapter, SQLite persistence, hash-chained trace | `backend/app/main.py`, `backend/app/registry.py` |
+| Verification, evidence, recheck, and review APIs with a synthetic registry, SQLite persistence, and a hash-chained trace | `backend/app/api/`, `backend/app/verification.py`, `backend/app/registry.py`, `backend/app/workflow.py` |
 | Password-protected web demo and interactive API docs | `app.py`, `demo.html`, `vercel.json` |
 | Tests | `tests/` |
-| Codex instructions | `AGENTS.md`, `BASELINE.md` |
+| Codex instructions | `AGENTS.md`, `BASELINE.md`, [Thomaz API guidance](ThomazAgents.md) |
 
 **Prepared before the event (existing personal project).**
 
@@ -50,9 +50,9 @@ TrustCart checks a listing **before publication** through an API. The design rul
 
 - **`AGENTS.md` first.** It gives Codex the stack, run and test commands, eight safety rules, and the status policy, so every task starts from the same constraints.
 - **One task per rule, endpoint, or component, with the test written first.** Codex implements the task against a named acceptance test.
-- **Visible log.** Commits made through Codex carry the `[codex]` tag. Including the workflow completion commit, 6 of 8 committed revisions carry the `[codex]` tag.
+- **Visible log.** Commits made through Codex carry the `[codex]` tag. Through the consolidated API integration, 7 of 9 committed revisions carry the `[codex]` tag.
 - **Human review.** Team members review every diff that touches rules, safety, or data handling.
-- **Test results.** `pytest` passes 32 tests for the completed demo workflow.
+- **Test results.** `pytest` passes 41 tests for the demo workflow and API compatibility.
 
 ## Run locally
 
@@ -114,6 +114,8 @@ The password gate covers the dashboard, API, and documentation. Access fails clo
 
 Hosted SQLite storage is temporary. Saved verification results can disappear after a function restart or be unavailable on another instance. Local SQLite preserves evidence hashes, listing snapshots, reviews, and audit history across app restarts. All demo roles share the password gate. Marketplace OAuth and separate reviewer identities remain roadmap work.
 
+Databases from the earlier feature branch are upgraded at startup. Existing listing snapshots and evidence hashes are imported into the current schema, and previous audit entries remain readable. If a saved listing only has the previous permit-conflict flag, mutations return `409`. Submit a new verification with the permit number to run the current comparison.
+
 The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer workspaces support submission, evidence upload, recheck, risk ordering, reviewer decisions, reports, badges, and audit checks. Mutations use the current chain hash and reject stale or tampered cases. Demo reset clears the form while retaining saved history.
 
 ## Complete L1 demo
@@ -125,6 +127,8 @@ The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer work
 5. Submit a new case to restart. Select simulated registry outage to see zero approvals across the 20 records.
 
 ## API workflow
+
+FastAPI registers four routers from `backend/app/api/`: `verifications.py` for listing submission and retrieval, `seller.py` for evidence, rechecks, and copy suggestions, `reviewer.py` for the queue and decisions, and `reports.py` for reports, badges, comparison, and audit checks. The API entry point is `backend.app.main:app`. The password-protected local demo uses `app:app`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -141,10 +145,14 @@ The dashboard evaluates 20 synthetic records. Seller, Shopper, and Reviewer work
 | POST | /v1/products/compare | Compare up to 10 saved reports |
 | POST | /demo/tamper/{id} | Intentionally alter a synthetic trace |
 
+Evidence uploads return `200` and accept two nonempty files up to 2 MiB each. Blank registration, product, or licence-holder declarations return `422` before any evidence is saved. Each decision uses the same registry record for identity, permit, and evidence comparisons. R-02 returns `skip` when verification stops before category comparison. During an outage, registry-dependent checks are skipped and the result is `UNKNOWN`. A recheck looks up the registry again without repeating the earlier request's outage simulation.
+
+If a stored audit chain fails validation, the shopper widget returns `UNKNOWN`. The report retains the recorded status alongside the failed audit result for investigation.
+
 ## Optional AI extraction
 
 The extraction client uses OpenAI structured output and drops every phrase absent from the listing. Deterministic rules evaluate the extracted phrases. Without configuration, keyword rules run locally.
 
 Explicit human approval is required before sending listing text to OpenAI. After obtaining approval, configure the process environment with OPENAI_API_KEY and TRUSTCART_AI_TRANSFER_APPROVED=true. OPENAI_MODEL is optional. The deployed demo currently uses local deterministic screening. Tests use fake clients and never call OpenAI.
 
-Validation: 32 tests pass, including Thai false-positive regressions, grounded extraction, the L1 loop, stale hashes, evidence retries, legacy database migration, and tamper detection. Risk weights are illustrative and need calibration.
+Validation: 41 tests pass, including Thai false-positive regressions, grounded extraction, the L1 loop, stale hashes, evidence validation and retries, legacy database migration, tamper detection, and the password gate for the API routers. Risk weights are illustrative and need calibration.
